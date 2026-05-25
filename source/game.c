@@ -251,19 +251,37 @@ void gameUpdate(void) {
     uint32_t keys_down = inputGetKeysDown();
     
     if (current_state == STATE_DRAW) {
+        // Toggle toolbar visibility with D-pad Up or Down
+        if (keys_down & (KEY_UP | KEY_DOWN)) {
+            toolbar_hidden = !toolbar_hidden;
+            if (toolbar_hidden) {
+                // Clear the toolbar area (y = 176 to 191) to white (canvas bg color)
+                for (int y = 176; y < 192; y++) {
+                    for (int x = 0; x < 256; x++) {
+                        canvas_buffer[y * 256 + x] = RGB15(31, 31, 31);
+                    }
+                }
+            } else {
+                // Restore toolbar
+                uiDrawToolbar();
+            }
+            renderUpdatePreview();
+        }
+
         printf("\x1b[12;0H"); 
         printf("Raw Keys: %08lX      \n", (unsigned long)keys_held);
         
         touchPosition touch;
         if (inputGetTouch(&touch)) {
             if (!was_touching) {
-                touch_started_in_toolbar = (touch.py >= 176);
+                touch_started_in_toolbar = !toolbar_hidden && (touch.py >= 176);
             }
             
-            if (touch.py < 176) {
+            int limit_y = toolbar_hidden ? 192 : 176;
+            if (touch.py < limit_y) {
                 uint16_t draw_color = is_eraser ? RGB15(31, 31, 31) : RGB15(0, 0, 0);
                 if (!touch_started_in_toolbar) {
-                    if (was_touching && prev_y < 176) {
+                    if (was_touching && prev_y < limit_y) {
                         renderDrawLine(prev_x, prev_y, touch.px, touch.py, draw_color, active_brush_size, is_eraser);
                     } else {
                         if (is_eraser) {

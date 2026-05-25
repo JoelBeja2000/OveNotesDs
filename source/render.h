@@ -13,6 +13,7 @@
 extern uint16_t* canvas_buffer;
 extern uint16_t* preview_buffer;
 extern uint16_t* wizard_buffer;
+extern bool toolbar_hidden;
 
 void renderInitCanvas(void);
 void renderInitPreview(void);

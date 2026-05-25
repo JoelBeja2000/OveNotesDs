@@ -7,6 +7,7 @@
 uint16_t* canvas_buffer = NULL;
 uint16_t* preview_buffer = NULL;
 uint16_t* wizard_buffer = NULL;
+bool toolbar_hidden = false;
 
 void renderSetPixel(int x, int y, uint16_t color) {
     if (x >= 0 && x < 256 && y >= 0 && y < 192) {
@@ -15,7 +16,8 @@ void renderSetPixel(int x, int y, uint16_t color) {
 }
 
 void renderSetCanvasPixel(int x, int y, uint16_t color) {
-    if (x >= 0 && x < 256 && y >= 0 && y < 176) {
+    int max_y = toolbar_hidden ? 192 : 176;
+    if (x >= 0 && x < 256 && y >= 0 && y < max_y) {
         canvas_buffer[y * 256 + x] = color;
     }
 }
