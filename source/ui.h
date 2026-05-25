@@ -26,6 +26,9 @@ extern int bg_modal_tab;
 
 extern int picker_x;
 extern int picker_y;
+extern int picker_h;
+extern int picker_s;
+extern int picker_v;
 
 extern uint16_t preset_palettes[20][5];
 extern uint16_t custom_palettes[50][5];
@@ -34,6 +37,8 @@ void uiDrawToolbar(void);
 void uiOpenModal(int modal_idx);
 void uiCloseModal(void);
 void uiUpdateModalBackup(void);
+uint16_t hsv_to_rgb15(int h, int s, int v);
+void rgb15_to_hsv(uint16_t color, int* h, int* s, int* v);
 void uiUpdatePickerPosFromActiveColor(void);
 void uiUpdateColorPickerSelection(void);
 void uiUpdateAngleWheelVisuals(void);

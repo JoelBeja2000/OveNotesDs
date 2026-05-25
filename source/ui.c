@@ -33,6 +33,9 @@ int bg_modal_tab = 0;
 
 int picker_x = 128;
 int picker_y = 84;
+int picker_h = 0;
+int picker_s = 31;
+int picker_v = 31;
 
 uint16_t preset_palettes[20][5] = {
     { RGB15(0, 0, 0), RGB15(0, 0, 28), RGB15(28, 0, 0), RGB15(0, 20, 0), RGB15(30, 10, 20) },
@@ -367,7 +370,7 @@ uint16_t hsv_to_rgb15(int h, int s, int v) {
     } else {
         int base = ((31 - s) * v) >> 5;
         int color_range = v - base;
-        int phase = h / 60;
+        int phase = (h / 60) % 6;
         int f = h % 60;
         int descending = (color_range * (60 - f)) / 60;
         int ascending = (color_range * f) / 60;
@@ -384,130 +387,57 @@ uint16_t hsv_to_rgb15(int h, int s, int v) {
     return RGB15(r, g, b);
 }
 
-uint16_t getSpectrumColor(int dx, int dy, int width, int height) {
-    if (dx < 0) dx = 0;
-    if (dx >= width) dx = width - 1;
-    if (dy < 0) dy = 0;
-    if (dy >= height) dy = height - 1;
+void rgb15_to_hsv(uint16_t color, int* h, int* s, int* v) {
+    int r = color & 0x1F;
+    int g = (color >> 5) & 0x1F;
+    int b = (color >> 10) & 0x1F;
     
-    int h = (dx * 360) / width;
-    int s = 31;
-    int v = 31;
+    int max_val = r;
+    if (g > max_val) max_val = g;
+    if (b > max_val) max_val = b;
     
-    int mid = height / 2;
-    if (dy < mid) {
-        s = (dy * 31) / mid;
-        v = 31;
+    int min_val = r;
+    if (g < min_val) min_val = g;
+    if (b < min_val) min_val = b;
+    
+    *v = max_val;
+    
+    int delta = max_val - min_val;
+    if (max_val == 0) {
+        *s = 0;
     } else {
-        s = 31;
-        v = 31 - ((dy - mid) * 31) / (height - 1 - mid);
+        *s = (delta * 31) / max_val;
     }
     
-    return hsv_to_rgb15(h, s, v);
-}
-
-static uint16_t spectrum_cache[128 * 61];
-static bool spectrum_cache_initialized = false;
-
-static void uiInitSpectrumCache(void) {
-    if (spectrum_cache_initialized) return;
-    for (int dy = 0; dy < 61; dy++) {
-        for (int dx = 0; dx < 128; dx++) {
-            spectrum_cache[dy * 128 + dx] = getSpectrumColor(dx, dy, 128, 61);
+    if (delta == 0) {
+        *h = 0;
+    } else {
+        if (max_val == r) {
+            *h = (60 * (g - b)) / delta;
+        } else if (max_val == g) {
+            *h = 120 + (60 * (b - r)) / delta;
+        } else {
+            *h = 240 + (60 * (r - g)) / delta;
         }
-    }
-    spectrum_cache_initialized = true;
-}
-
-static uint16_t reticle_backup[9 * 9];
-static int last_reticle_x = -1;
-static int last_reticle_y = -1;
-
-void uiRestoreReticle(void) {
-    if (last_reticle_x != -1 && last_reticle_y != -1) {
-        for (int dy = -4; dy <= 4; dy++) {
-            for (int dx = -4; dx <= 4; dx++) {
-                int px = last_reticle_x + dx;
-                int py = last_reticle_y + dy;
-                if (px >= 64 && px <= 191 && py >= 54 && py <= 114) {
-                    canvas_buffer[py * 256 + px] = reticle_backup[(dy + 4) * 9 + (dx + 4)];
-                }
-            }
-        }
+        if (*h < 0) *h += 360;
     }
 }
 
-void uiDrawReticle(void) {
-    uiRestoreReticle();
-    
-    for (int dy = -4; dy <= 4; dy++) {
-        for (int dx = -4; dx <= 4; dx++) {
-            int px = picker_x + dx;
-            int py = picker_y + dy;
-            if (px >= 64 && px <= 191 && py >= 54 && py <= 114) {
-                reticle_backup[(dy + 4) * 9 + (dx + 4)] = canvas_buffer[py * 256 + px];
-            } else {
-                reticle_backup[(dy + 4) * 9 + (dx + 4)] = RGB15(31, 31, 31);
-            }
-        }
-    }
-    
-    uint16_t reticle_color = RGB15(31, 31, 31);
-    uint16_t bg_col = canvas_buffer[picker_y * 256 + picker_x];
-    int r = bg_col & 31, g = (bg_col >> 5) & 31, b = (bg_col >> 10) & 31;
-    if (r + g + b > 45) reticle_color = RGB15(0, 0, 0);
-    
-    drawCircleOutline(picker_x, picker_y, 3, reticle_color);
-    
-    last_reticle_x = picker_x;
-    last_reticle_y = picker_y;
-}
+
 
 void uiUpdateColorPickerSelection(void) {
     if (open_modal != 2) return;
-    
-    uiDrawReticle();
-    
-    for (int i = 0; i < 5; i++) {
-        drawModalColorButtonAt(16 + i * 46, 16 + i * 46 + 40, 36, 48, palette_colors[i], (active_color_idx == i));
-    }
+    uiOpenModal(2);
 }
 
 void uiUpdatePickerPosFromActiveColor(void) {
-    uint16_t target = palette_colors[active_color_idx];
-    int target_r = target & 0x1F;
-    int target_g = (target >> 5) & 0x1F;
-    int target_b = (target >> 10) & 0x1F;
-    
-    int best_x = 64 + 64;
-    int best_y = 54 + 30;
-    int min_dist = 999999;
-    
-    for (int dy = 0; dy < 61; dy += 2) {
-        for (int dx = 0; dx < 128; dx += 2) {
-            uint16_t c = getSpectrumColor(dx, dy, 128, 61);
-            int r = c & 0x1F;
-            int g = (c >> 5) & 0x1F;
-            int b = (c >> 10) & 0x1F;
-            
-            int dr = r - target_r;
-            int dg = g - target_g;
-            int db = b - target_b;
-            int dist = dr*dr + dg*dg + db*db;
-            if (dist < min_dist) {
-                min_dist = dist;
-                best_x = 64 + dx;
-                best_y = 54 + dy;
-                if (min_dist == 0) break;
-            }
-        }
-        if (min_dist == 0) break;
-    }
-    picker_x = best_x;
-    picker_y = best_y;
+    rgb15_to_hsv(palette_colors[active_color_idx], &picker_h, &picker_s, &picker_v);
 }
 
 void uiOpenModal(int modal_idx) {
+    if (modal_idx == 2) {
+        uiUpdatePickerPosFromActiveColor();
+    }
     bool already_open = (open_modal == modal_idx);
     if (open_modal != -1 && !already_open) {
         uiCloseModal();
@@ -602,18 +532,65 @@ void uiOpenModal(int modal_idx) {
             drawModalColorButtonAt(16 + i * 46, 16 + i * 46 + 40, 36, 48, palette_colors[i], (active_color_idx == i));
         }
         
-        uiInitSpectrumCache();
-        for (int dy = 0; dy < 61; dy++) {
-            for (int dx = 0; dx < 128; dx++) {
-                canvas_buffer[(54 + dy) * 256 + (64 + dx)] = spectrum_cache[dy * 128 + dx];
+        // 1. Draw HUE slider (H: 0..360) at y: 56..66, x: 48..224
+        renderDrawText("H", 24, 58, RGB15(0, 0, 0), 0);
+        char h_val_lbl[8];
+        sprintf(h_val_lbl, "%d", picker_h);
+        renderDrawText(h_val_lbl, 230, 58, RGB15(0, 0, 0), 0);
+        for (int dx = 0; dx < 176; dx++) {
+            int h = (dx * 360) / 176;
+            uint16_t color = hsv_to_rgb15(h, 31, 31);
+            for (int dy = 0; dy < 10; dy++) {
+                canvas_buffer[(56 + dy) * 256 + (48 + dx)] = color;
             }
         }
-        drawRectOutline(64, 54, 191, 114, RGB15(0, 0, 0));
-        drawRectOutline(65, 55, 190, 113, RGB15(31, 31, 31));
-        
-        last_reticle_x = -1;
-        last_reticle_y = -1;
-        uiDrawReticle();
+        drawRectOutline(48, 56, 224, 66, RGB15(0, 0, 0));
+        // Draw Hue indicator knob
+        int h_knob_x = 48 + (picker_h * 176) / 360;
+        if (h_knob_x < 48) h_knob_x = 48;
+        if (h_knob_x > 224) h_knob_x = 224;
+        drawRect(h_knob_x - 1, 54, h_knob_x + 1, 68, RGB15(0, 0, 0));
+        drawRect(h_knob_x, 55, h_knob_x, 67, RGB15(31, 31, 31));
+
+        // 2. Draw SATURATION slider (S: 0..31) at y: 76..86, x: 48..224
+        renderDrawText("S", 24, 78, RGB15(0, 0, 0), 0);
+        char s_val_lbl[8];
+        sprintf(s_val_lbl, "%d", picker_s);
+        renderDrawText(s_val_lbl, 230, 78, RGB15(0, 0, 0), 0);
+        for (int dx = 0; dx < 176; dx++) {
+            int s = (dx * 31) / 176;
+            uint16_t color = hsv_to_rgb15(picker_h, s, picker_v);
+            for (int dy = 0; dy < 10; dy++) {
+                canvas_buffer[(76 + dy) * 256 + (48 + dx)] = color;
+            }
+        }
+        drawRectOutline(48, 76, 224, 86, RGB15(0, 0, 0));
+        // Draw Saturation indicator knob
+        int s_knob_x = 48 + (picker_s * 176) / 31;
+        if (s_knob_x < 48) s_knob_x = 48;
+        if (s_knob_x > 224) s_knob_x = 224;
+        drawRect(s_knob_x - 1, 74, s_knob_x + 1, 88, RGB15(0, 0, 0));
+        drawRect(s_knob_x, 75, s_knob_x, 87, RGB15(31, 31, 31));
+
+        // 3. Draw VALUE slider (V: 0..31) at y: 96..106, x: 48..224
+        renderDrawText("V", 24, 98, RGB15(0, 0, 0), 0);
+        char v_val_lbl[8];
+        sprintf(v_val_lbl, "%d", picker_v);
+        renderDrawText(v_val_lbl, 230, 98, RGB15(0, 0, 0), 0);
+        for (int dx = 0; dx < 176; dx++) {
+            int v = (dx * 31) / 176;
+            uint16_t color = hsv_to_rgb15(picker_h, picker_s, v);
+            for (int dy = 0; dy < 10; dy++) {
+                canvas_buffer[(96 + dy) * 256 + (48 + dx)] = color;
+            }
+        }
+        drawRectOutline(48, 96, 224, 106, RGB15(0, 0, 0));
+        // Draw Value indicator knob
+        int v_knob_x = 48 + (picker_v * 176) / 31;
+        if (v_knob_x < 48) v_knob_x = 48;
+        if (v_knob_x > 224) v_knob_x = 224;
+        drawRect(v_knob_x - 1, 94, v_knob_x + 1, 108, RGB15(0, 0, 0));
+        drawRect(v_knob_x, 95, v_knob_x, 107, RGB15(31, 31, 31));
         
         if (color_modal_tab == 0) {
             char page_lbl[16];
@@ -626,11 +603,14 @@ void uiOpenModal(int modal_idx) {
                 int y0 = 134, y1 = 152;
                 
                 drawRectOutline(x0, y0, x1, y1, RGB15(0, 0, 0));
+                int pad = 1;
+                int x0_inner = x0 + pad;
+                int x1_inner = x1 - pad;
+                int W = x1_inner - x0_inner + 1;
                 for (int c = 0; c < 5; c++) {
-                    int cx0 = x0 + 1 + c * 7;
-                    int cx1 = cx0 + 6;
-                    if (cx1 >= x1) cx1 = x1 - 1;
-                    drawRect(cx0, y0 + 1, cx1, y1 - 1, preset_palettes[preset_idx][c]);
+                    int cx0 = x0_inner + (c * W) / 5;
+                    int cx1 = x0_inner + ((c + 1) * W) / 5 - 1;
+                    drawRect(cx0, y0 + pad, cx1, y1 - pad, preset_palettes[preset_idx][c]);
                 }
             }
             
@@ -655,10 +635,12 @@ void uiOpenModal(int modal_idx) {
                 }
                 
                 int pad = is_sel ? 2 : 1;
+                int x0_inner = x0 + pad;
+                int x1_inner = x1 - pad;
+                int W = x1_inner - x0_inner + 1;
                 for (int c = 0; c < 5; c++) {
-                    int cx0 = x0 + pad + c * 7;
-                    int cx1 = cx0 + 6;
-                    if (cx1 >= x1 - pad) cx1 = x1 - pad - 1;
+                    int cx0 = x0_inner + (c * W) / 5;
+                    int cx1 = x0_inner + ((c + 1) * W) / 5 - 1;
                     drawRect(cx0, y0 + pad, cx1, y1 - pad, custom_palettes[global_idx][c]);
                 }
             }
