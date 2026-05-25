@@ -279,22 +279,31 @@ void gameUpdate(void) {
             
             int limit_y = toolbar_hidden ? 192 : 176;
             if (touch.py < limit_y) {
-                uint16_t draw_color = is_eraser ? RGB15(31, 31, 31) : RGB15(0, 0, 0);
                 if (!touch_started_in_toolbar) {
-                    if (was_touching && prev_y < limit_y) {
-                        renderDrawLine(prev_x, prev_y, touch.px, touch.py, draw_color, active_brush_size, is_eraser);
+                    if (is_bucket) {
+                        if (!was_touching) {
+                            renderFloodFill(touch.px, touch.py, palette_colors[active_color_idx]);
+                            renderUpdatePreview();
+                        }
                     } else {
-                        if (is_eraser) {
-                            renderDrawEraserPoint(touch.px, touch.py);
+                        uint16_t draw_color = is_eraser ? RGB15(31, 31, 31) : palette_colors[active_color_idx];
+                        if (was_touching && prev_y < limit_y) {
+                            renderDrawLine(prev_x, prev_y, touch.px, touch.py, draw_color, is_eraser ? eraser_size : active_brush_size, is_eraser);
                         } else {
-                            renderDrawBrushPoint(touch.px, touch.py, draw_color, active_brush_size);
+                            if (is_eraser) {
+                                renderDrawEraserPoint(touch.px, touch.py);
+                            } else {
+                                renderDrawBrushPoint(touch.px, touch.py, draw_color, active_brush_size);
+                            }
                         }
                     }
                 }
                 prev_x = touch.px;
                 prev_y = touch.py;
                 was_touching = true;
-                renderUpdatePreview();
+                if (!is_bucket) {
+                    renderUpdatePreview();
+                }
             } else {
                 prev_x = touch.px;
                 prev_y = touch.py;
@@ -302,25 +311,51 @@ void gameUpdate(void) {
             }
         } else {
             if (was_touching && touch_started_in_toolbar && prev_y >= 176) {
-                if (prev_x >= 0 && prev_x < 30) {
-                    active_brush_size = 1;
-                    is_eraser = false;
-                    uiDrawToolbar();
-                } else if (prev_x >= 30 && prev_x < 60) {
-                    active_brush_size = 3;
-                    is_eraser = false;
-                    uiDrawToolbar();
-                } else if (prev_x >= 60 && prev_x < 90) {
-                    active_brush_size = 5;
-                    is_eraser = false;
-                    uiDrawToolbar();
-                } else if (prev_x >= 90 && prev_x < 130) {
-                    is_eraser = true;
-                    uiDrawToolbar();
-                } else if (prev_x >= 130 && prev_x < 185) {
-                    enterWizardState();
-                } else if (prev_x >= 185 && prev_x <= 255) {
-                    current_state = STATE_UPLOAD;
+                int btn = prev_x / 32;
+                if (btn >= 0 && btn < 8) {
+                    if (btn == 0) {
+                        if (is_eraser || is_bucket) {
+                            is_eraser = false;
+                            is_bucket = false;
+                        } else {
+                            if (active_brush_size == 1) active_brush_size = 3;
+                            else if (active_brush_size == 3) active_brush_size = 5;
+                            else active_brush_size = 1;
+                        }
+                        uiDrawToolbar();
+                    } else if (btn == 1) {
+                        if (!is_eraser) {
+                            is_eraser = true;
+                            is_bucket = false;
+                        } else {
+                            if (eraser_size == 4) eraser_size = 8;
+                            else if (eraser_size == 8) eraser_size = 16;
+                            else eraser_size = 4;
+                        }
+                        uiDrawToolbar();
+                    } else if (btn == 2) {
+                        is_eraser = false;
+                        is_bucket = false;
+                        active_color_idx = (active_color_idx + 1) % 5;
+                        uiDrawToolbar();
+                    } else if (btn == 3) {
+                        is_eraser = false;
+                        is_bucket = false;
+                        drawing_mode = (drawing_mode + 1) % 4;
+                        uiDrawToolbar();
+                    } else if (btn == 4) {
+                        is_eraser = false;
+                        is_bucket = !is_bucket;
+                        uiDrawToolbar();
+                    } else if (btn == 5) {
+                        bg_pattern_idx = (bg_pattern_idx + 1) % 4;
+                        renderApplyBackgroundPattern(bg_pattern_idx);
+                        uiDrawToolbar();
+                    } else if (btn == 6) {
+                        enterWizardState();
+                    } else if (btn == 7) {
+                        current_state = STATE_UPLOAD;
+                    }
                 }
             }
             was_touching = false;

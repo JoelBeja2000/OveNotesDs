@@ -8,7 +8,20 @@
 PrintConsole subConsole;
 
 int active_brush_size = 1;
+int eraser_size = 4;
+int active_color_idx = 0;
+int drawing_mode = 0;
+bool is_bucket = false;
+int bg_pattern_idx = 0;
 bool is_eraser = false;
+
+uint16_t palette_colors[5] = {
+    RGB15(0, 0, 0),       // Black
+    RGB15(0, 0, 28),      // Blue
+    RGB15(28, 0, 0),      // Red
+    RGB15(0, 20, 0),      // Green
+    RGB15(30, 10, 20)     // Pink
+};
 
 static void fillButtonBg(int x_start, int x_end, uint16_t color) {
     for (int y = 177; y < 191; y++) {
@@ -18,21 +31,7 @@ static void fillButtonBg(int x_start, int x_end, uint16_t color) {
     }
 }
 
-static void drawBrushIcon(int xc, int yc, int size) {
-    uint16_t color = RGB15(28, 28, 30);
-    int radius = size / 2;
-    if (radius == 0) {
-        renderSetPixel(xc, yc, color);
-    } else {
-        for (int dy = -radius; dy <= radius; dy++) {
-            for (int dx = -radius; dx <= radius; dx++) {
-                if (dx*dx + dy*dy <= radius*radius) {
-                    renderSetPixel(xc + dx, yc + dy, color);
-                }
-            }
-        }
-    }
-}
+
 
 void uiDrawToolbar(void) {
     // Fill toolbar background (dark blue-gray)
@@ -44,36 +43,71 @@ void uiDrawToolbar(void) {
 
     // Draw vertical separators
     for (int y = 176; y < 192; y++) {
-        renderSetPixel(30, y, RGB15(15, 15, 17));
-        renderSetPixel(60, y, RGB15(15, 15, 17));
-        renderSetPixel(90, y, RGB15(15, 15, 17));
-        renderSetPixel(130, y, RGB15(15, 15, 17));
-        renderSetPixel(185, y, RGB15(15, 15, 17));
+        for (int i = 1; i < 8; i++) {
+            renderSetPixel(i * 32, y, RGB15(15, 15, 17));
+        }
     }
 
-    // Highlight selected tool button background
-    if (!is_eraser && active_brush_size == 1) fillButtonBg(0, 30, RGB15(12, 12, 18));
-    if (!is_eraser && active_brush_size == 3) fillButtonBg(30, 60, RGB15(12, 12, 18));
-    if (!is_eraser && active_brush_size == 5) fillButtonBg(60, 90, RGB15(12, 12, 18));
-    if (is_eraser) fillButtonBg(90, 130, RGB15(12, 12, 18));
+    // Highlight active tool buttons:
+    // Button 0 (Pincel): Highlight if !is_eraser && !is_bucket
+    if (!is_eraser && !is_bucket) {
+        fillButtonBg(0, 32, RGB15(12, 12, 18));
+    }
+    // Button 1 (Borrador): Highlight if is_eraser
+    if (is_eraser) {
+        fillButtonBg(32, 64, RGB15(12, 12, 18));
+    }
+    // Button 4 (Relleno): Highlight if is_bucket
+    if (is_bucket) {
+        fillButtonBg(128, 160, RGB15(12, 12, 18));
+    }
 
-    // Blue background for Config
-    fillButtonBg(130, 185, RGB15(6, 6, 12));
+    // Highlight Config (Button 6) and Publicar (Button 7)
+    fillButtonBg(192, 224, RGB15(6, 6, 12));
+    fillButtonBg(224, 256, RGB15(2, 16, 2));
 
-    // Green highlight for the Publish button
-    fillButtonBg(185, 255, RGB15(2, 16, 2));
-
-    // Draw brush indicator circles
-    drawBrushIcon(15, 184, 1);
-    drawBrushIcon(45, 184, 3);
-    drawBrushIcon(75, 184, 5);
-
-    // Draw labels (Spanish)
+    // Draw Labels for each button
     uint16_t text_color = RGB15(22, 22, 24);
     uint16_t active_text_color = RGB15(31, 31, 31);
-    renderDrawText("BORR", 98, 180, is_eraser ? active_text_color : text_color, 0);
-    renderDrawText("CONFIG", 140, 180, active_text_color, 0);
-    renderDrawText("PUBLICAR", 196, 180, active_text_color, 0);
+
+    // Button 0: Pincel
+    char brush_label[4];
+    sprintf(brush_label, "P%d", active_brush_size);
+    renderDrawText(brush_label, 10, 180, (!is_eraser && !is_bucket) ? active_text_color : text_color, 0);
+
+    // Button 1: Borrador
+    char eraser_label[4];
+    sprintf(eraser_label, "B%d", eraser_size);
+    renderDrawText(eraser_label, 42, 180, is_eraser ? active_text_color : text_color, 0);
+
+    // Button 2: Color
+    uint16_t current_color = palette_colors[active_color_idx];
+    fillButtonBg(64, 96, blendRGB555_int(current_color, RGB15(5, 5, 7), 8));
+    renderDrawText("COL", 70, 180, active_text_color, 0);
+    // Draw a small 4x4 square of the active color next to the text
+    for (int dy = 0; dy < 4; dy++) {
+        for (int dx = 0; dx < 4; dx++) {
+            renderSetPixel(89 + dx, 182 + dy, current_color);
+        }
+    }
+
+    // Button 3: Modo
+    const char* mode_labels[4] = {"PEN", "ROT", "PT1", "PT2"};
+    renderDrawText(mode_labels[drawing_mode], 102, 180, active_text_color, 0);
+
+    // Button 4: Cubo / Relleno
+    renderDrawText("FILL", 134, 180, is_bucket ? active_text_color : text_color, 0);
+
+    // Button 5: Fondo
+    char bg_label[4];
+    sprintf(bg_label, "BG%d", bg_pattern_idx);
+    renderDrawText(bg_label, 166, 180, active_text_color, 0);
+
+    // Button 6: Config
+    renderDrawText("CFG", 198, 180, active_text_color, 0);
+
+    // Button 7: Publicar
+    renderDrawText("PUB", 230, 180, active_text_color, 0);
 }
 
 #include "font8x8.h"

@@ -15,10 +15,131 @@ void renderSetPixel(int x, int y, uint16_t color) {
     }
 }
 
+uint16_t blendRGB555_int(uint16_t src, uint16_t dst, int alpha_32) {
+    int src_r = src & 0x1F;
+    int src_g = (src >> 5) & 0x1F;
+    int src_b = (src >> 10) & 0x1F;
+    
+    int dst_r = dst & 0x1F;
+    int dst_g = (dst >> 5) & 0x1F;
+    int dst_b = (dst >> 10) & 0x1F;
+    
+    int r = (src_r * alpha_32 + dst_r * (32 - alpha_32)) >> 5;
+    int g = (src_g * alpha_32 + dst_g * (32 - alpha_32)) >> 5;
+    int b = (src_b * alpha_32 + dst_b * (32 - alpha_32)) >> 5;
+    
+    return BIT(15) | r | (g << 5) | (b << 10);
+}
+
 void renderSetCanvasPixel(int x, int y, uint16_t color) {
     int max_y = toolbar_hidden ? 192 : 176;
     if (x >= 0 && x < 256 && y >= 0 && y < max_y) {
-        canvas_buffer[y * 256 + x] = color;
+        if (color == RGB15(31, 31, 31)) {
+            // Eraser mode: draw solid white
+            canvas_buffer[y * 256 + x] = color;
+        } else {
+            // Brush mode: apply active color and drawing modes
+            uint16_t brush_color = palette_colors[active_color_idx];
+            if (drawing_mode == 0) {
+                canvas_buffer[y * 256 + x] = brush_color;
+            } else if (drawing_mode == 1) {
+                uint16_t current = canvas_buffer[y * 256 + x];
+                canvas_buffer[y * 256 + x] = blendRGB555_int(brush_color, current, 12);
+            } else if (drawing_mode == 2) {
+                if ((x + y) % 2 == 0) {
+                    canvas_buffer[y * 256 + x] = brush_color;
+                }
+            } else if (drawing_mode == 3) {
+                if ((x - y) % 4 == 0) {
+                    canvas_buffer[y * 256 + x] = brush_color;
+                }
+            }
+        }
+    }
+}
+
+void renderApplyBackgroundPattern(int pat_index) {
+    int limit_y = toolbar_hidden ? 192 : 176;
+    
+    // Base is white
+    for (int y = 0; y < limit_y; y++) {
+        for (int x = 0; x < 256; x++) {
+            canvas_buffer[y * 256 + x] = RGB15(31, 31, 31);
+        }
+    }
+    
+    // Light grid color blended with active color
+    uint16_t grid_color = blendRGB555_int(palette_colors[active_color_idx], RGB15(31, 31, 31), 6);
+    
+    if (pat_index == 1) {
+        // Dotted grid: dots spaced by 16px
+        for (int y = 8; y < limit_y; y += 16) {
+            for (int x = 8; x < 256; x += 16) {
+                canvas_buffer[y * 256 + x] = grid_color;
+            }
+        }
+    } else if (pat_index == 2) {
+        // Lined paper: horizontal lines spaced by 16px
+        for (int y = 16; y < limit_y; y += 16) {
+            for (int x = 0; x < 256; x++) {
+                canvas_buffer[y * 256 + x] = grid_color;
+            }
+        }
+    } else if (pat_index == 3) {
+        // Checked grid: squares of 16px
+        for (int y = 0; y < limit_y; y++) {
+            for (int x = 0; x < 256; x++) {
+                if (y % 16 == 0 || x % 16 == 0) {
+                    canvas_buffer[y * 256 + x] = grid_color;
+                }
+            }
+        }
+    }
+}
+
+void renderFloodFill(int start_x, int start_y, uint16_t fill_color) {
+    int limit_y = toolbar_hidden ? 192 : 176;
+    if (start_x < 0 || start_x >= 256 || start_y < 0 || start_y >= limit_y) return;
+    
+    uint16_t target_color = canvas_buffer[start_y * 256 + start_x];
+    if (target_color == fill_color) return;
+    
+    static int q_x[8192];
+    static int q_y[8192];
+    int head = 0;
+    int tail = 0;
+    
+    q_x[tail] = start_x;
+    q_y[tail] = start_y;
+    tail = (tail + 1) % 8192;
+    
+    canvas_buffer[start_y * 256 + start_x] = fill_color;
+    
+    while (head != tail) {
+        int cx = q_x[head];
+        int cy = q_y[head];
+        head = (head + 1) % 8192;
+        
+        int dx[4] = {0, 0, -1, 1};
+        int dy[4] = {-1, 1, 0, 0};
+        
+        for (int i = 0; i < 4; i++) {
+            int nx = cx + dx[i];
+            int ny = cy + dy[i];
+            
+            if (nx >= 0 && nx < 256 && ny >= 0 && ny < limit_y) {
+                if (canvas_buffer[ny * 256 + nx] == target_color) {
+                    canvas_buffer[ny * 256 + nx] = fill_color;
+                    
+                    int next_tail = (tail + 1) % 8192;
+                    if (next_tail != head) {
+                        q_x[tail] = nx;
+                        q_y[tail] = ny;
+                        tail = next_tail;
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -69,10 +190,15 @@ void renderDrawBrushPoint(int xc, int yc, uint16_t color, int size) {
 
 void renderDrawEraserPoint(int xc, int yc) {
     uint16_t color = RGB15(31, 31, 31);
-    for (int dy = -5; dy <= 5; dy++) {
-        for (int dx = -5; dx <= 5; dx++) {
-            if (dx*dx + dy*dy <= 25) {
-                renderSetCanvasPixel(xc + dx, yc + dy, color);
+    int radius = eraser_size / 2;
+    if (radius == 0) {
+        renderSetCanvasPixel(xc, yc, color);
+    } else {
+        for (int dy = -radius; dy <= radius; dy++) {
+            for (int dx = -radius; dx <= radius; dx++) {
+                if (dx*dx + dy*dy <= radius*radius) {
+                    renderSetCanvasPixel(xc + dx, yc + dy, color);
+                }
             }
         }
     }

@@ -22,6 +22,10 @@ void renderUpdatePreview(void);
 void renderSetPixel(int x, int y, uint16_t color);
 void renderSetCanvasPixel(int x, int y, uint16_t color);
 
+uint16_t blendRGB555_int(uint16_t src, uint16_t dst, int alpha_32);
+void renderApplyBackgroundPattern(int pat_index);
+void renderFloodFill(int start_x, int start_y, uint16_t fill_color);
+
 void renderDrawChar(char c, int x, int y, uint16_t color, uint16_t bg_color);
 void renderDrawText(const char* text, int x, int y, uint16_t color, uint16_t bg_color);
 void renderDrawBrushPoint(int xc, int yc, uint16_t color, int size);
