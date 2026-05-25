@@ -865,12 +865,61 @@ void gameUpdate(void) {
         if (!ignore_touch_until_release && inputGetTouch(&touch)) {
             if (!was_touching) {
                 touch_started_in_toolbar = !toolbar_hidden && (touch.py >= 176);
+                
+                // Track drag-and-drop start on circle drag handle (x = 162..172)
+                if (layers_panel_open && !touch_started_in_toolbar && touch.px >= 162 && touch.px <= 172) {
+                    for (int i = 0; i < layers_count; i++) {
+                        int idx_from_top = layers_count - 1 - i;
+                        int y_pos = 27 + idx_from_top * 14;
+                        if (touch.py >= y_pos && touch.py <= y_pos + 12) {
+                            dragging_layer_idx = i;
+                            renderComposeCanvas();
+                            renderUpdatePreview();
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            // Handle dynamic layer reordering swaps while dragging
+            if (dragging_layer_idx != -1) {
+                for (int j = 0; j < layers_count; j++) {
+                    int idx_from_top_j = layers_count - 1 - j;
+                    int y_pos_j = 27 + idx_from_top_j * 14;
+                    if (touch.py >= y_pos_j && touch.py <= y_pos_j + 12) {
+                        if (j != dragging_layer_idx) {
+                            // Swap layer pointer
+                            uint16_t* tmp_buf = layers[dragging_layer_idx];
+                            layers[dragging_layer_idx] = layers[j];
+                            layers[j] = tmp_buf;
+                            
+                            // Swap visibility
+                            bool tmp_vis = layers_visible[dragging_layer_idx];
+                            layers_visible[dragging_layer_idx] = layers_visible[j];
+                            layers_visible[j] = tmp_vis;
+                            
+                            // Adjust active layer index
+                            if (active_layer_idx == dragging_layer_idx) {
+                                active_layer_idx = j;
+                            } else if (active_layer_idx == j) {
+                                active_layer_idx = dragging_layer_idx;
+                            }
+                            drawing_buffer = layers[active_layer_idx];
+                            
+                            dragging_layer_idx = j;
+                            
+                            renderComposeCanvas();
+                            renderUpdatePreview();
+                        }
+                        break;
+                    }
+                }
             }
             
             int limit_y = toolbar_hidden ? 192 : 176;
             if (touch.py < limit_y) {
                 if (!touch_started_in_toolbar) {
-                    bool ignore_draw = (layers_panel_open && touch.px >= 160);
+                    bool ignore_draw = (layers_panel_open && touch.px >= 160) || (dragging_layer_idx != -1);
                     if (!ignore_draw) {
                         if (is_bucket) {
                             if (!was_touching) {
@@ -896,7 +945,7 @@ void gameUpdate(void) {
                 prev_x = touch.px;
                 prev_y = touch.py;
                 was_touching = true;
-                if (!is_bucket) {
+                if (!is_bucket && dragging_layer_idx == -1) {
                     renderUpdatePreview();
                 }
             } else {
@@ -908,29 +957,37 @@ void gameUpdate(void) {
             }
         } else {
             if (was_touching) {
+                // Release drag-and-drop layer reordering
+                if (dragging_layer_idx != -1) {
+                    dragging_layer_idx = -1;
+                    renderComposeCanvas();
+                    renderUpdatePreview();
+                }
+                
                 bool sidebar_action_taken = false;
                 if (layers_panel_open) {
                     if (prev_x >= 160 && prev_y < 176) {
-                        // Close button "X"
-                        if (prev_x >= 236 && prev_x <= 252 && prev_y >= 2 && prev_y <= 14) {
+                        // Close button "X" at x = 236..252, y = 1..11
+                        if (prev_x >= 236 && prev_x <= 252 && prev_y >= 1 && prev_y <= 11) {
                             layers_panel_open = false;
                             renderComposeCanvas();
                             sidebar_action_taken = true;
                         }
-                        // "+ CAPA" button
-                        else if (prev_x >= 164 && prev_x <= 252 && prev_y >= 18 && prev_y <= 32) {
+                        // "+ CAPA" button at x = 164..252, y = 14..24
+                        else if (prev_x >= 164 && prev_x <= 252 && prev_y >= 14 && prev_y <= 24) {
                             renderAddLayer();
                             sidebar_action_taken = true;
                         }
-                        // COMBINAR button
-                        else if (prev_x >= 164 && prev_x <= 252 && prev_y >= 154 && prev_y <= 168) {
+                        // COMBINAR button at x = 164..252, y = 157..169
+                        else if (prev_x >= 164 && prev_x <= 252 && prev_y >= 157 && prev_y <= 169) {
                             renderMergeActiveLayerDown();
                             sidebar_action_taken = true;
                         }
                         // FONDO or Layer items
                         else {
-                            int bg_y = 36 + layers_count * 16;
-                            if (prev_y >= bg_y && prev_y <= bg_y + 14) {
+                            int bg_y = 27 + layers_count * 14;
+                            if (prev_y >= bg_y && prev_y <= bg_y + 12) {
+                                // Lock toggle: x = 216..252
                                 if (prev_x >= 216 && prev_x <= 252) {
                                     bg_modifiable = !bg_modifiable;
                                     renderComposeCanvas();
@@ -939,18 +996,23 @@ void gameUpdate(void) {
                             } else {
                                 for (int i = layers_count - 1; i >= 0; i--) {
                                     int idx_from_top = layers_count - 1 - i;
-                                    int y_pos = 36 + idx_from_top * 16;
-                                    if (prev_y >= y_pos && prev_y <= y_pos + 14) {
-                                        if (prev_x >= 164 && prev_x <= 212) {
+                                    int y_pos = 27 + idx_from_top * 14;
+                                    if (prev_y >= y_pos && prev_y <= y_pos + 12) {
+                                        // Select layer: x = 174..212
+                                        if (prev_x >= 174 && prev_x <= 212) {
                                             active_layer_idx = i;
                                             drawing_buffer = layers[i];
                                             renderComposeCanvas();
                                             sidebar_action_taken = true;
-                                        } else if (prev_x >= 216 && prev_x <= 232) {
+                                        }
+                                        // Visibility toggle: x = 216..232
+                                        else if (prev_x >= 216 && prev_x <= 232) {
                                             layers_visible[i] = !layers_visible[i];
                                             renderComposeCanvas();
                                             sidebar_action_taken = true;
-                                        } else if (prev_x >= 236 && prev_x <= 252 && i > 0) {
+                                        }
+                                        // Delete button: x = 236..252
+                                        else if (prev_x >= 236 && prev_x <= 252 && i > 0) {
                                             renderDeleteLayer(i);
                                             sidebar_action_taken = true;
                                         }

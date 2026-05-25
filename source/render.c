@@ -16,6 +16,7 @@ int layers_count = 1;
 int active_layer_idx = 0;
 bool layers_visible[MAX_LAYERS] = {false};
 bool layers_panel_open = false;
+int dragging_layer_idx = -1;
 bool toolbar_hidden = false;
 
 bool bg_modifiable = false;

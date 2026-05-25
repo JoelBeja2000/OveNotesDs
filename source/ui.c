@@ -1402,83 +1402,110 @@ static void uiDrawLayersSidebar(void) {
     }
     
     // Header title "CAPAS"
-    renderDrawText("CAPAS", 164, 4, text_col, 0);
+    renderDrawText("CAPAS", 164, 2, text_col, 0);
     
-    // Close button "X" (red on dark red) at x = 236..252, y = 2..14
-    drawRect(236, 2, 252, 14, RGB15(15, 3, 3));
-    drawRectOutline(236, 2, 252, 14, border_col);
-    renderDrawText("X", 241, 4, RGB15(31, 10, 10), 0);
+    // Close button "X" (red on dark red) at x = 236..252, y = 1..11
+    drawRect(236, 1, 252, 11, RGB15(15, 3, 3));
+    drawRectOutline(236, 1, 252, 11, border_col);
+    renderDrawText("X", 241, 2, RGB15(31, 10, 10), 0);
     
-    // "+ CAPA" button at x = 164..252, y = 18..32
+    // "+ CAPA" button at x = 164..252, y = 14..24
     if (layers_count < MAX_LAYERS) {
-        drawRect(164, 18, 252, 32, RGB15(5, 18, 5));
-        drawRectOutline(164, 18, 252, 32, border_col);
-        renderDrawText("+ CAPA", 182, 21, RGB15(20, 31, 20), 0);
+        drawRect(164, 14, 252, 24, RGB15(5, 18, 5));
+        drawRectOutline(164, 14, 252, 24, border_col);
+        renderDrawText("+ CAPA", 182, 16, RGB15(20, 31, 20), 0);
     } else {
-        drawRect(164, 18, 252, 32, RGB15(12, 12, 12));
-        drawRectOutline(164, 18, 252, 32, border_col);
-        renderDrawText("LLENO", 188, 21, RGB15(18, 18, 18), 0);
+        drawRect(164, 14, 252, 24, RGB15(12, 12, 12));
+        drawRectOutline(164, 14, 252, 24, border_col);
+        renderDrawText("LLENO", 188, 16, RGB15(18, 18, 18), 0);
     }
     
     // Draw layer items from layers_count-1 down to 0
     for (int i = layers_count - 1; i >= 0; i--) {
         int idx_from_top = layers_count - 1 - i;
-        int y_pos = 36 + idx_from_top * 16;
+        int y_pos = 27 + idx_from_top * 14;
         
-        // Active indicator / selection button: x = 164..212, y = y_pos..y_pos+14
+        // Drag handle: circle at cx = 167, cy = y_pos + 6
+        uint16_t circle_col = (dragging_layer_idx == i) ? RGB15(31, 31, 10) : RGB15(18, 18, 20);
+        // Draw filled circle (radius 2)
+        for (int dy = -2; dy <= 2; dy++) {
+            for (int dx = -2; dx <= 2; dx++) {
+                if (dx*dx + dy*dy <= 5) {
+                    int px = 167 + dx;
+                    int py = y_pos + 6 + dy;
+                    if (px >= 160 && px < 256 && py >= 0 && py < 192) {
+                        canvas_buffer[py * 256 + px] = circle_col;
+                    }
+                }
+            }
+        }
+        // Circle border
+        for (int dy = -3; dy <= 3; dy++) {
+            for (int dx = -3; dx <= 3; dx++) {
+                if (dx*dx + dy*dy > 5 && dx*dx + dy*dy <= 10) {
+                    int px = 167 + dx;
+                    int py = y_pos + 6 + dy;
+                    if (px >= 160 && px < 256 && py >= 0 && py < 192) {
+                        canvas_buffer[py * 256 + px] = border_col;
+                    }
+                }
+            }
+        }
+        
+        // Active indicator / selection button: x = 174..212, y = y_pos..y_pos+12
         bool is_active = (active_layer_idx == i);
         uint16_t btn_bg = is_active ? RGB15(4, 10, 24) : RGB15(12, 12, 14);
         uint16_t btn_border = is_active ? RGB15(10, 16, 31) : border_col;
         uint16_t btn_txt = is_active ? RGB15(20, 25, 31) : text_col;
         
-        drawRect(164, y_pos, 212, y_pos + 14, btn_bg);
-        drawRectOutline(164, y_pos, 212, y_pos + 14, btn_border);
+        drawRect(174, y_pos, 212, y_pos + 12, btn_bg);
+        drawRectOutline(174, y_pos, 212, y_pos + 12, btn_border);
         
         char layer_name[16];
-        sprintf(layer_name, "CAPA %d", i);
-        renderDrawText(layer_name, 168, y_pos + 3, btn_txt, 0);
+        sprintf(layer_name, "C%d", i);
+        renderDrawText(layer_name, 182, y_pos + 2, btn_txt, 0);
         
-        // Visibility toggle button: x = 216..232, y = y_pos..y_pos+14
+        // Visibility toggle button: x = 216..232, y = y_pos..y_pos+12
         bool is_visible = layers_visible[i];
         uint16_t vis_bg = is_visible ? RGB15(20, 18, 5) : RGB15(8, 8, 8);
         uint16_t vis_txt = is_visible ? RGB15(31, 28, 15) : RGB15(15, 15, 15);
         
-        drawRect(216, y_pos, 232, y_pos + 14, vis_bg);
-        drawRectOutline(216, y_pos, 232, y_pos + 14, border_col);
-        renderDrawText(is_visible ? "V" : "H", 220, y_pos + 3, vis_txt, 0);
+        drawRect(216, y_pos, 232, y_pos + 12, vis_bg);
+        drawRectOutline(216, y_pos, 232, y_pos + 12, border_col);
+        renderDrawText(is_visible ? "V" : "H", 220, y_pos + 2, vis_txt, 0);
         
-        // Delete button: x = 236..252, y = y_pos..y_pos+14
+        // Delete button: x = 236..252, y = y_pos..y_pos+12
         if (i > 0) {
-            drawRect(236, y_pos, 252, y_pos + 14, RGB15(20, 5, 5));
-            drawRectOutline(236, y_pos, 252, y_pos + 14, border_col);
-            renderDrawText("X", 241, y_pos + 3, RGB15(31, 15, 15), 0);
+            drawRect(236, y_pos, 252, y_pos + 12, RGB15(20, 5, 5));
+            drawRectOutline(236, y_pos, 252, y_pos + 12, border_col);
+            renderDrawText("X", 241, y_pos + 2, RGB15(31, 15, 15), 0);
         } else {
-            drawRect(236, y_pos, 252, y_pos + 14, RGB15(8, 8, 8));
-            drawRectOutline(236, y_pos, 252, y_pos + 14, border_col);
-            renderDrawText("-", 241, y_pos + 3, RGB15(15, 15, 15), 0);
+            drawRect(236, y_pos, 252, y_pos + 12, RGB15(8, 8, 8));
+            drawRectOutline(236, y_pos, 252, y_pos + 12, border_col);
+            renderDrawText("-", 241, y_pos + 2, RGB15(15, 15, 15), 0);
         }
     }
     
-    // Draw "FONDO" item at y_pos = 36 + layers_count * 16
-    int bg_y = 36 + layers_count * 16;
-    drawRect(164, bg_y, 212, bg_y + 14, RGB15(12, 12, 14));
-    drawRectOutline(164, bg_y, 212, bg_y + 14, border_col);
-    renderDrawText("FONDO", 168, bg_y + 3, text_col, 0);
+    // Draw "FONDO" item at bg_y = 27 + layers_count * 14
+    int bg_y = 27 + layers_count * 14;
+    drawRect(164, bg_y, 212, bg_y + 12, RGB15(12, 12, 14));
+    drawRectOutline(164, bg_y, 212, bg_y + 12, border_col);
+    renderDrawText("FONDO", 168, bg_y + 2, text_col, 0);
     
-    // Lock toggle: x = 216..252, y = bg_y..bg_y+14
-    drawRect(216, bg_y, 252, bg_y + 14, bg_modifiable ? RGB15(5, 18, 5) : RGB15(20, 5, 5));
-    drawRectOutline(216, bg_y, 252, bg_y + 14, border_col);
-    renderDrawText(bg_modifiable ? " MOD" : " LOK", 218, bg_y + 3, text_col, 0);
+    // Lock toggle: x = 216..252, y = bg_y..bg_y+12
+    drawRect(216, bg_y, 252, bg_y + 12, bg_modifiable ? RGB15(5, 18, 5) : RGB15(20, 5, 5));
+    drawRectOutline(216, bg_y, 252, bg_y + 12, border_col);
+    renderDrawText(bg_modifiable ? " MOD" : " LOK", 218, bg_y + 2, text_col, 0);
     drawLockIcon(244, bg_y + 1, !bg_modifiable);
     
-    // Draw "COMBINAR" button at y = 154..168
+    // Draw "COMBINAR" button at y = 157..169
     bool can_merge = (active_layer_idx > 0);
     uint16_t merge_bg = can_merge ? RGB15(22, 12, 3) : RGB15(8, 8, 8);
     uint16_t merge_txt = can_merge ? RGB15(31, 20, 10) : RGB15(15, 15, 15);
     
-    drawRect(164, 154, 252, 168, merge_bg);
-    drawRectOutline(164, 154, 252, 168, border_col);
-    renderDrawText("COMBINAR", 182, 157, merge_txt, 0);
+    drawRect(164, 157, 252, 169, merge_bg);
+    drawRectOutline(164, 157, 252, 169, border_col);
+    renderDrawText("COMBINAR", 182, 160, merge_txt, 0);
 }
 
 void uiDrawLayersOverlay(void) {

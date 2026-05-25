@@ -20,6 +20,7 @@ extern int layers_count;
 extern int active_layer_idx;
 extern bool layers_visible[MAX_LAYERS];
 extern bool layers_panel_open;
+extern int dragging_layer_idx;
 
 void renderAddLayer(void);
 void renderDeleteLayer(int idx);
