@@ -11,6 +11,11 @@ uint16_t* canvas_buffer = NULL;
 uint16_t* preview_buffer = NULL;
 uint16_t* wizard_buffer = NULL;
 uint16_t* drawing_buffer = NULL;
+uint16_t* layer1_buffer = NULL;
+uint16_t* layer2_buffer = NULL;
+int active_layer = 1;
+bool layer1_visible = true;
+bool layer2_visible = true;
 bool toolbar_hidden = false;
 
 bool bg_modifiable = false;
@@ -60,14 +65,29 @@ uint16_t blendRGB555_int(uint16_t src, uint16_t dst, int alpha_32) {
     return BIT(15) | r | (g << 5) | (b << 10);
 }
 
-static void renderComposePixel(int x, int y) {
-    if (canvas_buffer == NULL || drawing_buffer == NULL) return;
-    int limit_y = toolbar_hidden ? 192 : 176;
-    if (x < 0 || x >= 256 || y < 0 || y >= limit_y) return;
-
-    uint16_t user_pixel = drawing_buffer[y * 256 + x];
-    uint16_t out_color = user_pixel;
-    if (user_pixel == RGB15(31, 31, 31)) {
+uint16_t renderGetComposedPixel(int x, int y) {
+    uint16_t p1 = RGB15(31, 31, 31);
+    uint16_t p2 = RGB15(31, 31, 31);
+    
+    if (layer1_buffer != NULL) p1 = layer1_buffer[y * 256 + x];
+    if (layer2_buffer != NULL) p2 = layer2_buffer[y * 256 + x];
+    
+    if (layer1_buffer == NULL && layer2_buffer == NULL && drawing_buffer != NULL) {
+        p1 = drawing_buffer[y * 256 + x];
+    }
+    
+    bool pixel_drawn = false;
+    uint16_t out_color = RGB15(31, 31, 31);
+    
+    if (layer2_visible && p2 != RGB15(31, 31, 31)) {
+        out_color = p2;
+        pixel_drawn = true;
+    } else if (layer1_visible && p1 != RGB15(31, 31, 31)) {
+        out_color = p1;
+        pixel_drawn = true;
+    }
+    
+    if (!pixel_drawn) {
         if (bg_modifiable) {
             out_color = RGB15(31, 31, 31);
         } else {
@@ -120,7 +140,15 @@ static void renderComposePixel(int x, int y) {
             }
         }
     }
-    canvas_buffer[y * 256 + x] = out_color;
+    return out_color;
+}
+
+static void renderComposePixel(int x, int y) {
+    if (canvas_buffer == NULL) return;
+    int limit_y = toolbar_hidden ? 192 : 176;
+    if (x < 0 || x >= 256 || y < 0 || y >= limit_y) return;
+
+    canvas_buffer[y * 256 + x] = renderGetComposedPixel(x, y);
 }
 
 void renderSetCanvasPixel(int x, int y, uint16_t color) {
@@ -258,97 +286,23 @@ static void drawPerspectiveCrosshair(int cx, int cy, uint16_t color) {
 }
 
 void renderComposeCanvas(void) {
-    if (canvas_buffer == NULL || drawing_buffer == NULL) return;
+    if (canvas_buffer == NULL) return;
     
     int limit_y = toolbar_hidden ? 192 : 176;
     
-    if (bg_modifiable) {
-        // Just copy drawing_buffer to canvas_buffer/modal_backup
-        for (int y = 0; y < limit_y; y++) {
-            if (open_modal == 4 && y >= 90) {
-                if (y < 176) {
-                    memcpy(&modal_backup[(y - 90) * 256], &drawing_buffer[y * 256], 256 * sizeof(uint16_t));
-                }
-            } else {
-                memcpy(&canvas_buffer[y * 256], &drawing_buffer[y * 256], 256 * sizeof(uint16_t));
+    for (int y = 0; y < limit_y; y++) {
+        uint16_t* dest_row = NULL;
+        if (open_modal == 4 && y >= 90) {
+            if (y < 176) {
+                dest_row = &modal_backup[(y - 90) * 256];
             }
-        }
-    } else {
-        // Locked mode: combine user drawings with background on the fly
-        uint16_t p_color = bg_primary_palette[bg_color_p_idx];
-        uint16_t s_color = getActualSecondaryColor();
-        uint16_t red_margin = RGB15(30, 8, 8);
-        
-        int cos_a_fp = 256;
-        int sin_a_fp = 0;
-        if (bg_angle != 0) {
-            float rad = -bg_angle * 3.14159265f / 180.0f;
-            cos_a_fp = (int)(cosf(rad) * 256.0f);
-            sin_a_fp = (int)(sinf(rad) * 256.0f);
+        } else {
+            dest_row = &canvas_buffer[y * 256];
         }
         
-        for (int y = 0; y < limit_y; y++) {
-            uint16_t* dest_row = NULL;
-            if (open_modal == 4 && y >= 90) {
-                if (y < 176) {
-                    dest_row = &modal_backup[(y - 90) * 256];
-                }
-            } else {
-                dest_row = &canvas_buffer[y * 256];
-            }
-            
+        if (dest_row != NULL) {
             for (int x = 0; x < 256; x++) {
-                uint16_t user_pixel = drawing_buffer[y * 256 + x];
-                uint16_t final_pixel = user_pixel;
-                if (user_pixel == RGB15(31, 31, 31)) {
-                    uint16_t pixel_color = p_color;
-                    
-                    int rx = x;
-                    int ry = y;
-                    if (bg_angle != 0) {
-                        int cx = x - 128;
-                        int cy = y - 96;
-                        rx = ((cx * cos_a_fp - cy * sin_a_fp) >> 8) + 128;
-                        ry = ((cx * sin_a_fp + cy * cos_a_fp) >> 8) + 96;
-                    }
-                    
-                    if (bg_pattern_idx == 1) { // Dotted grid
-                        if ((ry - 8) % 16 == 0 && (rx - 8) % 16 == 0) {
-                            pixel_color = s_color;
-                        }
-                    } else if (bg_pattern_idx == 2) { // Ruled
-                        if (ry > 0 && ry % 16 == 0) {
-                            pixel_color = s_color;
-                        }
-                    } else if (bg_pattern_idx == 3) { // Graph grid
-                        if (ry % 16 == 0 || rx % 16 == 0) {
-                            pixel_color = s_color;
-                        }
-                    } else if (bg_pattern_idx == 4) { // Vertical lines
-                        if (rx % 16 == 0) {
-                            pixel_color = s_color;
-                        }
-                    } else if (bg_pattern_idx == 5) { // Isometric grid
-                        if ((rx + ry * 2) % 32 == 0 || (rx - ry * 2) % 32 == 0) {
-                            pixel_color = s_color;
-                        }
-                    } else if (bg_pattern_idx == 6) { // Wide ruled
-                        if (ry > 0 && ry % 24 == 0) {
-                            pixel_color = s_color;
-                        }
-                    } else if (bg_pattern_idx == 7) { // Ruled with red margin
-                        if (ry > 0 && ry % 16 == 0) {
-                            pixel_color = s_color;
-                        }
-                        if (rx == 32) {
-                            pixel_color = red_margin;
-                        }
-                    }
-                    final_pixel = pixel_color;
-                }
-                if (dest_row != NULL) {
-                    dest_row[x] = final_pixel;
-                }
+                dest_row[x] = renderGetComposedPixel(x, y);
             }
         }
     }
@@ -699,9 +653,14 @@ void renderDrawLine(int x0, int y0, int x1, int y1, uint16_t color, int size, bo
 }
 
 void renderInitCanvas(void) {
-    if (drawing_buffer != NULL) {
+    if (layer1_buffer != NULL) {
         for (int i = 0; i < 256 * 192; i++) {
-            drawing_buffer[i] = RGB15(31, 31, 31);
+            layer1_buffer[i] = RGB15(31, 31, 31);
+        }
+    }
+    if (layer2_buffer != NULL) {
+        for (int i = 0; i < 256 * 192; i++) {
+            layer2_buffer[i] = RGB15(31, 31, 31);
         }
     }
     renderComposeCanvas();

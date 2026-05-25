@@ -14,6 +14,11 @@ extern uint16_t* canvas_buffer;
 extern uint16_t* preview_buffer;
 extern uint16_t* wizard_buffer;
 extern uint16_t* drawing_buffer;
+extern uint16_t* layer1_buffer;
+extern uint16_t* layer2_buffer;
+extern int active_layer;
+extern bool layer1_visible;
+extern bool layer2_visible;
 extern bool toolbar_hidden;
 
 extern bool bg_modifiable;

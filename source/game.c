@@ -68,10 +68,19 @@ void gameInit(void) {
     bgSet(bg_sub_preview, 0, 1 << 8, 1 << 8, -64 << 8, -32 << 8, 0, 0);
     bgUpdate();
 
-    drawing_buffer = (uint16_t*)malloc(256 * 192 * sizeof(uint16_t));
-    if (drawing_buffer == NULL) {
+    layer1_buffer = (uint16_t*)malloc(256 * 192 * sizeof(uint16_t));
+    layer2_buffer = (uint16_t*)malloc(256 * 192 * sizeof(uint16_t));
+    if (layer1_buffer == NULL || layer2_buffer == NULL) {
         printf("[FATAL] Error de asignacion de memoria.\n");
     }
+    
+    for (int i = 0; i < 256 * 192; i++) {
+        layer1_buffer[i] = RGB15(31, 31, 31);
+        layer2_buffer[i] = RGB15(31, 31, 31);
+    }
+    
+    active_layer = 1;
+    drawing_buffer = layer1_buffer;
 
     // Initialize drawing paper & toolbar
     renderInitCanvas();
@@ -634,14 +643,19 @@ void gameUpdate(void) {
                         } else if (open_modal == 3) { // BG
                             // Check tab bar (y = 20..32)
                             if (prev_y >= 20 && prev_y <= 32) {
-                                if (prev_x >= 8 && prev_x <= 128) {
+                                if (prev_x >= 8 && prev_x <= 87) {
                                     if (bg_modal_tab != 0) {
                                         bg_modal_tab = 0;
                                         uiOpenModal(3);
                                     }
-                                } else if (prev_x > 128 && prev_x <= 247) {
+                                } else if (prev_x >= 88 && prev_x <= 167) {
                                     if (bg_modal_tab != 1) {
                                         bg_modal_tab = 1;
+                                        uiOpenModal(3);
+                                    }
+                                } else if (prev_x >= 168 && prev_x <= 247) {
+                                    if (bg_modal_tab != 2) {
+                                        bg_modal_tab = 2;
                                         uiOpenModal(3);
                                     }
                                 }
@@ -816,6 +830,74 @@ void gameUpdate(void) {
                                         else if (perspective_step == 12) perspective_step = 8;
                                         else perspective_step = 64;
                                         
+                                        renderComposeCanvas();
+                                        uiUpdateModalBackup();
+                                        uiOpenModal(3);
+                                    }
+                                }
+                            }
+                            // Tab 2: CAPAS
+                            else if (bg_modal_tab == 2) {
+                                // Row 1: Capa 2 (y = 50..70)
+                                if (prev_y >= 50 && prev_y <= 70) {
+                                    if (prev_x >= 12 && prev_x <= 120) {
+                                        active_layer = 2;
+                                        drawing_buffer = layer2_buffer;
+                                        uiOpenModal(3);
+                                    } else if (prev_x >= 126 && prev_x <= 180) {
+                                        layer2_visible = !layer2_visible;
+                                        renderComposeCanvas();
+                                        uiUpdateModalBackup();
+                                        uiOpenModal(3);
+                                    } else if (prev_x >= 186 && prev_x <= 244) {
+                                        for (int i = 0; i < 256 * 192; i++) {
+                                            layer2_buffer[i] = RGB15(31, 31, 31);
+                                        }
+                                        renderComposeCanvas();
+                                        uiUpdateModalBackup();
+                                        uiOpenModal(3);
+                                    }
+                                }
+                                // Row 2: Capa 1 (y = 80..100)
+                                else if (prev_y >= 80 && prev_y <= 100) {
+                                    if (prev_x >= 12 && prev_x <= 120) {
+                                        active_layer = 1;
+                                        drawing_buffer = layer1_buffer;
+                                        uiOpenModal(3);
+                                    } else if (prev_x >= 126 && prev_x <= 180) {
+                                        layer1_visible = !layer1_visible;
+                                        renderComposeCanvas();
+                                        uiUpdateModalBackup();
+                                        uiOpenModal(3);
+                                    } else if (prev_x >= 186 && prev_x <= 244) {
+                                        for (int i = 0; i < 256 * 192; i++) {
+                                            layer1_buffer[i] = RGB15(31, 31, 31);
+                                        }
+                                        renderComposeCanvas();
+                                        uiUpdateModalBackup();
+                                        uiOpenModal(3);
+                                    }
+                                }
+                                // Row 3: Fondo & Lock (y = 110..130)
+                                else if (prev_y >= 110 && prev_y <= 130) {
+                                    if (prev_x >= 126 && prev_x <= 244) {
+                                        bg_modifiable = !bg_modifiable;
+                                        renderApplyBackgroundPattern(bg_pattern_idx);
+                                        renderComposeCanvas();
+                                        uiUpdateModalBackup();
+                                        uiOpenModal(3);
+                                    }
+                                }
+                                // Row 4: Merge button (y = 140..160)
+                                else if (prev_y >= 140 && prev_y <= 160) {
+                                    if (prev_x >= 12 && prev_x <= 244) {
+                                        for (int i = 0; i < 256 * 192; i++) {
+                                            uint16_t p2 = layer2_buffer[i];
+                                            if (p2 != RGB15(31, 31, 31)) {
+                                                layer1_buffer[i] = p2;
+                                            }
+                                            layer2_buffer[i] = RGB15(31, 31, 31);
+                                        }
                                         renderComposeCanvas();
                                         uiUpdateModalBackup();
                                         uiOpenModal(3);

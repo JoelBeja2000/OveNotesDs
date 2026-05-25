@@ -488,6 +488,54 @@ void uiUpdatePickerPosFromActiveColor(void) {
     rgb15_to_hsv(palette_colors[active_color_idx], &picker_h, &picker_s, &picker_v);
 }
 
+static void drawLockIcon(int x, int y, bool locked) {
+    uint16_t metal = RGB15(12, 12, 12);
+    uint16_t body = RGB15(26, 15, 0); // Golden body
+    if (locked) {
+        body = RGB15(28, 5, 5); // Red body when locked
+    }
+    // Draw body: 8x6 rectangle
+    for (int dy = 4; dy <= 9; dy++) {
+        for (int dx = 1; dx <= 8; dx++) {
+            if (x + dx >= 0 && x + dx < 256 && y + dy >= 0 && y + dy < 192) {
+                canvas_buffer[(y + dy) * 256 + (x + dx)] = body;
+            }
+        }
+    }
+    // Draw shackle
+    if (locked) {
+        // Closed shackle: loop connecting both sides
+        for (int i = 0; i < 4; i++) {
+            if (x + 3 >= 0 && x + 3 < 256 && y + i >= 0 && y + i < 192) {
+                canvas_buffer[(y + i) * 256 + (x + 3)] = metal;
+            }
+            if (x + 6 >= 0 && x + 6 < 256 && y + i >= 0 && y + i < 192) {
+                canvas_buffer[(y + i) * 256 + (x + 6)] = metal;
+            }
+        }
+        for (int dx = 4; dx <= 5; dx++) {
+            if (x + dx >= 0 && x + dx < 256 && y >= 0 && y < 192) {
+                canvas_buffer[y * 256 + (x + dx)] = metal;
+            }
+        }
+    } else {
+        // Open shackle: loop is open/turned on one side
+        for (int i = 0; i < 4; i++) {
+            if (x + 2 >= 0 && x + 2 < 256 && y + i >= 0 && y + i < 192) {
+                canvas_buffer[(y + i) * 256 + (x + 2)] = metal;
+            }
+        }
+        for (int dx = 3; dx <= 4; dx++) {
+            if (x + dx >= 0 && x + dx < 256 && y >= 0 && y < 192) {
+                canvas_buffer[y * 256 + (x + dx)] = metal;
+            }
+        }
+        if (x + 4 >= 0 && x + 4 < 256 && y + 1 >= 0 && y + 1 < 192) {
+            canvas_buffer[(y + 1) * 256 + (x + 4)] = metal;
+        }
+    }
+}
+
 void uiOpenModal(int modal_idx) {
     if (modal_idx == 2) {
         uiUpdatePickerPosFromActiveColor();
@@ -694,14 +742,17 @@ void uiOpenModal(int modal_idx) {
         uint16_t tab_inactive_bg = RGB15(20, 20, 20);
         uint16_t tab_border = RGB15(0, 0, 0);
         
-        drawRect(8, 20, 127, 32, (bg_modal_tab == 0) ? tab_active_bg : tab_inactive_bg);
-        drawRect(128, 20, 247, 32, (bg_modal_tab == 1) ? tab_active_bg : tab_inactive_bg);
+        drawRect(8, 20, 87, 32, (bg_modal_tab == 0) ? tab_active_bg : tab_inactive_bg);
+        drawRect(88, 20, 167, 32, (bg_modal_tab == 1) ? tab_active_bg : tab_inactive_bg);
+        drawRect(168, 20, 247, 32, (bg_modal_tab == 2) ? tab_active_bg : tab_inactive_bg);
         
-        drawRectOutline(8, 20, 127, 32, tab_border);
-        drawRectOutline(128, 20, 247, 32, tab_border);
+        drawRectOutline(8, 20, 87, 32, tab_border);
+        drawRectOutline(88, 20, 167, 32, tab_border);
+        drawRectOutline(168, 20, 247, 32, tab_border);
         
-        renderDrawText("PATRONES", 40, 23, (bg_modal_tab == 0) ? RGB15(0, 0, 0) : RGB15(16, 16, 16), 0);
-        renderDrawText("PERSPECTIVA", 148, 23, (bg_modal_tab == 1) ? RGB15(0, 0, 0) : RGB15(16, 16, 16), 0);
+        renderDrawText("PATRON", 24, 23, (bg_modal_tab == 0) ? RGB15(0, 0, 0) : RGB15(16, 16, 16), 0);
+        renderDrawText("PERSPECT", 96, 23, (bg_modal_tab == 1) ? RGB15(0, 0, 0) : RGB15(16, 16, 16), 0);
+        renderDrawText("CAPAS", 188, 23, (bg_modal_tab == 2) ? RGB15(0, 0, 0) : RGB15(16, 16, 16), 0);
         
         if (bg_modal_tab == 0) {
             for (int i = 0; i < 4; i++) {
@@ -724,6 +775,23 @@ void uiOpenModal(int modal_idx) {
             char rot_lbl[16];
             sprintf(rot_lbl, "ROT:%d", bg_angle);
             drawModalButtonAt(198, 244, 132, 150, rot_lbl, false);
+        } else if (bg_modal_tab == 2) {
+            renderDrawText("SISTEMA DE CAPAS", 16, 36, RGB15(0, 0, 0), 0);
+            
+            drawModalButtonAt(12, 120, 50, 70, (active_layer == 2) ? "CAPA 2 (ACTIVA)" : "CAPA 2", (active_layer == 2));
+            drawModalButtonAt(126, 180, 50, 70, layer2_visible ? "VER: SI" : "VER: NO", layer2_visible);
+            drawModalButtonAt(186, 244, 50, 70, "LIMPIAR", false);
+            
+            drawModalButtonAt(12, 120, 80, 100, (active_layer == 1) ? "CAPA 1 (ACTIVA)" : "CAPA 1", (active_layer == 1));
+            drawModalButtonAt(126, 180, 80, 100, layer1_visible ? "VER: SI" : "VER: NO", layer1_visible);
+            drawModalButtonAt(186, 244, 80, 100, "LIMPIAR", false);
+            
+            drawModalButtonAt(12, 120, 110, 130, "FONDO", false);
+            
+            drawModalButtonAt(126, 244, 110, 130, bg_modifiable ? "  UNLOCKED" : "  LOCKED", !bg_modifiable);
+            drawLockIcon(134, 115, !bg_modifiable);
+            
+            drawModalButtonAt(12, 244, 140, 160, "COMBINAR CAPA 2 HACIA ABAJO", false);
         } else {
             renderDrawText("MODO DE PERSPECTIVA", 16, 36, RGB15(0, 0, 0), 0);
             
