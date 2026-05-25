@@ -928,7 +928,7 @@ void gameUpdate(void) {
             int limit_y = toolbar_hidden ? 192 : 176;
             if (touch.py < limit_y) {
                 if (!touch_started_in_toolbar) {
-                    bool ignore_draw = (layers_panel_open && touch.px >= 144) || (dragging_layer_idx != -1);
+                    bool ignore_draw = layers_panel_open || (dragging_layer_idx != -1);
                     if (!ignore_draw) {
                         if (is_bucket) {
                             if (!was_touching) {
@@ -1040,6 +1040,11 @@ void gameUpdate(void) {
                                 }
                             }
                         }
+                    } else {
+                        // Tapped outside the layers panel: close it automatically!
+                        layers_panel_open = false;
+                        renderComposeCanvas();
+                        sidebar_action_taken = true;
                     }
                 } else {
                     // Floating layers tab: x = 244..255, y = 70..106
