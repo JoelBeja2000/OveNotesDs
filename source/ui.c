@@ -163,6 +163,21 @@ static void drawModalButtonAt(int x0, int x1, int y0, int y1, const char* text, 
     renderDrawText(text, tx, ty, text_color, 0);
 }
 
+static void drawModalButtonDisabledAt(int x0, int x1, int y0, int y1, const char* text) {
+    uint16_t bg = RGB15(22, 22, 22);
+    uint16_t outline = RGB15(15, 15, 15);
+    uint16_t text_color = RGB15(12, 12, 12);
+    
+    drawRect(x0, y0, x1, y1, bg);
+    drawRectOutline(x0, y0, x1, y1, outline);
+    
+    int text_len = strlen(text);
+    int text_w = text_len * 6 - 1;
+    int tx = x0 + (x1 - x0 - text_w) / 2;
+    int ty = y0 + (y1 - y0 - 8) / 2;
+    renderDrawText(text, tx, ty, text_color, 0);
+}
+
 static void drawModalColorButtonAt(int x0, int x1, int y0, int y1, uint16_t color, bool selected) {
     uint16_t outline = selected ? RGB15(31, 0, 0) : RGB15(0, 0, 0);
     int outline_width = selected ? 2 : 1;
@@ -574,14 +589,33 @@ void uiOpenModal(int modal_idx) {
             drawModalButtonAt(184, 244, 46, 62, "3 VP", (perspective_mode == 3));
             
             if (perspective_mode > 0) {
-                drawModalButtonAt(12, 244, 68, 84, "REUBICAR PUNTOS DE FUGA", false);
+                drawModalButtonAt(12, 244, 68, 84, "REUBICAR TODOS LOS PUNTOS", false);
             } else {
                 drawModalButtonAt(12, 244, 68, 84, "(SIN PERSPECTIVA)", false);
             }
             
+            // Individual point editing buttons
+            if (perspective_mode >= 1) {
+                drawModalButtonAt(12, 84, 90, 106, "PUNTO 1", false);
+            } else {
+                drawModalButtonDisabledAt(12, 84, 90, 106, "PUNTO 1");
+            }
+            
+            if (perspective_mode >= 2) {
+                drawModalButtonAt(92, 164, 90, 106, "PUNTO 2", false);
+            } else {
+                drawModalButtonDisabledAt(92, 164, 90, 106, "PUNTO 2");
+            }
+            
+            if (perspective_mode >= 3) {
+                drawModalButtonAt(172, 244, 90, 106, "PUNTO 3", false);
+            } else {
+                drawModalButtonDisabledAt(172, 244, 90, 106, "PUNTO 3");
+            }
+            
             char dens_lbl[32];
             sprintf(dens_lbl, "DENSIDAD DE REJILLA: %d px", perspective_step);
-            drawModalButtonAt(12, 244, 90, 106, dens_lbl, false);
+            drawModalButtonAt(12, 244, 112, 128, dens_lbl, false);
         }
     } 
     else if (open_modal == 4) {

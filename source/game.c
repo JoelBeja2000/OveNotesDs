@@ -26,6 +26,7 @@ static int bg_sub_wizard = -1;
 
 bool placing_vanishing_points = false;
 int placing_point_idx = 0;
+bool placing_single_vanishing_point = false;
 bool ignore_touch_until_release = false;
 
 void gameInit(void) {
@@ -274,13 +275,19 @@ void gameUpdate(void) {
                     if (prev_y >= 0 && prev_y < 176 && prev_x >= 0 && prev_x < 256) {
                         perspective_points[placing_point_idx][0] = prev_x;
                         perspective_points[placing_point_idx][1] = prev_y;
-                        placing_point_idx++;
                         
                         renderComposeCanvas();
                         
-                        if (placing_point_idx >= perspective_mode) {
+                        if (placing_single_vanishing_point) {
                             placing_vanishing_points = false;
+                            placing_single_vanishing_point = false;
                             uiDrawToolbar();
+                        } else {
+                            placing_point_idx++;
+                            if (placing_point_idx >= perspective_mode) {
+                                placing_vanishing_points = false;
+                                uiDrawToolbar();
+                            }
                         }
                         ignore_touch_until_release = true;
                     }
@@ -695,19 +702,48 @@ void gameUpdate(void) {
                                         uiOpenModal(3);
                                     }
                                 }
-                                // Placing points button (y = 68..84)
-                                else if (prev_y >= 68 && prev_y <= 84) {
-                                    if (prev_x >= 12 && prev_x <= 244) {
-                                        if (perspective_mode > 0) {
-                                            uiCloseModal();
-                                            placing_vanishing_points = true;
-                                            placing_point_idx = 0;
-                                            ignore_touch_until_release = true;
-                                        }
-                                    }
-                                }
-                                // Density button (y = 90..106)
-                                else if (prev_y >= 90 && prev_y <= 106) {
+                                 // Placing points button (y = 68..84)
+                                 else if (prev_y >= 68 && prev_y <= 84) {
+                                     if (prev_x >= 12 && prev_x <= 244) {
+                                         if (perspective_mode > 0) {
+                                             uiCloseModal();
+                                             placing_vanishing_points = true;
+                                             placing_single_vanishing_point = false;
+                                             placing_point_idx = 0;
+                                             ignore_touch_until_release = true;
+                                         }
+                                     }
+                                 }
+                                 // Individual point edit buttons (y = 90..106)
+                                 else if (prev_y >= 90 && prev_y <= 106) {
+                                     if (prev_x >= 12 && prev_x <= 84) {
+                                         if (perspective_mode >= 1) {
+                                             uiCloseModal();
+                                             placing_vanishing_points = true;
+                                             placing_single_vanishing_point = true;
+                                             placing_point_idx = 0;
+                                             ignore_touch_until_release = true;
+                                         }
+                                     } else if (prev_x >= 92 && prev_x <= 164) {
+                                         if (perspective_mode >= 2) {
+                                             uiCloseModal();
+                                             placing_vanishing_points = true;
+                                             placing_single_vanishing_point = true;
+                                             placing_point_idx = 1;
+                                             ignore_touch_until_release = true;
+                                         }
+                                     } else if (prev_x >= 172 && prev_x <= 244) {
+                                         if (perspective_mode >= 3) {
+                                             uiCloseModal();
+                                             placing_vanishing_points = true;
+                                             placing_single_vanishing_point = true;
+                                             placing_point_idx = 2;
+                                             ignore_touch_until_release = true;
+                                         }
+                                     }
+                                 }
+                                // Density button (y = 112..128)
+                                else if (prev_y >= 112 && prev_y <= 128) {
                                     if (prev_x >= 12 && prev_x <= 244) {
                                         if (perspective_step == 64) perspective_step = 32;
                                         else if (perspective_step == 32) perspective_step = 16;
