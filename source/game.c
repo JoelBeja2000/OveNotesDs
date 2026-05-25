@@ -668,39 +668,52 @@ void gameUpdate(void) {
                             else if (bg_modal_tab == 1) {
                                 // Mode buttons (y = 46..62)
                                 if (prev_y >= 46 && prev_y <= 62) {
-                                    if (prev_x >= 12 && prev_x <= 64) {
-                                        perspective_mode = 0;
-                                        renderComposeCanvas();
-                                        uiUpdateModalBackup();
-                                        uiOpenModal(3);
-                                    } else if (prev_x >= 68 && prev_x <= 122) {
-                                        perspective_mode = 1;
-                                        perspective_points[0][0] = 128;
-                                        perspective_points[0][1] = 88;
-                                        renderComposeCanvas();
-                                        uiUpdateModalBackup();
-                                        uiOpenModal(3);
-                                    } else if (prev_x >= 126 && prev_x <= 180) {
-                                        perspective_mode = 2;
-                                        perspective_points[0][0] = 32;
-                                        perspective_points[0][1] = 88;
-                                        perspective_points[1][0] = 224;
-                                        perspective_points[1][1] = 88;
-                                        renderComposeCanvas();
-                                        uiUpdateModalBackup();
-                                        uiOpenModal(3);
-                                    } else if (prev_x >= 184 && prev_x <= 244) {
-                                        perspective_mode = 3;
-                                        perspective_points[0][0] = 32;
-                                        perspective_points[0][1] = 64;
-                                        perspective_points[1][0] = 224;
-                                        perspective_points[1][1] = 64;
-                                        perspective_points[2][0] = 128;
-                                        perspective_points[2][1] = 150;
-                                        renderComposeCanvas();
-                                        uiUpdateModalBackup();
-                                        uiOpenModal(3);
-                                    }
+                                    if (prev_x >= 12 && prev_x <= 53) {
+                                         perspective_mode = 0;
+                                         renderComposeCanvas();
+                                         uiUpdateModalBackup();
+                                         uiOpenModal(3);
+                                     } else if (prev_x >= 57 && prev_x <= 101) {
+                                         perspective_mode = 1;
+                                         perspective_points[0][0] = 128;
+                                         perspective_points[0][1] = 88;
+                                         renderComposeCanvas();
+                                         uiUpdateModalBackup();
+                                         uiOpenModal(3);
+                                     } else if (prev_x >= 105 && prev_x <= 149) {
+                                         perspective_mode = 2;
+                                         perspective_points[0][0] = 32;
+                                         perspective_points[0][1] = 88;
+                                         perspective_points[1][0] = 224;
+                                         perspective_points[1][1] = 88;
+                                         renderComposeCanvas();
+                                         uiUpdateModalBackup();
+                                         uiOpenModal(3);
+                                     } else if (prev_x >= 153 && prev_x <= 197) {
+                                         perspective_mode = 3;
+                                         perspective_points[0][0] = 32;
+                                         perspective_points[0][1] = 64;
+                                         perspective_points[1][0] = 224;
+                                         perspective_points[1][1] = 64;
+                                         perspective_points[2][0] = 128;
+                                         perspective_points[2][1] = 150;
+                                         renderComposeCanvas();
+                                         uiUpdateModalBackup();
+                                         uiOpenModal(3);
+                                     } else if (prev_x >= 201 && prev_x <= 244) {
+                                         perspective_mode = 4;
+                                         perspective_points[0][0] = 20;
+                                         perspective_points[0][1] = 88;
+                                         perspective_points[1][0] = 236;
+                                         perspective_points[1][1] = 88;
+                                         perspective_points[2][0] = 128;
+                                         perspective_points[2][1] = 12;
+                                         perspective_points[3][0] = 128;
+                                         perspective_points[3][1] = 164;
+                                         renderComposeCanvas();
+                                         uiUpdateModalBackup();
+                                         uiOpenModal(3);
+                                     }
                                 }
                                  // Placing points button (y = 68..84)
                                  else if (prev_y >= 68 && prev_y <= 84) {
@@ -716,7 +729,7 @@ void gameUpdate(void) {
                                  }
                                  // Individual point edit buttons (y = 90..106)
                                  else if (prev_y >= 90 && prev_y <= 106) {
-                                     if (prev_x >= 12 && prev_x <= 84) {
+                                     if (prev_x >= 12 && prev_x <= 65) {
                                          if (perspective_mode >= 1) {
                                              uiCloseModal();
                                              placing_vanishing_points = true;
@@ -724,7 +737,7 @@ void gameUpdate(void) {
                                              placing_point_idx = 0;
                                              ignore_touch_until_release = true;
                                          }
-                                     } else if (prev_x >= 92 && prev_x <= 164) {
+                                     } else if (prev_x >= 71 && prev_x <= 124) {
                                          if (perspective_mode >= 2) {
                                              uiCloseModal();
                                              placing_vanishing_points = true;
@@ -732,12 +745,20 @@ void gameUpdate(void) {
                                              placing_point_idx = 1;
                                              ignore_touch_until_release = true;
                                          }
-                                     } else if (prev_x >= 172 && prev_x <= 244) {
+                                     } else if (prev_x >= 130 && prev_x <= 183) {
                                          if (perspective_mode >= 3) {
                                              uiCloseModal();
                                              placing_vanishing_points = true;
                                              placing_single_vanishing_point = true;
                                              placing_point_idx = 2;
+                                             ignore_touch_until_release = true;
+                                         }
+                                     } else if (prev_x >= 189 && prev_x <= 244) {
+                                         if (perspective_mode >= 4) {
+                                             uiCloseModal();
+                                             placing_vanishing_points = true;
+                                             placing_single_vanishing_point = true;
+                                             placing_point_idx = 3;
                                              ignore_touch_until_release = true;
                                          }
                                      }

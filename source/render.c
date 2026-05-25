@@ -20,7 +20,7 @@ int bg_color_s_idx = 0;
 int angle_target = 0; // 0 = brush, 1 = background
 
 int perspective_mode = 0;
-int perspective_points[3][2] = { {32, 88}, {224, 88}, {128, 150} };
+int perspective_points[4][2] = { {32, 88}, {224, 88}, {128, 40}, {128, 136} };
 int perspective_step = 32;
 int nib_angle = 0;
 
@@ -216,6 +216,21 @@ static void drawPerspectiveLine(int x0, int y0, int x1, int y1, uint16_t color) 
     }
 }
 
+static void drawPerspectiveCurve(int x0, int y0, int cx, int cy, int x1, int y1, uint16_t color) {
+    int prev_x = x0;
+    int prev_y = y0;
+    for (int i = 1; i <= 8; i++) {
+        int t = i * 8; // 0..64
+        int mt = 64 - t;
+        int x = (mt * mt * x0 + 2 * mt * t * cx + t * t * x1) / 4096;
+        int y = (mt * mt * y0 + 2 * mt * t * cy + t * t * y1) / 4096;
+        
+        drawPerspectiveLine(prev_x, prev_y, x, y, color);
+        prev_x = x;
+        prev_y = y;
+    }
+}
+
 static void drawPerspectiveCrosshair(int cx, int cy, uint16_t color) {
     int limit_y = toolbar_hidden ? 192 : 176;
     for (int dx = -2; dx <= 2; dx++) {
@@ -316,26 +331,28 @@ void renderComposeCanvas(void) {
         uint16_t s_color = getActualSecondaryColor();
         
         // Draw radiating perspective grid lines
-        for (int i = 0; i < perspective_mode; i++) {
-            int px = perspective_points[i][0];
-            int py = perspective_points[i][1];
-            
-            // Draw lines to screen borders
-            // Top border: (bx, 0)
-            for (int bx = 0; bx < 256; bx += perspective_step) {
-                drawPerspectiveLine(px, py, bx, 0, s_color);
-            }
-            // Bottom border: (bx, limit_y - 1)
-            for (int bx = 0; bx < 256; bx += perspective_step) {
-                drawPerspectiveLine(px, py, bx, limit_y - 1, s_color);
-            }
-            // Left border: (0, by)
-            for (int by = 0; by < limit_y; by += perspective_step) {
-                drawPerspectiveLine(px, py, 0, by, s_color);
-            }
-            // Right border: (255, by)
-            for (int by = 0; by < limit_y; by += perspective_step) {
-                drawPerspectiveLine(px, py, 255, by, s_color);
+        if (perspective_mode < 4) {
+            for (int i = 0; i < perspective_mode; i++) {
+                int px = perspective_points[i][0];
+                int py = perspective_points[i][1];
+                
+                // Draw lines to screen borders
+                // Top border: (bx, 0)
+                for (int bx = 0; bx < 256; bx += perspective_step) {
+                    drawPerspectiveLine(px, py, bx, 0, s_color);
+                }
+                // Bottom border: (bx, limit_y - 1)
+                for (int bx = 0; bx < 256; bx += perspective_step) {
+                    drawPerspectiveLine(px, py, bx, limit_y - 1, s_color);
+                }
+                // Left border: (0, by)
+                for (int by = 0; by < limit_y; by += perspective_step) {
+                    drawPerspectiveLine(px, py, 0, by, s_color);
+                }
+                // Right border: (255, by)
+                for (int by = 0; by < limit_y; by += perspective_step) {
+                    drawPerspectiveLine(px, py, 255, by, s_color);
+                }
             }
         }
         
@@ -356,6 +373,37 @@ void renderComposeCanvas(void) {
             drawPerspectiveLine(perspective_points[2][0], perspective_points[2][1],
                                  perspective_points[0][0], perspective_points[0][1],
                                  RGB15(0, 0, 31)); // Blue perspective boundary!
+        } else if (perspective_mode == 4) {
+            // Fisheye grid: curves connecting L-R and T-B
+            int lx = perspective_points[0][0];
+            int ly = perspective_points[0][1];
+            int rx = perspective_points[1][0];
+            int ry = perspective_points[1][1];
+            int tx = perspective_points[2][0];
+            int ty = perspective_points[2][1];
+            int bx = perspective_points[3][0];
+            int by = perspective_points[3][1];
+            
+            int cx = (lx + rx) / 2;
+            int cy = (ty + by) / 2;
+            
+            // Left-to-Right curves (horizontal lines in fisheye)
+            for (int v = -4; v <= 4; v++) {
+                int control_y = cy + v * perspective_step;
+                drawPerspectiveCurve(lx, ly, cx, control_y, rx, ry, s_color);
+            }
+            
+            // Top-to-Bottom curves (vertical lines in fisheye)
+            for (int h = -5; h <= 5; h++) {
+                int control_x = cx + h * perspective_step;
+                drawPerspectiveCurve(tx, ty, control_x, cy, bx, by, s_color);
+            }
+            
+            // Draw outer border / horizon connections for visual structure
+            drawPerspectiveLine(lx, ly, tx, ty, RGB15(0, 0, 31));
+            drawPerspectiveLine(tx, ty, rx, ry, RGB15(0, 0, 31));
+            drawPerspectiveLine(rx, ry, bx, by, RGB15(0, 0, 31));
+            drawPerspectiveLine(bx, by, lx, ly, RGB15(0, 0, 31));
         }
         
         // Draw crosshairs at vanishing points

@@ -583,10 +583,11 @@ void uiOpenModal(int modal_idx) {
         } else {
             renderDrawText("MODO DE PERSPECTIVA", 16, 36, RGB15(0, 0, 0), 0);
             
-            drawModalButtonAt(12, 64, 46, 62, "OFF", (perspective_mode == 0));
-            drawModalButtonAt(68, 122, 46, 62, "1 VP", (perspective_mode == 1));
-            drawModalButtonAt(126, 180, 46, 62, "2 VP", (perspective_mode == 2));
-            drawModalButtonAt(184, 244, 46, 62, "3 VP", (perspective_mode == 3));
+            drawModalButtonAt(12, 53, 46, 62, "OFF", (perspective_mode == 0));
+            drawModalButtonAt(57, 101, 46, 62, "1 VP", (perspective_mode == 1));
+            drawModalButtonAt(105, 149, 46, 62, "2 VP", (perspective_mode == 2));
+            drawModalButtonAt(153, 197, 46, 62, "3 VP", (perspective_mode == 3));
+            drawModalButtonAt(201, 244, 46, 62, "4 VP", (perspective_mode == 4));
             
             if (perspective_mode > 0) {
                 drawModalButtonAt(12, 244, 68, 84, "REUBICAR TODOS LOS PUNTOS", false);
@@ -596,21 +597,27 @@ void uiOpenModal(int modal_idx) {
             
             // Individual point editing buttons
             if (perspective_mode >= 1) {
-                drawModalButtonAt(12, 84, 90, 106, "PUNTO 1", false);
+                drawModalButtonAt(12, 65, 90, 106, "PUNTO 1", false);
             } else {
-                drawModalButtonDisabledAt(12, 84, 90, 106, "PUNTO 1");
+                drawModalButtonDisabledAt(12, 65, 90, 106, "PUNTO 1");
             }
             
             if (perspective_mode >= 2) {
-                drawModalButtonAt(92, 164, 90, 106, "PUNTO 2", false);
+                drawModalButtonAt(71, 124, 90, 106, "PUNTO 2", false);
             } else {
-                drawModalButtonDisabledAt(92, 164, 90, 106, "PUNTO 2");
+                drawModalButtonDisabledAt(71, 124, 90, 106, "PUNTO 2");
             }
             
             if (perspective_mode >= 3) {
-                drawModalButtonAt(172, 244, 90, 106, "PUNTO 3", false);
+                drawModalButtonAt(130, 183, 90, 106, "PUNTO 3", false);
             } else {
-                drawModalButtonDisabledAt(172, 244, 90, 106, "PUNTO 3");
+                drawModalButtonDisabledAt(130, 183, 90, 106, "PUNTO 3");
+            }
+            
+            if (perspective_mode >= 4) {
+                drawModalButtonAt(189, 244, 90, 106, "PUNTO 4", false);
+            } else {
+                drawModalButtonDisabledAt(189, 244, 90, 106, "PUNTO 4");
             }
             
             char dens_lbl[32];

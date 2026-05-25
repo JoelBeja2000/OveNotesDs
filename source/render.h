@@ -24,7 +24,7 @@ extern const uint16_t bg_primary_palette[4];
 extern const uint16_t bg_secondary_palette[4];
 
 extern int perspective_mode;
-extern int perspective_points[3][2];
+extern int perspective_points[4][2];
 extern int perspective_step;
 extern int nib_angle;
 
