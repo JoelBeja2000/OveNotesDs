@@ -58,43 +58,33 @@ void renderSetCanvasPixel(int x, int y, uint16_t color) {
     }
 }
 
-void renderApplyBackgroundPattern(int pat_index) {
-    int limit_y = toolbar_hidden ? 192 : 176;
-    
-    // Base is white
-    for (int y = 0; y < limit_y; y++) {
-        for (int x = 0; x < 256; x++) {
-            canvas_buffer[y * 256 + x] = RGB15(31, 31, 31);
-        }
-    }
-    
-    // Light grid color blended with active color
+void renderDrawBackgroundRegion(int y0, int y1) {
     uint16_t grid_color = blendRGB555_int(palette_colors[active_color_idx], RGB15(31, 31, 31), 6);
     
-    if (pat_index == 1) {
-        // Dotted grid: dots spaced by 16px
-        for (int y = 8; y < limit_y; y += 16) {
-            for (int x = 8; x < 256; x += 16) {
-                canvas_buffer[y * 256 + x] = grid_color;
-            }
-        }
-    } else if (pat_index == 2) {
-        // Lined paper: horizontal lines spaced by 16px
-        for (int y = 16; y < limit_y; y += 16) {
-            for (int x = 0; x < 256; x++) {
-                canvas_buffer[y * 256 + x] = grid_color;
-            }
-        }
-    } else if (pat_index == 3) {
-        // Checked grid: squares of 16px
-        for (int y = 0; y < limit_y; y++) {
-            for (int x = 0; x < 256; x++) {
+    for (int y = y0; y <= y1; y++) {
+        for (int x = 0; x < 256; x++) {
+            uint16_t pixel_color = RGB15(31, 31, 31);
+            if (bg_pattern_idx == 1) {
+                if ((y - 8) % 16 == 0 && (x - 8) % 16 == 0) {
+                    pixel_color = grid_color;
+                }
+            } else if (bg_pattern_idx == 2) {
+                if (y > 0 && y % 16 == 0) {
+                    pixel_color = grid_color;
+                }
+            } else if (bg_pattern_idx == 3) {
                 if (y % 16 == 0 || x % 16 == 0) {
-                    canvas_buffer[y * 256 + x] = grid_color;
+                    pixel_color = grid_color;
                 }
             }
+            canvas_buffer[y * 256 + x] = pixel_color;
         }
     }
+}
+
+void renderApplyBackgroundPattern(int pat_index) {
+    bg_pattern_idx = pat_index;
+    renderDrawBackgroundRegion(0, 191);
 }
 
 void renderFloodFill(int start_x, int start_y, uint16_t fill_color) {

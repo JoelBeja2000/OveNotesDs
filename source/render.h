@@ -24,6 +24,7 @@ void renderSetCanvasPixel(int x, int y, uint16_t color);
 
 uint16_t blendRGB555_int(uint16_t src, uint16_t dst, int alpha_32);
 void renderApplyBackgroundPattern(int pat_index);
+void renderDrawBackgroundRegion(int y0, int y1);
 void renderFloodFill(int start_x, int start_y, uint16_t fill_color);
 
 void renderDrawChar(char c, int x, int y, uint16_t color, uint16_t bg_color);

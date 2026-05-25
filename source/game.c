@@ -317,7 +317,12 @@ void gameUpdate(void) {
                                 if (touch.px >= x0 && touch.px <= x1) {
                                     bg_pattern_idx = i;
                                     renderApplyBackgroundPattern(bg_pattern_idx);
-                                    option_selected = true;
+                                    
+                                    // Close modal without restoring backup
+                                    open_modal = -1;
+                                    uiDrawToolbar();
+                                    
+                                    option_selected = false;
                                     break;
                                 }
                             }
@@ -342,12 +347,8 @@ void gameUpdate(void) {
             uiCloseModal(); // Close open modal if any
             toolbar_hidden = !toolbar_hidden;
             if (toolbar_hidden) {
-                // Clear the toolbar area (y = 176 to 191) to white (canvas bg color)
-                for (int y = 176; y < 192; y++) {
-                    for (int x = 0; x < 256; x++) {
-                        canvas_buffer[y * 256 + x] = RGB15(31, 31, 31);
-                    }
-                }
+                // Draw background pattern region on the bottom 16 pixels
+                renderDrawBackgroundRegion(176, 191);
             } else {
                 // Restore toolbar
                 uiDrawToolbar();
