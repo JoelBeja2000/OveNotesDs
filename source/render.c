@@ -20,6 +20,16 @@ int dragging_layer_idx = -1;
 char layer_names[MAX_LAYERS][16] = {
     "Capa 0", "Capa 1", "Capa 2", "Capa 3", "Capa 4", "Capa 5", "Capa 6", "Capa 7"
 };
+uint8_t layers_opacity[MAX_LAYERS] = {100, 100, 100, 100, 100, 100, 100, 100};
+
+#define MAX_UNDO_STEPS 5
+uint16_t* undo_stack[MAX_UNDO_STEPS] = {NULL};
+uint16_t* redo_stack[MAX_UNDO_STEPS] = {NULL};
+int undo_layer_idx[MAX_UNDO_STEPS];
+int redo_layer_idx[MAX_UNDO_STEPS];
+int undo_count = 0;
+int redo_count = 0;
+
 bool toolbar_hidden = false;
 
 bool bg_modifiable = false;
@@ -70,21 +80,23 @@ uint16_t blendRGB555_int(uint16_t src, uint16_t dst, int alpha_32) {
 }
 
 uint16_t renderGetComposedPixel(int x, int y) {
-    bool pixel_drawn = false;
-    uint16_t out_color = RGB15(31, 31, 31);
-    
+    int stop_idx = -1;
     for (int i = layers_count - 1; i >= 0; i--) {
         if (layers[i] != NULL && layers_visible[i]) {
             uint16_t p = layers[i][y * 256 + x];
             if (p != RGB15(31, 31, 31)) {
-                out_color = p;
-                pixel_drawn = true;
-                break;
+                if (layers_opacity[i] == 100) {
+                    stop_idx = i;
+                    break;
+                }
             }
         }
     }
     
-    if (!pixel_drawn) {
+    uint16_t out_color;
+    if (stop_idx != -1) {
+        out_color = layers[stop_idx][y * 256 + x];
+    } else {
         if (bg_modifiable) {
             out_color = RGB15(31, 31, 31);
         } else {
@@ -137,6 +149,20 @@ uint16_t renderGetComposedPixel(int x, int y) {
             }
         }
     }
+    
+    int start_i = (stop_idx == -1) ? 0 : (stop_idx + 1);
+    for (int i = start_i; i < layers_count; i++) {
+        if (layers[i] != NULL && layers_visible[i]) {
+            uint16_t p = layers[i][y * 256 + x];
+            if (p != RGB15(31, 31, 31)) {
+                if (layers_opacity[i] > 0) {
+                    int alpha_32 = (layers_opacity[i] * 32) / 100;
+                    out_color = blendRGB555_int(p, out_color, alpha_32);
+                }
+            }
+        }
+    }
+    
     return out_color;
 }
 
@@ -395,6 +421,7 @@ void renderComposeCanvas(void) {
         }
     }
     
+    uiDrawUndoRedoButtons();
     uiDrawLayersOverlay();
 }
 
@@ -664,6 +691,7 @@ void renderInitCanvas(void) {
         }
         layers_visible[i] = false;
         sprintf(layer_names[i], "Capa %d", i);
+        layers_opacity[i] = 100;
     }
     
     layers[0] = (uint16_t*)malloc(256 * 192 * sizeof(uint16_t));
@@ -677,6 +705,8 @@ void renderInitCanvas(void) {
     active_layer_idx = 0;
     layers_visible[0] = true;
     drawing_buffer = layers[0];
+    
+    renderInitUndoStack();
     
     renderComposeCanvas();
     uiDrawToolbar();
@@ -695,6 +725,7 @@ void renderAddLayer(void) {
     layers[layers_count] = new_layer;
     layers_visible[layers_count] = true;
     sprintf(layer_names[layers_count], "Capa %d", layers_count);
+    layers_opacity[layers_count] = 100;
     active_layer_idx = layers_count;
     drawing_buffer = layers[active_layer_idx];
     layers_count++;
@@ -715,10 +746,12 @@ void renderDeleteLayer(int idx) {
         layers[i] = layers[i + 1];
         layers_visible[i] = layers_visible[i + 1];
         strcpy(layer_names[i], layer_names[i + 1]);
+        layers_opacity[i] = layers_opacity[i + 1];
     }
     layers[layers_count - 1] = NULL;
     layers_visible[layers_count - 1] = false;
     sprintf(layer_names[layers_count - 1], "Capa %d", layers_count - 1);
+    layers_opacity[layers_count - 1] = 100;
     layers_count--;
     
     if (active_layer_idx >= layers_count) {
@@ -762,4 +795,109 @@ void renderUpdatePreview(void) {
             preview_buffer[(y + 20) * 128 + x] = p;
         }
     }
+}
+
+void renderInitUndoStack(void) {
+    for (int i = 0; i < MAX_UNDO_STEPS; i++) {
+        if (undo_stack[i] == NULL) {
+            undo_stack[i] = malloc(256 * 192 * sizeof(uint16_t));
+        }
+        if (redo_stack[i] == NULL) {
+            redo_stack[i] = malloc(256 * 192 * sizeof(uint16_t));
+        }
+    }
+    undo_count = 0;
+    redo_count = 0;
+}
+
+void renderSaveUndoState(void) {
+    if (drawing_buffer == NULL) return;
+    
+    // Push current to undo stack
+    if (undo_count == MAX_UNDO_STEPS) {
+        uint16_t* oldest = undo_stack[0];
+        for (int i = 0; i < MAX_UNDO_STEPS - 1; i++) {
+            undo_stack[i] = undo_stack[i + 1];
+            undo_layer_idx[i] = undo_layer_idx[i + 1];
+        }
+        undo_stack[MAX_UNDO_STEPS - 1] = oldest;
+        undo_count = MAX_UNDO_STEPS - 1;
+    }
+    
+    memcpy(undo_stack[undo_count], drawing_buffer, 256 * 192 * 2);
+    undo_layer_idx[undo_count] = active_layer_idx;
+    undo_count++;
+    
+    // Clear redo stack on new action
+    redo_count = 0;
+}
+
+void renderUndo(void) {
+    if (undo_count <= 0) return;
+    
+    // Push current to redo stack
+    if (redo_count == MAX_UNDO_STEPS) {
+        uint16_t* oldest = redo_stack[0];
+        for (int i = 0; i < MAX_UNDO_STEPS - 1; i++) {
+            redo_stack[i] = redo_stack[i + 1];
+            redo_layer_idx[i] = redo_layer_idx[i + 1];
+        }
+        redo_stack[MAX_UNDO_STEPS - 1] = oldest;
+        redo_count = MAX_UNDO_STEPS - 1;
+    }
+    
+    int target_layer = undo_layer_idx[undo_count - 1];
+    if (target_layer >= layers_count || layers[target_layer] == NULL) {
+        undo_count--;
+        return;
+    }
+    
+    memcpy(redo_stack[redo_count], layers[target_layer], 256 * 192 * 2);
+    redo_layer_idx[redo_count] = target_layer;
+    redo_count++;
+    
+    // Restore from undo stack
+    memcpy(layers[target_layer], undo_stack[undo_count - 1], 256 * 192 * 2);
+    undo_count--;
+    
+    active_layer_idx = target_layer;
+    drawing_buffer = layers[active_layer_idx];
+    
+    renderComposeCanvas();
+    renderUpdatePreview();
+}
+
+void renderRedo(void) {
+    if (redo_count <= 0) return;
+    
+    int target_layer = redo_layer_idx[redo_count - 1];
+    if (target_layer >= layers_count || layers[target_layer] == NULL) {
+        redo_count--;
+        return;
+    }
+    
+    // Push current to undo stack
+    if (undo_count == MAX_UNDO_STEPS) {
+        uint16_t* oldest = undo_stack[0];
+        for (int i = 0; i < MAX_UNDO_STEPS - 1; i++) {
+            undo_stack[i] = undo_stack[i + 1];
+            undo_layer_idx[i] = undo_layer_idx[i + 1];
+        }
+        undo_stack[MAX_UNDO_STEPS - 1] = oldest;
+        undo_count = MAX_UNDO_STEPS - 1;
+    }
+    
+    memcpy(undo_stack[undo_count], layers[target_layer], 256 * 192 * 2);
+    undo_layer_idx[undo_count] = target_layer;
+    undo_count++;
+    
+    // Restore from redo stack
+    memcpy(layers[target_layer], redo_stack[redo_count - 1], 256 * 192 * 2);
+    redo_count--;
+    
+    active_layer_idx = target_layer;
+    drawing_buffer = layers[active_layer_idx];
+    
+    renderComposeCanvas();
+    renderUpdatePreview();
 }

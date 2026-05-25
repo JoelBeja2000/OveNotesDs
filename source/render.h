@@ -22,6 +22,14 @@ extern bool layers_visible[MAX_LAYERS];
 extern bool layers_panel_open;
 extern int dragging_layer_idx;
 extern char layer_names[MAX_LAYERS][16];
+extern uint8_t layers_opacity[MAX_LAYERS];
+
+void renderInitUndoStack(void);
+void renderSaveUndoState(void);
+void renderUndo(void);
+void renderRedo(void);
+extern int undo_count;
+extern int redo_count;
 
 void renderAddLayer(void);
 void renderDeleteLayer(int idx);

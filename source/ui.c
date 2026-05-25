@@ -1530,7 +1530,7 @@ void uiDrawLayersOverlay(void) {
     }
 }
 
-void uiDrawRenameKeyboard(const char* input_text) {
+void uiDrawRenameKeyboard(const char* input_text, uint8_t opacity) {
     uint16_t cream = RGB15(28, 29, 28);
     for (int y = 0; y < 192; y++) {
         for (int x = 0; x < 256; x++) {
@@ -1550,9 +1550,9 @@ void uiDrawRenameKeyboard(const char* input_text) {
         }
     }
     
-    // Header banner: "RENOMBRAR CAPA"
+    // Header banner: "PROPIEDADES DE CAPA"
     drawRect(0, 0, 255, 12, RGB15(12, 12, 12));
-    renderDrawText("RENOMBRAR CAPA", 8, 2, RGB15(31, 31, 31), 0);
+    renderDrawText("PROPIEDADES DE CAPA", 8, 2, RGB15(31, 31, 31), 0);
     
     // Text input box outline and fill
     for (int y = 16; y <= 38; y++) {
@@ -1573,5 +1573,32 @@ void uiDrawRenameKeyboard(const char* input_text) {
     // Save (A) at x = 166..246, y = 44..62
     drawKey(166, 44, 246, 62, "SAVE (A)", false);
     
+    // Opacity Selector:
+    renderDrawText("OPACIDAD:", 10, 73, RGB15(0, 0, 0), 0);
+    drawKey(100, 68, 124, 86, "-", false);
+    
+    char op_val_str[16];
+    sprintf(op_val_str, "%d%%", opacity);
+    renderDrawText(op_val_str, 138, 73, RGB15(0, 0, 0), 0);
+    
+    drawKey(176, 68, 200, 86, "+", false);
+    
     drawKeyboard();
+}
+
+void uiDrawUndoRedoButtons(void) {
+    uint16_t btn_bg = RGB15(12, 12, 14);
+    uint16_t border_col = RGB15(0, 0, 0);
+    
+    // Undo
+    drawRect(4, 4, 20, 20, btn_bg);
+    drawRectOutline(4, 4, 20, 20, border_col);
+    uint16_t undo_text_col = (undo_count > 0) ? RGB15(31, 31, 31) : RGB15(12, 12, 12);
+    renderDrawText("<", 9, 8, undo_text_col, 0);
+    
+    // Redo
+    drawRect(24, 4, 40, 20, btn_bg);
+    drawRectOutline(24, 4, 40, 20, border_col);
+    uint16_t redo_text_col = (redo_count > 0) ? RGB15(31, 31, 31) : RGB15(12, 12, 12);
+    renderDrawText(">", 29, 8, redo_text_col, 0);
 }

@@ -46,6 +46,7 @@ void uiDrawLayersOverlay(void);
 void uiDrawFormUI(int step, const char* input_text);
 void uiDrawBottomForm(int step, const char* input_text);
 char uiHandleKeyboardTouch(int tx, int ty, bool* shift_toggled, bool* caps_toggled, bool* enter_pressed, bool* backspace_pressed);
-void uiDrawRenameKeyboard(const char* input_text);
+void uiDrawRenameKeyboard(const char* input_text, uint8_t opacity);
+void uiDrawUndoRedoButtons(void);
 
 #endif // UI_H
