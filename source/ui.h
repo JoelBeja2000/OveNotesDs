@@ -5,13 +5,13 @@
 #include <stdbool.h>
 
 extern PrintConsole subConsole;
-extern PrintConsole bottom_form_console;
 
 extern int active_brush_size;
 extern bool is_eraser;
 
 void uiDrawToolbar(void);
 void uiDrawFormUI(int step, const char* input_text);
-void uiDrawBottomButtons(int active_step);
+void uiDrawBottomForm(int step, const char* input_text);
+char uiHandleKeyboardTouch(int tx, int ty, bool* shift_toggled, bool* caps_toggled, bool* enter_pressed, bool* backspace_pressed);
 
 #endif // UI_H

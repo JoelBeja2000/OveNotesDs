@@ -91,38 +91,19 @@ static void enterWizardState(void) {
         printf("[GAME] Advertencia: fallo al asignar backups de memoria\n");
     }
     
-    // Ocultar el dibujo (BG2) en la pantalla inferior (Main) y activar BG0 y BG3
-    videoSetMode(MODE_0_2D | DISPLAY_BG0_ACTIVE | DISPLAY_BG3_ACTIVE);
+    // Keep the bottom screen video mode as MODE_5_2D | DISPLAY_BG2_ACTIVE, so we can draw on canvas_buffer
     
     // Configurar la pantalla superior (Sub Engine) para un bitmap completo de 256x256 (BG3 activo)
     videoSetModeSub(MODE_5_2D | DISPLAY_BG3_ACTIVE);
     bg_sub_wizard = bgInitSub(3, BgType_Bmp16, BgSize_B16_256x256, 0, 0);
     wizard_buffer = (uint16_t*)bgGetGfxPtr(bg_sub_wizard);
     
-    // Inicializar la consola para la pantalla inferior (Main Engine)
-    consoleInit(&bottom_form_console, 
-                0,                  // layer 0
-                BgType_Text4bpp,     // text mode
-                BgSize_T_256x256,    // map size 256x256
-                22,                 // map base 22
-                3,                  // tile base 3 (evita colisionar con el teclado)
-                true,               // true = Main Engine
-                true);              // load default graphics
-
-    // Configurar la paleta de colores de la consola inferior (texto negro sobre fondo gris claro)
-    BG_PALETTE[0] = RGB15(28, 28, 28);        // Fondo gris claro pantalla inferior
-    BG_PALETTE[255] = RGB15(0, 0, 0);         // Texto negro pantalla inferior
-
-    // Inicializar el teclado en la pantalla inferior (Main Engine)
-    keyboardInit(NULL, 3, BgType_Text4bpp, BgSize_T_256x512, 20, 0, true, true);
-    keyboardShow();
-    
     wizard_step = 0;
     strcpy(current_input, http_ip);
     input_len = strlen(current_input);
     
     uiDrawFormUI(wizard_step, current_input);
-    uiDrawBottomButtons(wizard_step);
+    uiDrawBottomForm(wizard_step, current_input);
 }
 
 static void exitWizardState(bool canceled) {
@@ -134,11 +115,8 @@ static void exitWizardState(bool canceled) {
         netDisconnect();
     }
     printf("[GAME] Saliendo de exitWizardState (cancelado: %d, IP: %s, Puerto: %s, SSID: %s)\n", canceled, http_ip, http_port_str, wifi_ssid);
-    keyboardHide();
     
-    // Restaurar los modos de video de ambas pantallas a su estado de dibujo original
-    videoSetMode(MODE_5_2D | DISPLAY_BG2_ACTIVE);
-    videoSetModeSub(MODE_5_2D | DISPLAY_BG0_ACTIVE | DISPLAY_BG2_ACTIVE);
+    // Deshabilitar el fondo bitmap de la pantalla superior
     videoBgDisableSub(3);
     
     // Re-inicializar el subConsole en la pantalla superior para limpiar la corrupcion de VRAM
@@ -269,7 +247,7 @@ static void changeWizardStep(int new_step) {
     
     input_len = strlen(current_input);
     uiDrawFormUI(wizard_step, current_input);
-    uiDrawBottomButtons(wizard_step);
+    uiDrawBottomForm(wizard_step, current_input);
 }
 
 void gameUpdate(void) {
@@ -339,10 +317,51 @@ void gameUpdate(void) {
         if (keys_down & KEY_TOUCH) {
             touchPosition touch;
             if (inputGetTouch(&touch)) {
-                if (touch.py < 64) {
-                    int tapped_step = touch.px / 85;
-                    if (tapped_step > 2) tapped_step = 2;
-                    changeWizardStep(tapped_step);
+                // 1. Check if they touched the tabs: y = 42 to 62
+                if (touch.py >= 42 && touch.py <= 62) {
+                    if (touch.px >= 10 && touch.px <= 70) {
+                        changeWizardStep(0);
+                    } else if (touch.px >= 76 && touch.px <= 136) {
+                        changeWizardStep(1);
+                    } else if (touch.px >= 142 && touch.px <= 202) {
+                        changeWizardStep(2);
+                    }
+                }
+                // 2. Check if they touched the keyboard: y = 96 to 182
+                else if (touch.py >= 96 && touch.py <= 182) {
+                    bool shift_toggled = false;
+                    bool caps_toggled = false;
+                    bool enter_pressed = false;
+                    bool backspace_pressed = false;
+                    
+                    char key = uiHandleKeyboardTouch(touch.px, touch.py, &shift_toggled, &caps_toggled, &enter_pressed, &backspace_pressed);
+                    
+                    if (shift_toggled || caps_toggled) {
+                        uiDrawBottomForm(wizard_step, current_input);
+                    } else if (enter_pressed) {
+                        if (wizard_step < 2) {
+                            changeWizardStep(wizard_step + 1);
+                        } else {
+                            strcpy(wifi_ssid, current_input);
+                            exitWizardState(false);
+                            return;
+                        }
+                    } else if (backspace_pressed) {
+                        if (input_len > 0) {
+                            input_len--;
+                            current_input[input_len] = '\0';
+                        }
+                        uiDrawFormUI(wizard_step, current_input);
+                        uiDrawBottomForm(wizard_step, current_input);
+                    } else if (key > 0) {
+                        if (input_len < 63) {
+                            current_input[input_len] = key;
+                            input_len++;
+                            current_input[input_len] = '\0';
+                        }
+                        uiDrawFormUI(wizard_step, current_input);
+                        uiDrawBottomForm(wizard_step, current_input);
+                    }
                 }
             }
         }
@@ -368,30 +387,6 @@ void gameUpdate(void) {
         if (keys_down & KEY_B) {
             exitWizardState(true);
             return;
-        }
-        
-        int key = keyboardUpdate();
-        if (key > 0) {
-            if (key == '\n') {
-                if (wizard_step < 2) {
-                    changeWizardStep(wizard_step + 1);
-                } else {
-                    strcpy(wifi_ssid, current_input);
-                    exitWizardState(false);
-                    return;
-                }
-            } else if (key == '\b') {
-                if (input_len > 0) {
-                    input_len--;
-                    current_input[input_len] = '\0';
-                }
-                uiDrawFormUI(wizard_step, current_input);
-            } else if (input_len < 63) {
-                current_input[input_len] = (char)key;
-                input_len++;
-                current_input[input_len] = '\0';
-                uiDrawFormUI(wizard_step, current_input);
-            }
         }
     } 
     else if (current_state == STATE_UPLOAD) {

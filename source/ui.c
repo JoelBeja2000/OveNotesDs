@@ -6,7 +6,6 @@
 #include <time.h>
 
 PrintConsole subConsole;
-PrintConsole bottom_form_console;
 
 int active_brush_size = 1;
 bool is_eraser = false;
@@ -281,30 +280,206 @@ void uiDrawFormUI(int step, const char* input_text) {
     }
 }
 
-void uiDrawBottomButtons(int active_step) {
-    consoleSelect(&bottom_form_console);
+static bool shift_active = false;
+static bool caps_active = false;
 
-    printf("\x1b[1;1H                                \n");
-    printf("                                \n");
-    printf("                                \n");
-    printf("                                \n");
-    printf("                                \n");
+static void drawKey(int x0, int y0, int x1, int y1, const char* label, bool highlighted) {
+    uint16_t bg_color = highlighted ? RGB15(15, 20, 31) : RGB15(31, 31, 31);
+    uint16_t border_color = RGB15(0, 0, 0);
+    uint16_t text_color = highlighted ? RGB15(31, 31, 31) : RGB15(0, 0, 0);
+    
+    // Draw background
+    for (int y = y0; y <= y1; y++) {
+        for (int x = x0; x <= x1; x++) {
+            canvas_buffer[y * 256 + x] = bg_color;
+        }
+    }
+    // Draw border
+    for (int x = x0; x <= x1; x++) {
+        canvas_buffer[y0 * 256 + x] = border_color;
+        canvas_buffer[y1 * 256 + x] = border_color;
+    }
+    for (int y = y0; y <= y1; y++) {
+        canvas_buffer[y * 256 + x0] = border_color;
+        canvas_buffer[y * 256 + x1] = border_color;
+    }
+    
+    // Center label
+    int len = strlen(label);
+    int text_w = len * 8;
+    int text_h = 8;
+    int tx = x0 + (x1 - x0 + 1 - text_w) / 2;
+    int ty = y0 + (y1 - y0 + 1 - text_h) / 2;
+    renderDrawText(label, tx, ty, text_color, 0);
+}
 
-    printf("\x1b[2;1H");
-    printf("  +----+   +----+   +-----+\n");
+static void drawKeyboard(void) {
+    bool upper = shift_active || caps_active;
+    
+    // Row 1: 1 to = and Bksp
+    const char* r1_labels[] = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-", "="};
+    for (int i = 0; i < 12; i++) {
+        int x0 = 4 + i * 18;
+        drawKey(x0, 96, x0 + 16, 116, r1_labels[i], false);
+    }
+    drawKey(220, 96, 252, 116, "Bksp", false);
+    
+    // Row 2: q to backslash
+    const char* r2_labels_low[] = {"q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "[", "]", "\\"};
+    const char* r2_labels_up[]  = {"Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P", "{", "}", "|"};
+    for (int i = 0; i < 13; i++) {
+        int x0 = 4 + i * 19;
+        drawKey(x0, 118, x0 + 17, 138, upper ? r2_labels_up[i] : r2_labels_low[i], false);
+    }
+    
+    // Row 3: Caps, a to ' and Rtrn
+    drawKey(4, 140, 29, 160, "Caps", caps_active);
+    const char* r3_labels_low[] = {"a", "s", "d", "f", "g", "h", "j", "k", "l", ";", "'"};
+    const char* r3_labels_up[]  = {"A", "S", "D", "F", "G", "H", "J", "K", "L", ":", "\""};
+    for (int i = 0; i < 11; i++) {
+        int x0 = 31 + i * 18;
+        drawKey(x0, 140, x0 + 16, 160, upper ? r3_labels_up[i] : r3_labels_low[i], false);
+    }
+    drawKey(229, 140, 253, 160, "Entr", false);
+    
+    // Row 4: Shift, z to /, Space
+    drawKey(4, 162, 29, 182, "Shft", shift_active);
+    const char* r4_labels_low[] = {"z", "x", "c", "v", "b", "n", "m", ",", ".", "/"};
+    const char* r4_labels_up[]  = {"Z", "X", "C", "V", "B", "N", "M", "<", ">", "?"};
+    for (int i = 0; i < 10; i++) {
+        int x0 = 31 + i * 18;
+        drawKey(x0, 162, x0 + 16, 182, upper ? r4_labels_up[i] : r4_labels_low[i], false);
+    }
+    drawKey(211, 162, 254, 182, "Space", false);
+}
 
-    printf("  |");
-    if (active_step == 0) printf("\x1b[7m IP \x1b[0m");
-    else printf(" IP ");
-    printf("|   |");
+void uiDrawBottomForm(int step, const char* input_text) {
+    uint16_t cream = RGB15(28, 29, 28);
+    for (int y = 0; y < 192; y++) {
+        for (int x = 0; x < 256; x++) {
+            canvas_buffer[y * 256 + x] = cream;
+        }
+    }
+    
+    uint16_t grid_color = RGB15(26, 27, 26);
+    for (int y = 0; y < 192; y += 8) {
+        for (int x = 0; x < 256; x += 4) {
+            renderSetPixel(x, y, grid_color);
+        }
+    }
+    for (int x = 0; x < 256; x += 8) {
+        for (int y = 0; y < 192; y += 4) {
+            renderSetPixel(x, y, grid_color);
+        }
+    }
+    
+    for (int y = 8; y <= 34; y++) {
+        for (int x = 10; x <= 246; x++) {
+            canvas_buffer[y * 256 + x] = RGB15(31, 31, 31);
+        }
+    }
+    for (int x = 10; x <= 246; x++) {
+        canvas_buffer[8 * 256 + x] = RGB15(0, 0, 0);
+        canvas_buffer[34 * 256 + x] = RGB15(0, 0, 0);
+    }
+    for (int y = 8; y <= 34; y++) {
+        canvas_buffer[y * 256 + 10] = RGB15(0, 0, 0);
+        canvas_buffer[y * 256 + 246] = RGB15(0, 0, 0);
+    }
+    
+    char label[128];
+    if (step == 0)      sprintf(label, "IP: %s_", input_text);
+    else if (step == 1) sprintf(label, "PORT: %s_", input_text);
+    else if (step == 2) sprintf(label, "SSID: %s_", input_text);
+    renderDrawText(label, 16, 17, RGB15(0, 0, 0), 0);
+    
+    drawKey(10, 42, 70, 62, "IP", (step == 0));
+    drawKey(76, 42, 136, 62, "PORT", (step == 1));
+    drawKey(142, 42, 202, 62, "SSID", (step == 2));
+    
+    drawKeyboard();
+}
 
-    if (active_step == 1) printf("\x1b[7mPORT\x1b[0m");
-    else printf("PORT");
-    printf("|   |");
-
-    if (active_step == 2) printf("\x1b[7mSSID\x1b[0m");
-    else printf("SSID");
-    printf("|  \n");
-
-    printf("  +----+   +----+   +-----+\n");
+char uiHandleKeyboardTouch(int tx, int ty, bool* shift_toggled, bool* caps_toggled, bool* enter_pressed, bool* backspace_pressed) {
+    *shift_toggled = false;
+    *caps_toggled = false;
+    *enter_pressed = false;
+    *backspace_pressed = false;
+    
+    bool upper = shift_active || caps_active;
+    
+    if (ty >= 96 && ty <= 116) {
+        for (int i = 0; i < 12; i++) {
+            int x0 = 4 + i * 18;
+            if (tx >= x0 && tx <= x0 + 16) {
+                const char* r1_labels[] = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-", "="};
+                return r1_labels[i][0];
+            }
+        }
+        if (tx >= 220 && tx <= 252) {
+            *backspace_pressed = true;
+            return 0;
+        }
+    }
+    
+    if (ty >= 118 && ty <= 138) {
+        for (int i = 0; i < 13; i++) {
+            int x0 = 4 + i * 19;
+            if (tx >= x0 && tx <= x0 + 17) {
+                const char* r2_labels_low[] = {"q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "[", "]", "\\"};
+                const char* r2_labels_up[]  = {"Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P", "{", "}", "|"};
+                return upper ? r2_labels_up[i][0] : r2_labels_low[i][0];
+            }
+        }
+    }
+    
+    if (ty >= 140 && ty <= 160) {
+        if (tx >= 4 && tx <= 29) {
+            *caps_toggled = true;
+            caps_active = !caps_active;
+            return 0;
+        }
+        for (int i = 0; i < 11; i++) {
+            int x0 = 31 + i * 18;
+            if (tx >= x0 && tx <= x0 + 16) {
+                const char* r3_labels_low[] = {"a", "s", "d", "f", "g", "h", "j", "k", "l", ";", "'"};
+                const char* r3_labels_up[]  = {"A", "S", "D", "F", "G", "H", "J", "K", "L", ":", "\""};
+                return upper ? r3_labels_up[i][0] : r3_labels_low[i][0];
+            }
+        }
+        if (tx >= 229 && tx <= 253) {
+            *enter_pressed = true;
+            return 0;
+        }
+    }
+    
+    if (ty >= 162 && ty <= 182) {
+        if (tx >= 4 && tx <= 29) {
+            *shift_toggled = true;
+            shift_active = !shift_active;
+            return 0;
+        }
+        for (int i = 0; i < 10; i++) {
+            int x0 = 31 + i * 18;
+            if (tx >= x0 && tx <= x0 + 16) {
+                const char* r4_labels_low[] = {"z", "x", "c", "v", "b", "n", "m", ",", ".", "/"};
+                const char* r4_labels_up[]  = {"Z", "X", "C", "V", "B", "N", "M", "<", ">", "?"};
+                char c = upper ? r4_labels_up[i][0] : r4_labels_low[i][0];
+                if (shift_active) {
+                    shift_active = false;
+                    *shift_toggled = true;
+                }
+                return c;
+            }
+        }
+        if (tx >= 211 && tx <= 254) {
+            if (shift_active) {
+                shift_active = false;
+                *shift_toggled = true;
+            }
+            return ' ';
+        }
+    }
+    
+    return 0;
 }
