@@ -377,11 +377,11 @@ uint16_t hsv_to_rgb15(int h, int s, int v) {
         
         switch (phase) {
             case 0: r = v; g = base + ascending; b = base; break;
-            case 1: r = v - descending; g = v; b = base; break;
+            case 1: r = base + descending; g = v; b = base; break;
             case 2: r = base; g = v; b = base + ascending; break;
-            case 3: r = base; g = v - descending; b = v; break;
+            case 3: r = base; g = base + descending; b = v; break;
             case 4: r = base + ascending; g = base; b = v; break;
-            case 5: r = v; g = base; b = v - descending; break;
+            case 5: r = v; g = base; b = base + descending; break;
         }
     }
     return RGB15(r, g, b);
@@ -532,47 +532,47 @@ void uiOpenModal(int modal_idx) {
             drawModalColorButtonAt(16 + i * 46, 16 + i * 46 + 40, 36, 48, palette_colors[i], (active_color_idx == i));
         }
         
-        // 1. Draw the 2D Hue-Saturation Map: x = 16..136 (width 120), y = 56..116 (height 60)
-        for (int dy = 0; dy < 60; dy++) {
-            int s = 31 - (dy * 31) / 60;
-            for (int dx = 0; dx < 120; dx++) {
-                int h = dx * 3;
-                canvas_buffer[(56 + dy) * 256 + (16 + dx)] = hsv_to_rgb15(h, s, 31);
+        // 1. Draw the 2D Hue-Saturation Map: x = 16..136 (outline), inside: x = 17..135 (width 119), y = 57..115 (height 59)
+        for (int dy = 0; dy < 59; dy++) {
+            int s = 31 - (dy * 31) / 59;
+            for (int dx = 0; dx < 119; dx++) {
+                int h = (dx * 360) / 119;
+                canvas_buffer[(57 + dy) * 256 + (17 + dx)] = hsv_to_rgb15(h, s, 31);
             }
         }
         drawRectOutline(16, 56, 136, 116, RGB15(0, 0, 0));
         
         // Draw Hue-Saturation reticle
-        int reticle_x = 16 + (picker_h * 120) / 360;
-        int reticle_y = 56 + ((31 - picker_s) * 60) / 31;
-        if (reticle_x < 16) reticle_x = 16;
-        if (reticle_x > 136) reticle_x = 136;
-        if (reticle_y < 56) reticle_y = 56;
-        if (reticle_y > 116) reticle_y = 116;
+        int reticle_x = 17 + (picker_h * 119) / 360;
+        int reticle_y = 57 + ((31 - picker_s) * 59) / 31;
+        if (reticle_x < 17) reticle_x = 17;
+        if (reticle_x > 135) reticle_x = 135;
+        if (reticle_y < 57) reticle_y = 57;
+        if (reticle_y > 115) reticle_y = 115;
         uint16_t bg_col = hsv_to_rgb15(picker_h, picker_s, 31);
         int r = bg_col & 31, g = (bg_col >> 5) & 31, b = (bg_col >> 10) & 31;
         uint16_t reticle_color = (r + g + b > 45) ? RGB15(0, 0, 0) : RGB15(31, 31, 31);
         drawCircleOutline(reticle_x, reticle_y, 3, reticle_color);
 
-        // 2. Draw the vertical Preview Swatch: x = 152..176 (width 24), y = 56..116 (height 60)
+        // 2. Draw the vertical Preview Swatch: x = 152..176 (outline), inside: x = 153..175, y = 57..115
         uint16_t preview_color = palette_colors[active_color_idx];
-        drawRect(152, 56, 176, 116, preview_color);
+        drawRect(153, 57, 175, 115, preview_color);
         drawRectOutline(152, 56, 176, 116, RGB15(0, 0, 0));
 
-        // 3. Draw the vertical Value (brightness) slider: x = 192..216 (width 24), y = 56..116 (height 60)
-        for (int dy = 0; dy < 60; dy++) {
-            int v = 31 - (dy * 31) / 60;
+        // 3. Draw the vertical Value (brightness) slider: x = 192..216 (outline), inside: x = 193..215 (width 23), y = 57..115 (height 59)
+        for (int dy = 0; dy < 59; dy++) {
+            int v = 31 - (dy * 31) / 59;
             uint16_t slider_color = hsv_to_rgb15(picker_h, picker_s, v);
-            for (int dx = 0; dx < 24; dx++) {
-                canvas_buffer[(56 + dy) * 256 + (192 + dx)] = slider_color;
+            for (int dx = 0; dx < 23; dx++) {
+                canvas_buffer[(57 + dy) * 256 + (193 + dx)] = slider_color;
             }
         }
         drawRectOutline(192, 56, 216, 116, RGB15(0, 0, 0));
         
         // Draw Value indicator line
-        int v_indicator_y = 56 + ((31 - picker_v) * 60) / 31;
-        if (v_indicator_y < 56) v_indicator_y = 56;
-        if (v_indicator_y > 116) v_indicator_y = 116;
+        int v_indicator_y = 57 + ((31 - picker_v) * 59) / 31;
+        if (v_indicator_y < 57) v_indicator_y = 57;
+        if (v_indicator_y > 115) v_indicator_y = 115;
         drawRect(190, v_indicator_y - 1, 218, v_indicator_y + 1, RGB15(0, 0, 0));
         drawRect(191, v_indicator_y, 217, v_indicator_y, RGB15(31, 31, 31));
         

@@ -326,9 +326,9 @@ void gameUpdate(void) {
                             }
                         }
                     } else if (open_modal == 2) {
-                        if (touch.px >= 16 && touch.px <= 136 && touch.py >= 56 && touch.py <= 116) {
-                            int h = (touch.px - 16) * 3;
-                            int s = 31 - ((touch.py - 56) * 31) / 60;
+                        if (touch.px >= 17 && touch.px <= 135 && touch.py >= 57 && touch.py <= 115) {
+                            int h = ((touch.px - 17) * 360) / 119;
+                            int s = 31 - ((touch.py - 57) * 31) / 59;
                             if (h < 0) h = 0;
                             if (h > 360) h = 360;
                             if (s < 0) s = 0;
@@ -341,8 +341,8 @@ void gameUpdate(void) {
                                 uiUpdateColorPickerSelection();
                                 uiDrawToolbar();
                             }
-                        } else if (touch.px >= 192 && touch.px <= 216 && touch.py >= 56 && touch.py <= 116) {
-                            int v = 31 - ((touch.py - 56) * 31) / 60;
+                        } else if (touch.px >= 193 && touch.px <= 215 && touch.py >= 57 && touch.py <= 115) {
+                            int v = 31 - ((touch.py - 57) * 31) / 59;
                             if (v < 0) v = 0;
                             if (v > 31) v = 31;
                             if (picker_v != v) {
@@ -513,9 +513,9 @@ void gameUpdate(void) {
                                 }
                             }
                             // 3. Check 2D Hue-Saturation Map or Value slider
-                            else if (prev_x >= 16 && prev_x <= 136 && prev_y >= 56 && prev_y <= 116) {
-                                int h = (prev_x - 16) * 3;
-                                int s = 31 - ((prev_y - 56) * 31) / 60;
+                            else if (prev_x >= 17 && prev_x <= 135 && prev_y >= 57 && prev_y <= 115) {
+                                int h = ((prev_x - 17) * 360) / 119;
+                                int s = 31 - ((prev_y - 57) * 31) / 59;
                                 if (h < 0) h = 0;
                                 if (h > 360) h = 360;
                                 if (s < 0) s = 0;
@@ -527,8 +527,8 @@ void gameUpdate(void) {
                                 uiUpdateColorPickerSelection();
                                 uiDrawToolbar();
                             }
-                            else if (prev_x >= 192 && prev_x <= 216 && prev_y >= 56 && prev_y <= 116) {
-                                int v = 31 - ((prev_y - 56) * 31) / 60;
+                            else if (prev_x >= 193 && prev_x <= 215 && prev_y >= 57 && prev_y <= 115) {
+                                int v = 31 - ((prev_y - 57) * 31) / 59;
                                 if (v < 0) v = 0;
                                 if (v > 31) v = 31;
                                 picker_v = v;
