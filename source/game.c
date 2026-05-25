@@ -323,7 +323,7 @@ void gameUpdate(void) {
                                 picker_y = touch.py;
                                 extern uint16_t getSpectrumColor(int dx, int dy, int width, int height);
                                 palette_colors[active_color_idx] = getSpectrumColor(picker_x - 64, picker_y - 54, 128, 61);
-                                uiOpenModal(2);
+                                uiUpdateColorPickerSelection();
                                 uiDrawToolbar();
                             }
                         }
@@ -476,25 +476,24 @@ void gameUpdate(void) {
                                 extern uint16_t getSpectrumColor(int dx, int dy, int width, int height);
                                 palette_colors[active_color_idx] = getSpectrumColor(picker_x - 64, picker_y - 54, 128, 61);
                                 is_eraser = false;
-                                uiOpenModal(2);
+                                uiUpdateColorPickerSelection();
                                 uiDrawToolbar();
                             }
                             // 4. Check bottom area (y = 120..170)
                             else if (prev_y >= 120 && prev_y <= 170) {
                                 if (color_modal_tab == 0) {
                                     // PRESETS page buttons:
-                                    // Preset buttons: slot i (0..3) -> x0 = 12 + i * 44, x1 = x0 + 38, y = 134..152
+                                    // Preset buttons: slot i (0..4) -> x0 = 12 + i * 48, x1 = x0 + 38, y = 134..152
                                     if (prev_y >= 134 && prev_y <= 152) {
-                                        if (prev_x >= 12 && prev_x <= 186) {
-                                            for (int i = 0; i < 4; i++) {
-                                                int x0 = 12 + i * 44;
+                                        if (prev_x >= 12 && prev_x <= 242) {
+                                            for (int i = 0; i < 5; i++) {
+                                                int x0 = 12 + i * 48;
                                                 int x1 = x0 + 38;
                                                 if (prev_x >= x0 && prev_x <= x1) {
-                                                    int preset_idx = preset_page * 4 + i;
+                                                    int preset_idx = preset_page * 5 + i;
                                                     if (preset_idx < 20) {
                                                         memcpy(palette_colors, preset_palettes[preset_idx], sizeof(palette_colors));
                                                         is_eraser = false;
-                                                        
                                                         uiUpdatePickerPosFromActiveColor();
                                                         uiOpenModal(2);
                                                         uiDrawToolbar();
@@ -503,27 +502,30 @@ void gameUpdate(void) {
                                                 }
                                             }
                                         }
-                                        // Prev button <- (x = 192..214)
-                                        else if (prev_x >= 192 && prev_x <= 214) {
+                                    }
+                                    // Prev / Next button -> y = 154..170
+                                    else if (prev_y >= 154 && prev_y <= 170) {
+                                        // Prev button <- (x = 74..114)
+                                        if (prev_x >= 74 && prev_x <= 114) {
                                             preset_page--;
-                                            if (preset_page < 0) preset_page = 4;
+                                            if (preset_page < 0) preset_page = 3;
                                             uiOpenModal(2);
                                         }
-                                        // Next button -> (x = 222..244)
-                                        else if (prev_x >= 222 && prev_x <= 244) {
+                                        // Next button -> (x = 142..182)
+                                        else if (prev_x >= 142 && prev_x <= 182) {
                                             preset_page++;
-                                            if (preset_page > 4) preset_page = 0;
+                                            if (preset_page > 3) preset_page = 0;
                                             uiOpenModal(2);
                                         }
                                     }
                                 } else {
                                     // MIS PALETAS:
-                                    // Slots buttons: slot i (0..4) -> x0 = 12 + i * 36, x1 = x0 + 30, y = 134..152
+                                    // Slots buttons: slot i (0..4) -> x0 = 12 + i * 48, x1 = x0 + 38, y = 134..152
                                     if (prev_y >= 134 && prev_y <= 152) {
-                                        if (prev_x >= 12 && prev_x <= 186) {
+                                        if (prev_x >= 12 && prev_x <= 242) {
                                             for (int i = 0; i < 5; i++) {
-                                                int x0 = 12 + i * 36;
-                                                int x1 = x0 + 30;
+                                                int x0 = 12 + i * 48;
+                                                int x1 = x0 + 38;
                                                 if (prev_x >= x0 && prev_x <= x1) {
                                                     selected_custom_slot = i;
                                                     int global_idx = custom_page * 5 + i;
@@ -547,8 +549,8 @@ void gameUpdate(void) {
                                             uiOpenModal(2);
                                             uiDrawToolbar();
                                         }
-                                        // Prev button <- (x = 182..204)
-                                        else if (prev_x >= 182 && prev_x <= 204) {
+                                        // Prev button <- (x = 114..144)
+                                        else if (prev_x >= 114 && prev_x <= 144) {
                                             custom_page--;
                                             if (custom_page < 0) custom_page = 9;
                                             int global_idx = custom_page * 5 + selected_custom_slot;
@@ -557,8 +559,8 @@ void gameUpdate(void) {
                                             uiOpenModal(2);
                                             uiDrawToolbar();
                                         }
-                                        // Next button -> (x = 212..234)
-                                        else if (prev_x >= 212 && prev_x <= 234) {
+                                        // Next button -> (x = 174..204)
+                                        else if (prev_x >= 174 && prev_x <= 204) {
                                             custom_page++;
                                             if (custom_page > 9) custom_page = 0;
                                             int global_idx = custom_page * 5 + selected_custom_slot;
