@@ -1056,6 +1056,7 @@ void gameUpdate(void) {
                 }
                 
                 if (touch_started_in_toolbar && prev_y >= 176) {
+                    bool was_open = layers_panel_open;
                     layers_panel_open = false;
                     
                     if (prev_x >= 0 && prev_x < 42) {
@@ -1074,6 +1075,11 @@ void gameUpdate(void) {
                         enterWizardState();
                     } else if (prev_x >= 212 && prev_x <= 255) {
                         current_state = STATE_UPLOAD;
+                    }
+                    
+                    if (was_open) {
+                        renderComposeCanvas();
+                        renderUpdatePreview();
                     }
                 }
             }
