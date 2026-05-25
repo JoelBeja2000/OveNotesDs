@@ -69,7 +69,7 @@ static void fillButtonBg(int x_start, int x_end, uint16_t color) {
     }
 }
 
-static uint16_t modal_backup[256 * 156];
+uint16_t modal_backup[256 * 156];
 int open_modal = -1;
 
 static void getModalYRange(int modal, int* y0, int* y1) {
@@ -772,6 +772,55 @@ void uiOpenModal(int modal_idx) {
         int end_y = cy + (int)(sinf(rad) * 26.0f);
         drawLine(cx, cy, end_x, end_y, RGB15(31, 0, 0));
     }
+}
+
+static void drawFilledCircle(int xm, int ym, int r, uint16_t color) {
+    int x = -r, y = 0, err = 2-2*r;
+    do {
+        for (int i = xm + x; i <= xm - x; i++) {
+            if (i >= 0 && i < 256 && ym + y >= 0 && ym + y < 192) {
+                canvas_buffer[(ym + y) * 256 + i] = color;
+            }
+            if (i >= 0 && i < 256 && ym - y >= 0 && ym - y < 192) {
+                canvas_buffer[(ym - y) * 256 + i] = color;
+            }
+        }
+        r = err;
+        if (r <= y) err += ++y*2+1;
+        if (r > x || err > y) err += ++x*2+1;
+    } while (x < 0);
+}
+
+void uiUpdateAngleWheelVisuals(void) {
+    if (open_modal != 4) return;
+    
+    uint16_t light_grey = RGB15(28, 28, 28);
+    
+    // Clear old text area and redraw it
+    drawRect(16, 96, 220, 104, light_grey);
+    char label[32];
+    if (angle_target == 1) {
+        sprintf(label, "ROTACION FONDO: %d", bg_angle);
+    } else {
+        sprintf(label, "ANGULO DE LA PLUMA: %d", nib_angle);
+    }
+    renderDrawText(label, 16, 96, RGB15(0, 0, 0), 0);
+    
+    // Clear circle interior only (radius 27)
+    int cx = 128;
+    int cy = 132;
+    drawFilledCircle(cx, cy, 27, light_grey);
+    
+    // Redraw crosshair inside circle
+    drawRect(cx - 2, cy, cx + 2, cy, RGB15(15, 15, 15));
+    drawRect(cx, cy - 2, cx, cy + 2, RGB15(15, 15, 15));
+    
+    // Draw the new angle line
+    int current_angle = (angle_target == 1) ? bg_angle : nib_angle;
+    float rad = current_angle * 3.14159265f / 180.0f;
+    int end_x = cx + (int)(cosf(rad) * 26.0f);
+    int end_y = cy + (int)(sinf(rad) * 26.0f);
+    drawLine(cx, cy, end_x, end_y, RGB15(31, 0, 0));
 }
 
 void uiCloseModal(void) {

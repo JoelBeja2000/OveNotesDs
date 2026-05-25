@@ -348,15 +348,12 @@ void gameUpdate(void) {
                                     bg_angle = angle;
                                     renderApplyBackgroundPattern(bg_pattern_idx);
                                     renderComposeCanvas();
-                                    uiUpdateModalBackup();
-                                    uiOpenModal(4);
-                                    uiDrawToolbar();
+                                    uiUpdateAngleWheelVisuals();
                                 }
                             } else {
                                 if (nib_angle != angle) {
                                     nib_angle = angle;
-                                    uiOpenModal(4);
-                                    uiDrawToolbar();
+                                    uiUpdateAngleWheelVisuals();
                                 }
                             }
                         }
@@ -463,12 +460,10 @@ void gameUpdate(void) {
                                     bg_angle = angle;
                                     renderApplyBackgroundPattern(bg_pattern_idx);
                                     renderComposeCanvas();
-                                    uiUpdateModalBackup();
                                 } else {
                                     nib_angle = angle;
                                 }
-                                uiOpenModal(4);
-                                uiDrawToolbar();
+                                uiUpdateAngleWheelVisuals();
                             }
                         } else if (open_modal == 2) { // COLOR
                             // 1. Check tab bar (y = 20..32)

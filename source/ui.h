@@ -16,6 +16,7 @@ extern bool is_eraser;
 extern uint16_t palette_colors[5];
 
 extern int open_modal;
+extern uint16_t modal_backup[256 * 156];
 
 extern int preset_page;
 extern int custom_page;
@@ -35,6 +36,7 @@ void uiCloseModal(void);
 void uiUpdateModalBackup(void);
 void uiUpdatePickerPosFromActiveColor(void);
 void uiUpdateColorPickerSelection(void);
+void uiUpdateAngleWheelVisuals(void);
 void uiDrawFormUI(int step, const char* input_text);
 void uiDrawBottomForm(int step, const char* input_text);
 char uiHandleKeyboardTouch(int tx, int ty, bool* shift_toggled, bool* caps_toggled, bool* enter_pressed, bool* backspace_pressed);

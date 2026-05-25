@@ -188,6 +188,16 @@ uint16_t getActualSecondaryColor(void) {
     return s;
 }
 
+static inline void writePixel(int x, int y, uint16_t color) {
+    if (open_modal == 4 && y >= 90) {
+        if (y < 176) {
+            modal_backup[(y - 90) * 256 + x] = color;
+        }
+    } else {
+        canvas_buffer[y * 256 + x] = color;
+    }
+}
+
 static void drawPerspectiveLine(int x0, int y0, int x1, int y1, uint16_t color) {
     int dx = abs(x1 - x0);
     int dy = abs(y1 - y0);
@@ -200,7 +210,7 @@ static void drawPerspectiveLine(int x0, int y0, int x1, int y1, uint16_t color) 
         if (x0 >= 0 && x0 < 256 && y0 >= 0 && y0 < limit_y) {
             // Only draw if drawing_buffer is white (user has not drawn there)
             if (drawing_buffer[y0 * 256 + x0] == RGB15(31, 31, 31)) {
-                canvas_buffer[y0 * 256 + x0] = color;
+                writePixel(x0, y0, color);
             }
         }
         if (x0 == x1 && y0 == y1) break;
@@ -236,13 +246,13 @@ static void drawPerspectiveCrosshair(int cx, int cy, uint16_t color) {
     for (int dx = -2; dx <= 2; dx++) {
         int x = cx + dx;
         if (x >= 0 && x < 256 && cy >= 0 && cy < limit_y) {
-            canvas_buffer[cy * 256 + x] = color;
+            writePixel(x, cy, color);
         }
     }
     for (int dy = -2; dy <= 2; dy++) {
         int y = cy + dy;
         if (cx >= 0 && cx < 256 && y >= 0 && y < limit_y) {
-            canvas_buffer[y * 256 + cx] = color;
+            writePixel(cx, y, color);
         }
     }
 }
@@ -253,9 +263,15 @@ void renderComposeCanvas(void) {
     int limit_y = toolbar_hidden ? 192 : 176;
     
     if (bg_modifiable) {
-        // Just copy drawing_buffer to canvas_buffer
+        // Just copy drawing_buffer to canvas_buffer/modal_backup
         for (int y = 0; y < limit_y; y++) {
-            memcpy(&canvas_buffer[y * 256], &drawing_buffer[y * 256], 256 * sizeof(uint16_t));
+            if (open_modal == 4 && y >= 90) {
+                if (y < 176) {
+                    memcpy(&modal_backup[(y - 90) * 256], &drawing_buffer[y * 256], 256 * sizeof(uint16_t));
+                }
+            } else {
+                memcpy(&canvas_buffer[y * 256], &drawing_buffer[y * 256], 256 * sizeof(uint16_t));
+            }
         }
     } else {
         // Locked mode: combine user drawings with background on the fly
@@ -272,8 +288,18 @@ void renderComposeCanvas(void) {
         }
         
         for (int y = 0; y < limit_y; y++) {
+            uint16_t* dest_row = NULL;
+            if (open_modal == 4 && y >= 90) {
+                if (y < 176) {
+                    dest_row = &modal_backup[(y - 90) * 256];
+                }
+            } else {
+                dest_row = &canvas_buffer[y * 256];
+            }
+            
             for (int x = 0; x < 256; x++) {
                 uint16_t user_pixel = drawing_buffer[y * 256 + x];
+                uint16_t final_pixel = user_pixel;
                 if (user_pixel == RGB15(31, 31, 31)) {
                     uint16_t pixel_color = p_color;
                     
@@ -318,9 +344,10 @@ void renderComposeCanvas(void) {
                             pixel_color = red_margin;
                         }
                     }
-                    canvas_buffer[y * 256 + x] = pixel_color;
-                } else {
-                    canvas_buffer[y * 256 + x] = user_pixel;
+                    final_pixel = pixel_color;
+                }
+                if (dest_row != NULL) {
+                    dest_row[x] = final_pixel;
                 }
             }
         }
