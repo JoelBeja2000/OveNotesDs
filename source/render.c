@@ -230,9 +230,10 @@ static void drawPerspectiveLine(int x0, int y0, int x1, int y1, uint16_t color) 
     int sy = (y0 < y1) ? 1 : -1;
     int err = dx - dy;
     int limit_y = toolbar_hidden ? 192 : 176;
+    int max_x = layers_panel_open ? 144 : 256;
 
     while (1) {
-        if (x0 >= 0 && x0 < 256 && y0 >= 0 && y0 < limit_y) {
+        if (x0 >= 0 && x0 < max_x && y0 >= 0 && y0 < limit_y) {
             // Only draw if drawing_buffer is white (user has not drawn there)
             if (drawing_buffer[y0 * 256 + x0] == RGB15(31, 31, 31)) {
                 writePixel(x0, y0, color);
@@ -268,15 +269,16 @@ static void drawPerspectiveCurve(int x0, int y0, int cx, int cy, int x1, int y1,
 
 static void drawPerspectiveCrosshair(int cx, int cy, uint16_t color) {
     int limit_y = toolbar_hidden ? 192 : 176;
+    int max_x = layers_panel_open ? 144 : 256;
     for (int dx = -2; dx <= 2; dx++) {
         int x = cx + dx;
-        if (x >= 0 && x < 256 && cy >= 0 && cy < limit_y) {
+        if (x >= 0 && x < max_x && cy >= 0 && cy < limit_y) {
             writePixel(x, cy, color);
         }
     }
     for (int dy = -2; dy <= 2; dy++) {
         int y = cy + dy;
-        if (cx >= 0 && cx < 256 && y >= 0 && y < limit_y) {
+        if (cx >= 0 && cx < max_x && y >= 0 && y < limit_y) {
             writePixel(cx, y, color);
         }
     }
@@ -285,7 +287,10 @@ static void drawPerspectiveCrosshair(int cx, int cy, uint16_t color) {
 void renderComposeCanvas(void) {
     if (canvas_buffer == NULL) return;
     
+    swiWaitForVBlank();
+    
     int limit_y = toolbar_hidden ? 192 : 176;
+    int max_x = layers_panel_open ? 144 : 256;
     
     for (int y = 0; y < limit_y; y++) {
         uint16_t* dest_row = NULL;
@@ -298,7 +303,7 @@ void renderComposeCanvas(void) {
         }
         
         if (dest_row != NULL) {
-            for (int x = 0; x < 256; x++) {
+            for (int x = 0; x < max_x; x++) {
                 dest_row[x] = renderGetComposedPixel(x, y);
             }
         }

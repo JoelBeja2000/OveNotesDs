@@ -1189,6 +1189,9 @@ void gameUpdate(void) {
                 if (prev_x >= 10 && prev_x <= 90 && prev_y >= 44 && prev_y <= 62) {
                     current_state = STATE_DRAW;
                     renderComposeCanvas();
+                    if (!toolbar_hidden) {
+                        uiDrawToolbar();
+                    }
                     was_touching = false;
                     return;
                 }
@@ -1198,6 +1201,9 @@ void gameUpdate(void) {
                     layer_names[rename_layer_idx][15] = '\0';
                     current_state = STATE_DRAW;
                     renderComposeCanvas();
+                    if (!toolbar_hidden) {
+                        uiDrawToolbar();
+                    }
                     was_touching = false;
                     return;
                 }
@@ -1217,6 +1223,9 @@ void gameUpdate(void) {
                         layer_names[rename_layer_idx][15] = '\0';
                         current_state = STATE_DRAW;
                         renderComposeCanvas();
+                        if (!toolbar_hidden) {
+                            uiDrawToolbar();
+                        }
                         was_touching = false;
                         return;
                     } else if (backspace_pressed) {
@@ -1243,12 +1252,18 @@ void gameUpdate(void) {
             layer_names[rename_layer_idx][15] = '\0';
             current_state = STATE_DRAW;
             renderComposeCanvas();
+            if (!toolbar_hidden) {
+                uiDrawToolbar();
+            }
             was_touching = false;
             return;
         }
         if (keys_down & KEY_B) {
             current_state = STATE_DRAW;
             renderComposeCanvas();
+            if (!toolbar_hidden) {
+                uiDrawToolbar();
+            }
             was_touching = false;
             return;
         }
