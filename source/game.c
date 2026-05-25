@@ -108,11 +108,7 @@ static void enterWizardState(void) {
 
 static void exitWizardState(bool canceled) {
     if (!canceled) {
-        if (wizard_step == 0)      strcpy(http_ip, current_input);
-        else if (wizard_step == 1) strcpy(http_port_str, current_input);
-        else if (wizard_step == 2) strcpy(wifi_ssid, current_input);
         netSaveConfig();
-        netDisconnect();
     }
     printf("[GAME] Saliendo de exitWizardState (cancelado: %d, IP: %s, Puerto: %s, SSID: %s)\n", canceled, http_ip, http_port_str, wifi_ssid);
     
@@ -147,13 +143,13 @@ static void exitWizardState(bool canceled) {
         printf("[GAME] Backups restaurados y liberados\n");
     }
     
+    printf("\x1b[2J");
     if (canceled) {
-        printf("\x1b[2J");
-        printf("Envio cancelado.\n");
-        current_state = STATE_DRAW;
+        printf("Configuracion cancelada.\n");
     } else {
-        current_state = STATE_UPLOAD;
+        printf("Configuracion guardada.\n");
     }
+    current_state = STATE_DRAW;
 }
 
 static void runUpload(void) {
@@ -342,7 +338,10 @@ void gameUpdate(void) {
                         if (wizard_step < 2) {
                             changeWizardStep(wizard_step + 1);
                         } else {
-                            strcpy(wifi_ssid, current_input);
+                            if (strcmp(wifi_ssid, current_input) != 0) {
+                                strcpy(wifi_ssid, current_input);
+                                netDisconnect();
+                            }
                             exitWizardState(false);
                             return;
                         }
@@ -379,7 +378,12 @@ void gameUpdate(void) {
         if (keys_down & KEY_A) {
             if (wizard_step == 0)      strcpy(http_ip, current_input);
             else if (wizard_step == 1) strcpy(http_port_str, current_input);
-            else if (wizard_step == 2) strcpy(wifi_ssid, current_input);
+            else if (wizard_step == 2) {
+                if (strcmp(wifi_ssid, current_input) != 0) {
+                    strcpy(wifi_ssid, current_input);
+                    netDisconnect();
+                }
+            }
             exitWizardState(false);
             return;
         }
