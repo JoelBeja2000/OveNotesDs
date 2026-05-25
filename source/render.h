@@ -21,6 +21,7 @@ extern int active_layer_idx;
 extern bool layers_visible[MAX_LAYERS];
 extern bool layers_panel_open;
 extern int dragging_layer_idx;
+extern char layer_names[MAX_LAYERS][16];
 
 void renderAddLayer(void);
 void renderDeleteLayer(int idx);

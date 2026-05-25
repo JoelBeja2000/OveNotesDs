@@ -17,6 +17,9 @@ int active_layer_idx = 0;
 bool layers_visible[MAX_LAYERS] = {false};
 bool layers_panel_open = false;
 int dragging_layer_idx = -1;
+char layer_names[MAX_LAYERS][16] = {
+    "Capa 0", "Capa 1", "Capa 2", "Capa 3", "Capa 4", "Capa 5", "Capa 6", "Capa 7"
+};
 bool toolbar_hidden = false;
 
 bool bg_modifiable = false;
@@ -655,6 +658,7 @@ void renderInitCanvas(void) {
             layers[i] = NULL;
         }
         layers_visible[i] = false;
+        sprintf(layer_names[i], "Capa %d", i);
     }
     
     layers[0] = (uint16_t*)malloc(256 * 192 * sizeof(uint16_t));
@@ -685,6 +689,7 @@ void renderAddLayer(void) {
     
     layers[layers_count] = new_layer;
     layers_visible[layers_count] = true;
+    sprintf(layer_names[layers_count], "Capa %d", layers_count);
     active_layer_idx = layers_count;
     drawing_buffer = layers[active_layer_idx];
     layers_count++;
@@ -704,9 +709,11 @@ void renderDeleteLayer(int idx) {
     for (int i = idx; i < layers_count - 1; i++) {
         layers[i] = layers[i + 1];
         layers_visible[i] = layers_visible[i + 1];
+        strcpy(layer_names[i], layer_names[i + 1]);
     }
     layers[layers_count - 1] = NULL;
     layers_visible[layers_count - 1] = false;
+    sprintf(layer_names[layers_count - 1], "Capa %d", layers_count - 1);
     layers_count--;
     
     if (active_layer_idx >= layers_count) {

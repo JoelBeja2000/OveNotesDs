@@ -1393,30 +1393,30 @@ static void uiDrawLayersSidebar(void) {
     uint16_t border_col = RGB15(0, 0, 0);
     uint16_t text_col = RGB15(31, 31, 31);
     
-    // Fill sidebar region: x = 160..255, y = 0..176
+    // Fill sidebar region: x = 144..255, y = 0..176
     for (int y = 0; y < 176; y++) {
-        for (int x = 160; x < 256; x++) {
+        for (int x = 144; x < 256; x++) {
             canvas_buffer[y * 256 + x] = panel_bg;
         }
-        canvas_buffer[y * 256 + 159] = border_col;
+        canvas_buffer[y * 256 + 143] = border_col;
     }
     
     // Header title "CAPAS"
-    renderDrawText("CAPAS", 164, 2, text_col, 0);
+    renderDrawText("CAPAS", 148, 2, text_col, 0);
     
     // Close button "X" (red on dark red) at x = 236..252, y = 1..11
     drawRect(236, 1, 252, 11, RGB15(15, 3, 3));
     drawRectOutline(236, 1, 252, 11, border_col);
     renderDrawText("X", 241, 2, RGB15(31, 10, 10), 0);
     
-    // "+ CAPA" button at x = 164..252, y = 14..24
+    // "+ CAPA" button at x = 148..252, y = 14..24
     if (layers_count < MAX_LAYERS) {
-        drawRect(164, 14, 252, 24, RGB15(5, 18, 5));
-        drawRectOutline(164, 14, 252, 24, border_col);
+        drawRect(148, 14, 252, 24, RGB15(5, 18, 5));
+        drawRectOutline(148, 14, 252, 24, border_col);
         renderDrawText("+ CAPA", 182, 16, RGB15(20, 31, 20), 0);
     } else {
-        drawRect(164, 14, 252, 24, RGB15(12, 12, 12));
-        drawRectOutline(164, 14, 252, 24, border_col);
+        drawRect(148, 14, 252, 24, RGB15(12, 12, 12));
+        drawRectOutline(148, 14, 252, 24, border_col);
         renderDrawText("LLENO", 188, 16, RGB15(18, 18, 18), 0);
     }
     
@@ -1425,15 +1425,15 @@ static void uiDrawLayersSidebar(void) {
         int idx_from_top = layers_count - 1 - i;
         int y_pos = 27 + idx_from_top * 14;
         
-        // Drag handle: circle at cx = 167, cy = y_pos + 6
+        // Drag handle: circle at cx = 151, cy = y_pos + 6
         uint16_t circle_col = (dragging_layer_idx == i) ? RGB15(31, 31, 10) : RGB15(18, 18, 20);
         // Draw filled circle (radius 2)
         for (int dy = -2; dy <= 2; dy++) {
             for (int dx = -2; dx <= 2; dx++) {
                 if (dx*dx + dy*dy <= 5) {
-                    int px = 167 + dx;
+                    int px = 151 + dx;
                     int py = y_pos + 6 + dy;
-                    if (px >= 160 && px < 256 && py >= 0 && py < 192) {
+                    if (px >= 144 && px < 256 && py >= 0 && py < 192) {
                         canvas_buffer[py * 256 + px] = circle_col;
                     }
                 }
@@ -1443,27 +1443,28 @@ static void uiDrawLayersSidebar(void) {
         for (int dy = -3; dy <= 3; dy++) {
             for (int dx = -3; dx <= 3; dx++) {
                 if (dx*dx + dy*dy > 5 && dx*dx + dy*dy <= 10) {
-                    int px = 167 + dx;
+                    int px = 151 + dx;
                     int py = y_pos + 6 + dy;
-                    if (px >= 160 && px < 256 && py >= 0 && py < 192) {
+                    if (px >= 144 && px < 256 && py >= 0 && py < 192) {
                         canvas_buffer[py * 256 + px] = border_col;
                     }
                 }
             }
         }
         
-        // Active indicator / selection button: x = 174..212, y = y_pos..y_pos+12
+        // Active indicator / selection button: x = 158..212, y = y_pos..y_pos+12
         bool is_active = (active_layer_idx == i);
         uint16_t btn_bg = is_active ? RGB15(4, 10, 24) : RGB15(12, 12, 14);
         uint16_t btn_border = is_active ? RGB15(10, 16, 31) : border_col;
         uint16_t btn_txt = is_active ? RGB15(20, 25, 31) : text_col;
         
-        drawRect(174, y_pos, 212, y_pos + 12, btn_bg);
-        drawRectOutline(174, y_pos, 212, y_pos + 12, btn_border);
+        drawRect(158, y_pos, 212, y_pos + 12, btn_bg);
+        drawRectOutline(158, y_pos, 212, y_pos + 12, btn_border);
         
-        char layer_name[16];
-        sprintf(layer_name, "C%d", i);
-        renderDrawText(layer_name, 182, y_pos + 2, btn_txt, 0);
+        char disp_name[7];
+        strncpy(disp_name, layer_names[i], 6);
+        disp_name[6] = '\0';
+        renderDrawText(disp_name, 162, y_pos + 2, btn_txt, 0);
         
         // Visibility toggle button: x = 216..232, y = y_pos..y_pos+12
         bool is_visible = layers_visible[i];
@@ -1488,9 +1489,9 @@ static void uiDrawLayersSidebar(void) {
     
     // Draw "FONDO" item at bg_y = 27 + layers_count * 14
     int bg_y = 27 + layers_count * 14;
-    drawRect(164, bg_y, 212, bg_y + 12, RGB15(12, 12, 14));
-    drawRectOutline(164, bg_y, 212, bg_y + 12, border_col);
-    renderDrawText("FONDO", 168, bg_y + 2, text_col, 0);
+    drawRect(148, bg_y, 212, bg_y + 12, RGB15(12, 12, 14));
+    drawRectOutline(148, bg_y, 212, bg_y + 12, border_col);
+    renderDrawText("FONDO", 158, bg_y + 2, text_col, 0);
     
     // Lock toggle: x = 216..252, y = bg_y..bg_y+12
     drawRect(216, bg_y, 252, bg_y + 12, bg_modifiable ? RGB15(5, 18, 5) : RGB15(20, 5, 5));
@@ -1503,9 +1504,9 @@ static void uiDrawLayersSidebar(void) {
     uint16_t merge_bg = can_merge ? RGB15(22, 12, 3) : RGB15(8, 8, 8);
     uint16_t merge_txt = can_merge ? RGB15(31, 20, 10) : RGB15(15, 15, 15);
     
-    drawRect(164, 157, 252, 169, merge_bg);
-    drawRectOutline(164, 157, 252, 169, border_col);
-    renderDrawText("COMBINAR", 182, 160, merge_txt, 0);
+    drawRect(148, 157, 252, 169, merge_bg);
+    drawRectOutline(148, 157, 252, 169, border_col);
+    renderDrawText("COMBINAR", 180, 160, merge_txt, 0);
 }
 
 void uiDrawLayersOverlay(void) {
@@ -1527,4 +1528,50 @@ void uiDrawLayersOverlay(void) {
         
         renderDrawText("<", 247, 96, RGB15(31, 31, 31), 0);
     }
+}
+
+void uiDrawRenameKeyboard(const char* input_text) {
+    uint16_t cream = RGB15(28, 29, 28);
+    for (int y = 0; y < 192; y++) {
+        for (int x = 0; x < 256; x++) {
+            canvas_buffer[y * 256 + x] = cream;
+        }
+    }
+    
+    uint16_t grid_color = RGB15(26, 27, 26);
+    for (int y = 0; y < 192; y += 8) {
+        for (int x = 0; x < 256; x += 4) {
+            renderSetPixel(x, y, grid_color);
+        }
+    }
+    for (int x = 0; x < 256; x += 8) {
+        for (int y = 0; y < 192; y += 4) {
+            renderSetPixel(x, y, grid_color);
+        }
+    }
+    
+    // Header banner: "RENOMBRAR CAPA"
+    drawRect(0, 0, 255, 12, RGB15(12, 12, 12));
+    renderDrawText("RENOMBRAR CAPA", 8, 2, RGB15(31, 31, 31), 0);
+    
+    // Text input box outline and fill
+    for (int y = 16; y <= 38; y++) {
+        for (int x = 10; x <= 246; x++) {
+            canvas_buffer[y * 256 + x] = RGB15(31, 31, 31);
+        }
+    }
+    drawRectOutline(10, 16, 246, 38, RGB15(0, 0, 0));
+    
+    char label[128];
+    sprintf(label, "%s_", input_text);
+    renderDrawText(label, 16, 23, RGB15(0, 0, 0), 0);
+    
+    // Cancel & Save Buttons:
+    // Cancel (B) at x = 10..90, y = 44..62
+    drawKey(10, 44, 90, 62, "CANCEL (B)", false);
+    
+    // Save (A) at x = 166..246, y = 44..62
+    drawKey(166, 44, 246, 62, "SAVE (A)", false);
+    
+    drawKeyboard();
 }

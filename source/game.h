@@ -7,6 +7,7 @@ typedef enum {
     STATE_DRAW,
     STATE_WIZARD,
     STATE_UPLOAD,
+    STATE_RENAME_LAYER,
 } GameState;
 
 extern GameState current_state;

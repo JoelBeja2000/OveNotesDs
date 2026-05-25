@@ -18,6 +18,9 @@ static int input_len = 0;
 static int wizard_step = 0;
 static uint16_t* backup_canvas = NULL;
 static uint16_t* backup_preview = NULL;
+static int rename_layer_idx = 0;
+static char rename_input[16] = "";
+static int rename_input_len = 0;
 static bool was_touching = false;
 static bool touch_started_in_toolbar = false;
 static int prev_x = 0;
@@ -866,8 +869,8 @@ void gameUpdate(void) {
             if (!was_touching) {
                 touch_started_in_toolbar = !toolbar_hidden && (touch.py >= 176);
                 
-                // Track drag-and-drop start on circle drag handle (x = 162..172)
-                if (layers_panel_open && !touch_started_in_toolbar && touch.px >= 162 && touch.px <= 172) {
+                // Track drag-and-drop start on circle drag handle (x = 146..156)
+                if (layers_panel_open && !touch_started_in_toolbar && touch.px >= 146 && touch.px <= 156) {
                     for (int i = 0; i < layers_count; i++) {
                         int idx_from_top = layers_count - 1 - i;
                         int y_pos = 27 + idx_from_top * 14;
@@ -892,6 +895,12 @@ void gameUpdate(void) {
                             uint16_t* tmp_buf = layers[dragging_layer_idx];
                             layers[dragging_layer_idx] = layers[j];
                             layers[j] = tmp_buf;
+                            
+                            // Swap layer name
+                            char tmp_name[16];
+                            memcpy(tmp_name, layer_names[dragging_layer_idx], 16);
+                            memcpy(layer_names[dragging_layer_idx], layer_names[j], 16);
+                            memcpy(layer_names[j], tmp_name, 16);
                             
                             // Swap visibility
                             bool tmp_vis = layers_visible[dragging_layer_idx];
@@ -919,7 +928,7 @@ void gameUpdate(void) {
             int limit_y = toolbar_hidden ? 192 : 176;
             if (touch.py < limit_y) {
                 if (!touch_started_in_toolbar) {
-                    bool ignore_draw = (layers_panel_open && touch.px >= 160) || (dragging_layer_idx != -1);
+                    bool ignore_draw = (layers_panel_open && touch.px >= 144) || (dragging_layer_idx != -1);
                     if (!ignore_draw) {
                         if (is_bucket) {
                             if (!was_touching) {
@@ -929,7 +938,7 @@ void gameUpdate(void) {
                         } else {
                             uint16_t draw_color = is_eraser ? RGB15(31, 31, 31) : palette_colors[active_color_idx];
                             if (was_touching && prev_y < limit_y) {
-                                if (!layers_panel_open || (prev_x < 160 && touch.px < 160)) {
+                                if (!layers_panel_open || (prev_x < 144 && touch.px < 144)) {
                                     renderDrawLine(prev_x, prev_y, touch.px, touch.py, draw_color, is_eraser ? eraser_size : active_brush_size, is_eraser);
                                 }
                             } else {
@@ -966,20 +975,20 @@ void gameUpdate(void) {
                 
                 bool sidebar_action_taken = false;
                 if (layers_panel_open) {
-                    if (prev_x >= 160 && prev_y < 176) {
+                    if (prev_x >= 144 && prev_y < 176) {
                         // Close button "X" at x = 236..252, y = 1..11
                         if (prev_x >= 236 && prev_x <= 252 && prev_y >= 1 && prev_y <= 11) {
                             layers_panel_open = false;
                             renderComposeCanvas();
                             sidebar_action_taken = true;
                         }
-                        // "+ CAPA" button at x = 164..252, y = 14..24
-                        else if (prev_x >= 164 && prev_x <= 252 && prev_y >= 14 && prev_y <= 24) {
+                        // "+ CAPA" button at x = 148..252, y = 14..24
+                        else if (prev_x >= 148 && prev_x <= 252 && prev_y >= 14 && prev_y <= 24) {
                             renderAddLayer();
                             sidebar_action_taken = true;
                         }
-                        // COMBINAR button at x = 164..252, y = 157..169
-                        else if (prev_x >= 164 && prev_x <= 252 && prev_y >= 157 && prev_y <= 169) {
+                        // COMBINAR button at x = 148..252, y = 157..169
+                        else if (prev_x >= 148 && prev_x <= 252 && prev_y >= 157 && prev_y <= 169) {
                             renderMergeActiveLayerDown();
                             sidebar_action_taken = true;
                         }
@@ -998,12 +1007,22 @@ void gameUpdate(void) {
                                     int idx_from_top = layers_count - 1 - i;
                                     int y_pos = 27 + idx_from_top * 14;
                                     if (prev_y >= y_pos && prev_y <= y_pos + 12) {
-                                        // Select layer: x = 174..212
-                                        if (prev_x >= 174 && prev_x <= 212) {
-                                            active_layer_idx = i;
-                                            drawing_buffer = layers[i];
-                                            renderComposeCanvas();
-                                            sidebar_action_taken = true;
+                                        // Select layer / rename: x = 158..212
+                                        if (prev_x >= 158 && prev_x <= 212) {
+                                            if (active_layer_idx == i) {
+                                                current_state = STATE_RENAME_LAYER;
+                                                rename_layer_idx = i;
+                                                memcpy(rename_input, layer_names[i], 16);
+                                                rename_input[15] = '\0';
+                                                rename_input_len = strlen(rename_input);
+                                                uiDrawRenameKeyboard(rename_input);
+                                                sidebar_action_taken = true;
+                                            } else {
+                                                active_layer_idx = i;
+                                                drawing_buffer = layers[i];
+                                                renderComposeCanvas();
+                                                sidebar_action_taken = true;
+                                            }
                                         }
                                         // Visibility toggle: x = 216..232
                                         else if (prev_x >= 216 && prev_x <= 232) {
@@ -1156,6 +1175,84 @@ void gameUpdate(void) {
             return;
         }
     } 
+    else if (current_state == STATE_RENAME_LAYER) {
+        touchPosition touch;
+        if (inputGetTouch(&touch)) {
+            if (!was_touching) {
+                prev_x = touch.px;
+                prev_y = touch.py;
+            }
+            was_touching = true;
+        } else {
+            if (was_touching) {
+                // Cancel button: x = 10..90, y = 44..62
+                if (prev_x >= 10 && prev_x <= 90 && prev_y >= 44 && prev_y <= 62) {
+                    current_state = STATE_DRAW;
+                    renderComposeCanvas();
+                    was_touching = false;
+                    return;
+                }
+                // Save button: x = 166..246, y = 44..62
+                else if (prev_x >= 166 && prev_x <= 246 && prev_y >= 44 && prev_y <= 62) {
+                    memcpy(layer_names[rename_layer_idx], rename_input, 16);
+                    layer_names[rename_layer_idx][15] = '\0';
+                    current_state = STATE_DRAW;
+                    renderComposeCanvas();
+                    was_touching = false;
+                    return;
+                }
+                // Keyboard area: y = 96..182
+                else if (prev_y >= 96 && prev_y <= 182) {
+                    bool shift_toggled = false;
+                    bool caps_toggled = false;
+                    bool enter_pressed = false;
+                    bool backspace_pressed = false;
+                    
+                    char key = uiHandleKeyboardTouch(prev_x, prev_y, &shift_toggled, &caps_toggled, &enter_pressed, &backspace_pressed);
+                    
+                    if (shift_toggled || caps_toggled) {
+                        uiDrawRenameKeyboard(rename_input);
+                    } else if (enter_pressed) {
+                        memcpy(layer_names[rename_layer_idx], rename_input, 16);
+                        layer_names[rename_layer_idx][15] = '\0';
+                        current_state = STATE_DRAW;
+                        renderComposeCanvas();
+                        was_touching = false;
+                        return;
+                    } else if (backspace_pressed) {
+                        if (rename_input_len > 0) {
+                            rename_input_len--;
+                            rename_input[rename_input_len] = '\0';
+                        }
+                        uiDrawRenameKeyboard(rename_input);
+                    } else if (key > 0) {
+                        if (rename_input_len < 15) {
+                            rename_input[rename_input_len] = key;
+                            rename_input_len++;
+                            rename_input[rename_input_len] = '\0';
+                        }
+                        uiDrawRenameKeyboard(rename_input);
+                    }
+                }
+                was_touching = false;
+            }
+        }
+        
+        if (keys_down & KEY_A) {
+            memcpy(layer_names[rename_layer_idx], rename_input, 16);
+            layer_names[rename_layer_idx][15] = '\0';
+            current_state = STATE_DRAW;
+            renderComposeCanvas();
+            was_touching = false;
+            return;
+        }
+        if (keys_down & KEY_B) {
+            current_state = STATE_DRAW;
+            renderComposeCanvas();
+            was_touching = false;
+            return;
+        }
+    }
     else if (current_state == STATE_UPLOAD) {
         runUpload();
     }
