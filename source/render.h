@@ -13,11 +13,25 @@
 extern uint16_t* canvas_buffer;
 extern uint16_t* preview_buffer;
 extern uint16_t* wizard_buffer;
+extern uint16_t* drawing_buffer;
 extern bool toolbar_hidden;
+
+extern bool bg_modifiable;
+extern int bg_angle;
+extern int bg_color_p_idx;
+extern int bg_color_s_idx;
+extern const uint16_t bg_primary_palette[4];
+extern const uint16_t bg_secondary_palette[4];
+
+extern int perspective_mode;
+extern int perspective_points[3][2];
+extern int perspective_step;
+extern int nib_angle;
 
 void renderInitCanvas(void);
 void renderInitPreview(void);
 void renderUpdatePreview(void);
+void renderComposeCanvas(void);
 
 void renderSetPixel(int x, int y, uint16_t color);
 void renderSetCanvasPixel(int x, int y, uint16_t color);

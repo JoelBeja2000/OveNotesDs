@@ -17,9 +17,23 @@ extern uint16_t palette_colors[5];
 
 extern int open_modal;
 
+extern int preset_page;
+extern int custom_page;
+extern int selected_custom_slot;
+extern int color_modal_tab;
+extern int bg_modal_tab;
+
+extern int picker_x;
+extern int picker_y;
+
+extern uint16_t preset_palettes[20][5];
+extern uint16_t custom_palettes[50][5];
+
 void uiDrawToolbar(void);
 void uiOpenModal(int modal_idx);
 void uiCloseModal(void);
+void uiUpdateModalBackup(void);
+void uiUpdatePickerPosFromActiveColor(void);
 void uiDrawFormUI(int step, const char* input_text);
 void uiDrawBottomForm(int step, const char* input_text);
 char uiHandleKeyboardTouch(int tx, int ty, bool* shift_toggled, bool* caps_toggled, bool* enter_pressed, bool* backspace_pressed);

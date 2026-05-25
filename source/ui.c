@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
+#include <stdlib.h>
+#include <math.h>
 
 PrintConsole subConsole;
 
@@ -23,6 +25,42 @@ uint16_t palette_colors[5] = {
     RGB15(30, 10, 20)     // Pink
 };
 
+int preset_page = 0;
+int custom_page = 0;
+int selected_custom_slot = 0;
+int color_modal_tab = 0;
+int bg_modal_tab = 0;
+
+int picker_x = 128;
+int picker_y = 84;
+
+uint16_t preset_palettes[20][5] = {
+    { RGB15(0, 0, 0), RGB15(0, 0, 28), RGB15(28, 0, 0), RGB15(0, 20, 0), RGB15(30, 10, 20) },
+    { RGB15(28, 20, 20), RGB15(20, 24, 28), RGB15(28, 24, 20), RGB15(20, 28, 22), RGB15(28, 20, 28) },
+    { RGB15(12, 10, 8), RGB15(8, 16, 16), RGB15(22, 12, 10), RGB15(24, 18, 12), RGB15(18, 20, 16) },
+    { RGB15(8, 6, 4), RGB15(6, 14, 10), RGB15(18, 12, 6), RGB15(24, 22, 14), RGB15(12, 16, 8) },
+    { RGB15(0, 0, 0), RGB15(0, 31, 31), RGB15(31, 0, 31), RGB15(31, 31, 0), RGB15(0, 31, 0) },
+    { RGB15(0, 0, 0), RGB15(8, 8, 8), RGB15(16, 16, 16), RGB15(24, 24, 24), RGB15(31, 31, 31) },
+    { RGB15(31, 0, 0), RGB15(31, 10, 0), RGB15(31, 20, 0), RGB15(31, 28, 10), RGB15(20, 0, 8) },
+    { RGB15(0, 5, 15), RGB15(0, 12, 22), RGB15(0, 20, 28), RGB15(10, 28, 30), RGB15(20, 31, 31) },
+    { RGB15(5, 2, 8), RGB15(31, 0, 20), RGB15(0, 28, 31), RGB15(24, 0, 31), RGB15(31, 28, 0) },
+    { RGB15(6, 3, 1), RGB15(12, 6, 3), RGB15(18, 10, 5), RGB15(24, 16, 10), RGB15(28, 22, 18) },
+    { RGB15(16, 4, 2), RGB15(24, 8, 4), RGB15(28, 16, 4), RGB15(20, 18, 6), RGB15(14, 12, 6) },
+    { RGB15(31, 20, 22), RGB15(31, 15, 18), RGB15(28, 10, 14), RGB15(24, 6, 10), RGB15(18, 4, 6) },
+    { RGB15(8, 4, 12), RGB15(18, 6, 15), RGB15(28, 10, 12), RGB15(31, 16, 8), RGB15(31, 24, 6) },
+    { RGB15(10, 6, 16), RGB15(15, 10, 22), RGB15(20, 15, 28), RGB15(25, 20, 31), RGB15(28, 25, 31) },
+    { RGB15(16, 24, 28), RGB15(20, 27, 30), RGB15(24, 29, 31), RGB15(28, 31, 31), RGB15(31, 31, 31) },
+    { RGB15(10, 20, 16), RGB15(16, 25, 20), RGB15(22, 28, 24), RGB15(26, 31, 28), RGB15(30, 31, 30) },
+    { RGB15(26, 20, 12), RGB15(28, 22, 15), RGB15(30, 25, 18), RGB15(31, 28, 22), RGB15(22, 16, 10) },
+    { RGB15(6, 0, 10), RGB15(12, 2, 18), RGB15(18, 6, 24), RGB15(24, 12, 28), RGB15(28, 18, 31) },
+    { RGB15(31, 16, 20), RGB15(16, 28, 31), RGB15(31, 28, 16), RGB15(20, 31, 20), RGB15(24, 16, 28) },
+    { RGB15(2, 2, 3), RGB15(6, 6, 8), RGB15(12, 12, 14), RGB15(18, 18, 20), RGB15(26, 26, 28) }
+};
+
+uint16_t custom_palettes[50][5] = {
+    [0 ... 49] = { RGB15(0, 0, 0), RGB15(0, 0, 28), RGB15(28, 0, 0), RGB15(0, 20, 0), RGB15(30, 10, 20) }
+};
+
 static void fillButtonBg(int x_start, int x_end, uint16_t color) {
     for (int y = 177; y < 191; y++) {
         for (int x = x_start + 1; x < x_end; x++) {
@@ -31,141 +69,503 @@ static void fillButtonBg(int x_start, int x_end, uint16_t color) {
     }
 }
 
-
-
-static uint16_t modal_backup[256 * 56];
+static uint16_t modal_backup[256 * 156];
 int open_modal = -1;
 
-static void drawModalButton(int x0, int x1, const char* text, bool selected) {
+static void getModalYRange(int modal, int* y0, int* y1) {
+    if (modal == 0 || modal == 2 || modal == 3) {
+        *y0 = 20;
+        *y1 = 170;
+    } else if (modal == 4) {
+        *y0 = 90;
+        *y1 = 170;
+    } else { // modal == 1
+        *y0 = 120;
+        *y1 = 170;
+    }
+}
+
+static void drawRect(int x0, int y0, int x1, int y1, uint16_t color) {
+    if (x0 < 0) x0 = 0;
+    if (x1 >= 256) x1 = 255;
+    if (y0 < 0) y0 = 0;
+    if (y1 >= 192) y1 = 191;
+    for (int y = y0; y <= y1; y++) {
+        for (int x = x0; x <= x1; x++) {
+            canvas_buffer[y * 256 + x] = color;
+        }
+    }
+}
+
+static void drawRectOutline(int x0, int y0, int x1, int y1, uint16_t color) {
+    if (x0 < 0) x0 = 0;
+    if (x1 >= 256) x1 = 255;
+    if (y0 < 0) y0 = 0;
+    if (y1 >= 192) y1 = 191;
+    for (int x = x0; x <= x1; x++) {
+        canvas_buffer[y0 * 256 + x] = color;
+        canvas_buffer[y1 * 256 + x] = color;
+    }
+    for (int y = y0; y <= y1; y++) {
+        canvas_buffer[y * 256 + x0] = color;
+        canvas_buffer[y * 256 + x1] = color;
+    }
+}
+
+static void drawLine(int x0, int y0, int x1, int y1, uint16_t color) {
+    int dx = abs(x1 - x0), sx = x0 < x1 ? 1 : -1;
+    int dy = -abs(y1 - y0), sy = y0 < y1 ? 1 : -1;
+    int err = dx + dy, e2;
+    while (1) {
+        if (x0 >= 0 && x0 < 256 && y0 >= 0 && y0 < 192) {
+            canvas_buffer[y0 * 256 + x0] = color;
+        }
+        if (x0 == x1 && y0 == y1) break;
+        e2 = 2 * err;
+        if (e2 >= dy) { err += dy; x0 += sx; }
+        if (e2 <= dx) { err += dx; y0 += sy; }
+    }
+}
+
+static void drawCircleOutline(int xc, int yc, int r, uint16_t color) {
+    int x = 0;
+    int y = r;
+    int d = 3 - 2 * r;
+    while (y >= x) {
+        #define SET_P(px, py) if ((px) >= 0 && (px) < 256 && (py) >= 0 && (py) < 192) canvas_buffer[(py)*256 + (px)] = color
+        SET_P(xc + x, yc + y); SET_P(xc - x, yc + y);
+        SET_P(xc + x, yc - y); SET_P(xc - x, yc - y);
+        SET_P(xc + y, yc + x); SET_P(xc - y, yc + x);
+        SET_P(xc + y, yc - x); SET_P(xc - y, yc - x);
+        #undef SET_P
+        x++;
+        if (d > 0) {
+            y--;
+            d = d + 4 * (x - y) + 10;
+        } else {
+            d = d + 4 * x + 6;
+        }
+    }
+}
+
+static void drawModalButtonAt(int x0, int x1, int y0, int y1, const char* text, bool selected) {
     uint16_t bg = selected ? RGB15(12, 12, 18) : RGB15(31, 31, 31);
     uint16_t outline = RGB15(0, 0, 0);
     uint16_t text_color = selected ? RGB15(31, 31, 31) : RGB15(0, 0, 0);
     
-    for (int y = 130; y <= 160; y++) {
-        for (int x = x0; x <= x1; x++) {
-            canvas_buffer[y * 256 + x] = bg;
-        }
-    }
-    for (int x = x0; x <= x1; x++) {
-        canvas_buffer[130 * 256 + x] = outline;
-        canvas_buffer[160 * 256 + x] = outline;
-    }
-    for (int y = 130; y <= 160; y++) {
-        canvas_buffer[y * 256 + x0] = outline;
-        canvas_buffer[y * 256 + x1] = outline;
-    }
+    drawRect(x0, y0, x1, y1, bg);
+    drawRectOutline(x0, y0, x1, y1, outline);
     
-    // Center text
     int text_len = strlen(text);
     int text_w = text_len * 6 - 1;
     int tx = x0 + (x1 - x0 - text_w) / 2;
-    renderDrawText(text, tx, 142, text_color, 0);
+    int ty = y0 + (y1 - y0 - 8) / 2;
+    renderDrawText(text, tx, ty, text_color, 0);
 }
 
-static void drawModalColorButton(int x0, int x1, const char* text, uint16_t color, bool selected) {
-    uint16_t bg = color;
+static void drawModalColorButtonAt(int x0, int x1, int y0, int y1, uint16_t color, bool selected) {
     uint16_t outline = selected ? RGB15(31, 0, 0) : RGB15(0, 0, 0);
     int outline_width = selected ? 2 : 1;
     
-    for (int y = 130; y <= 160; y++) {
-        for (int x = x0; x <= x1; x++) {
-            canvas_buffer[y * 256 + x] = bg;
-        }
-    }
+    drawRect(x0, y0, x1, y1, color);
     
     for (int w = 0; w < outline_width; w++) {
-        for (int x = x0; x <= x1; x++) {
-            canvas_buffer[(130 + w) * 256 + x] = outline;
-            canvas_buffer[(160 - w) * 256 + x] = outline;
-        }
-        for (int y = 130; y <= 160; y++) {
-            canvas_buffer[y * 256 + (x0 + w)] = outline;
-            canvas_buffer[y * 256 + (x1 - w)] = outline;
+        drawRectOutline(x0 + w, y0 + w, x1 - w, y1 - w, outline);
+    }
+}
+
+static void drawPatternPreview(int x0, int y0, int x1, int y1, int pat_idx, bool selected) {
+    uint16_t p_color = bg_primary_palette[bg_color_p_idx];
+    uint16_t s_color = bg_secondary_palette[bg_color_s_idx];
+    uint16_t red_margin = RGB15(30, 8, 8);
+    uint16_t outline = selected ? RGB15(31, 0, 0) : RGB15(0, 0, 0);
+    
+    drawRect(x0, y0, x1, y1, p_color);
+    
+    for (int y = y0 + 1; y < y1; y++) {
+        for (int x = x0 + 1; x < x1; x++) {
+            int rx = x - x0;
+            int ry = y - y0;
+            
+            bool draw_s = false;
+            bool draw_red = false;
+            
+            if (pat_idx == 1) {
+                if (ry % 8 == 0 && rx % 8 == 0) draw_s = true;
+            } else if (pat_idx == 2) {
+                if (ry % 8 == 0) draw_s = true;
+            } else if (pat_idx == 3) {
+                if (ry % 8 == 0 || rx % 8 == 0) draw_s = true;
+            } else if (pat_idx == 4) {
+                if (rx % 8 == 0) draw_s = true;
+            } else if (pat_idx == 5) {
+                if ((rx + ry * 2) % 16 == 0 || (rx - ry * 2) % 16 == 0) draw_s = true;
+            } else if (pat_idx == 6) {
+                if (ry % 12 == 0) draw_s = true;
+            } else if (pat_idx == 7) {
+                if (ry % 8 == 0) draw_s = true;
+                if (rx == 8) draw_red = true;
+            }
+            
+            if (draw_red) {
+                canvas_buffer[y * 256 + x] = red_margin;
+            } else if (draw_s) {
+                canvas_buffer[y * 256 + x] = s_color;
+            }
         }
     }
     
-    uint16_t text_color = (color == RGB15(0, 0, 0) || color == RGB15(0, 0, 28) || color == RGB15(28, 0, 0)) ? RGB15(31, 31, 31) : RGB15(0, 0, 0);
-    int text_len = strlen(text);
-    int text_w = text_len * 6 - 1;
-    int tx = x0 + (x1 - x0 - text_w) / 2;
-    renderDrawText(text, tx, 142, text_color, 0);
+    drawRectOutline(x0, y0, x1, y1, outline);
+    if (selected) {
+        drawRectOutline(x0 + 1, y0 + 1, x1 - 1, y1 - 1, outline);
+    }
+}
+
+uint16_t hsv_to_rgb15(int h, int s, int v) {
+    int r = 0, g = 0, b = 0;
+    if (s == 0) {
+        r = g = b = v;
+    } else {
+        int base = ((31 - s) * v) >> 5;
+        int color_range = v - base;
+        int phase = h / 60;
+        int f = h % 60;
+        int descending = (color_range * (60 - f)) / 60;
+        int ascending = (color_range * f) / 60;
+        
+        switch (phase) {
+            case 0: r = v; g = base + ascending; b = base; break;
+            case 1: r = v - descending; g = v; b = base; break;
+            case 2: r = base; g = v; b = base + ascending; break;
+            case 3: r = base; g = v - descending; b = v; break;
+            case 4: r = base + ascending; g = base; b = v; break;
+            case 5: r = v; g = base; b = v - descending; break;
+        }
+    }
+    return RGB15(r, g, b);
+}
+
+uint16_t getSpectrumColor(int dx, int dy, int width, int height) {
+    if (dx < 0) dx = 0;
+    if (dx >= width) dx = width - 1;
+    if (dy < 0) dy = 0;
+    if (dy >= height) dy = height - 1;
+    
+    int h = (dx * 360) / width;
+    int s = 31;
+    int v = 31;
+    
+    int mid = height / 2;
+    if (dy < mid) {
+        s = (dy * 31) / mid;
+        v = 31;
+    } else {
+        s = 31;
+        v = 31 - ((dy - mid) * 31) / (height - 1 - mid);
+    }
+    
+    return hsv_to_rgb15(h, s, v);
+}
+
+void uiUpdatePickerPosFromActiveColor(void) {
+    uint16_t target = palette_colors[active_color_idx];
+    int target_r = target & 0x1F;
+    int target_g = (target >> 5) & 0x1F;
+    int target_b = (target >> 10) & 0x1F;
+    
+    int best_x = 64 + 64;
+    int best_y = 54 + 30;
+    int min_dist = 999999;
+    
+    for (int dy = 0; dy < 61; dy += 2) {
+        for (int dx = 0; dx < 128; dx += 2) {
+            uint16_t c = getSpectrumColor(dx, dy, 128, 61);
+            int r = c & 0x1F;
+            int g = (c >> 5) & 0x1F;
+            int b = (c >> 10) & 0x1F;
+            
+            int dr = r - target_r;
+            int dg = g - target_g;
+            int db = b - target_b;
+            int dist = dr*dr + dg*dg + db*db;
+            if (dist < min_dist) {
+                min_dist = dist;
+                best_x = 64 + dx;
+                best_y = 54 + dy;
+                if (min_dist == 0) break;
+            }
+        }
+        if (min_dist == 0) break;
+    }
+    picker_x = best_x;
+    picker_y = best_y;
 }
 
 void uiOpenModal(int modal_idx) {
-    if (open_modal != -1) {
+    if (open_modal != -1 && open_modal != modal_idx) {
         uiCloseModal();
     }
     open_modal = modal_idx;
     
-    // Backup canvas area y = 120 to 175
-    for (int y = 120; y < 176; y++) {
+    int y0, y1;
+    getModalYRange(modal_idx, &y0, &y1);
+    
+    for (int y = y0; y < 176; y++) {
         for (int x = 0; x < 256; x++) {
-            modal_backup[(y - 120) * 256 + x] = canvas_buffer[y * 256 + x];
+            modal_backup[(y - y0) * 256 + x] = canvas_buffer[y * 256 + x];
         }
     }
     
-    // Draw background
     uint16_t light_grey = RGB15(28, 28, 28);
     uint16_t black = RGB15(0, 0, 0);
-    for (int y = 120; y <= 170; y++) {
-        for (int x = 8; x <= 247; x++) {
-            canvas_buffer[y * 256 + x] = light_grey;
-        }
-    }
-    for (int x = 8; x <= 247; x++) {
-        canvas_buffer[120 * 256 + x] = black;
-        canvas_buffer[170 * 256 + x] = black;
-    }
-    for (int y = 120; y <= 170; y++) {
-        canvas_buffer[y * 256 + 8] = black;
-        canvas_buffer[y * 256 + 247] = black;
-    }
+    drawRect(8, y0, 247, y1, light_grey);
+    drawRectOutline(8, y0, 247, y1, black);
     
-    // Options
     if (open_modal == 0) {
-        drawModalButton(16, 86, "PINCEL", (!is_eraser && !is_bucket));
-        drawModalButton(92, 162, "BORRADOR", is_eraser);
-        drawModalButton(168, 238, "RELLENO", is_bucket);
+        renderDrawText("UTENSILIO", 16, y0 + 2, RGB15(0, 0, 0), 0);
+        drawModalButtonAt(16, 86, 32, 52, "PINCEL", (!is_eraser && !is_bucket));
+        drawModalButtonAt(92, 162, 32, 52, "BORRADOR", is_eraser);
+        drawModalButtonAt(168, 238, 32, 52, "RELLENO", is_bucket);
+        
+        renderDrawText("TRAZO", 16, y0 + 36, RGB15(0, 0, 0), 0);
+        drawModalButtonAt(16, 86, 66, 86, "NORMAL", (drawing_mode == 0));
+        drawModalButtonAt(92, 162, 66, 86, "ROTULADOR", (drawing_mode == 1));
+        
+        renderDrawText("PATRON BRUSH", 16, y0 + 70, RGB15(0, 0, 0), 0);
+        for (int i = 0; i < 5; i++) {
+            char label[6];
+            sprintf(label, "PAT%d", i + 1);
+            drawModalButtonAt(16 + i * 46, 16 + i * 46 + 40, 100, 120, label, (drawing_mode == 2 + i));
+        }
+        
+        renderDrawText("PLUMAS", 16, y0 + 104, RGB15(0, 0, 0), 0);
+        drawModalButtonAt(16, 56, 134, 154, "PL1", (drawing_mode == 7));
+        drawModalButtonAt(62, 102, 134, 154, "PL2", (drawing_mode == 8));
+        drawModalButtonAt(108, 148, 134, 154, "PL3", (drawing_mode == 9));
+        drawModalButtonAt(154, 194, 134, 154, "PL4", (drawing_mode == 10));
+        drawModalButtonAt(200, 240, 134, 154, "ANGULO", false);
     } 
     else if (open_modal == 1) {
+        char label[32];
         if (is_eraser) {
-            drawModalButton(16, 86, "B:4px", (eraser_size == 4));
-            drawModalButton(92, 162, "B:8px", (eraser_size == 8));
-            drawModalButton(168, 238, "B:16px", (eraser_size == 16));
+            sprintf(label, "GROSOR BORRADOR: %d px", eraser_size);
         } else {
-            drawModalButton(16, 86, "P:1px", (active_brush_size == 1));
-            drawModalButton(92, 162, "P:3px", (active_brush_size == 3));
-            drawModalButton(168, 238, "P:5px", (active_brush_size == 5));
+            sprintf(label, "GROSOR PINCEL: %d px", active_brush_size);
         }
+        renderDrawText(label, 16, 126, RGB15(0, 0, 0), 0);
+        
+        drawRect(24, 144, 232, 148, RGB15(20, 20, 20));
+        drawRectOutline(24, 144, 232, 148, RGB15(0, 0, 0));
+        
+        int knob_x = 24;
+        if (is_eraser) {
+            knob_x = 24 + (eraser_size - 2) * 208 / 28;
+        } else {
+            knob_x = 24 + (active_brush_size - 1) * 208 / 14;
+        }
+        if (knob_x < 24) knob_x = 24;
+        if (knob_x > 232) knob_x = 232;
+        
+        drawRect(knob_x - 4, 138, knob_x + 4, 154, RGB15(12, 12, 18));
+        drawRectOutline(knob_x - 4, 138, knob_x + 4, 154, RGB15(0, 0, 0));
     } 
     else if (open_modal == 2) {
-        const char* color_names[5] = {"NEGRO", "AZUL", "ROJO", "VERDE", "ROSA"};
+        uint16_t tab_active_bg = RGB15(28, 28, 28);
+        uint16_t tab_inactive_bg = RGB15(20, 20, 20);
+        uint16_t tab_border = RGB15(0, 0, 0);
+        
+        drawRect(8, 20, 127, 32, (color_modal_tab == 0) ? tab_active_bg : tab_inactive_bg);
+        drawRect(128, 20, 247, 32, (color_modal_tab == 1) ? tab_active_bg : tab_inactive_bg);
+        
+        drawRectOutline(8, 20, 127, 32, tab_border);
+        drawRectOutline(128, 20, 247, 32, tab_border);
+        
+        renderDrawText("PRESETS", 44, 23, (color_modal_tab == 0) ? RGB15(0, 0, 0) : RGB15(16, 16, 16), 0);
+        renderDrawText("MIS PALETAS", 152, 23, (color_modal_tab == 1) ? RGB15(0, 0, 0) : RGB15(16, 16, 16), 0);
+        
         for (int i = 0; i < 5; i++) {
-            drawModalColorButton(16 + i * 46, 16 + i * 46 + 40, color_names[i], palette_colors[i], (active_color_idx == i));
+            drawModalColorButtonAt(16 + i * 46, 16 + i * 46 + 40, 36, 48, palette_colors[i], (active_color_idx == i));
+        }
+        
+        for (int dy = 0; dy < 61; dy++) {
+            for (int dx = 0; dx < 128; dx++) {
+                canvas_buffer[(54 + dy) * 256 + (64 + dx)] = getSpectrumColor(dx, dy, 128, 61);
+            }
+        }
+        drawRectOutline(64, 54, 191, 114, RGB15(0, 0, 0));
+        
+        uint16_t cross_color = RGB15(31, 31, 31);
+        if (picker_x >= 64 && picker_x <= 191 && picker_y >= 54 && picker_y <= 114) {
+            uint16_t bg_col = canvas_buffer[picker_y * 256 + picker_x];
+            int r = bg_col & 31, g = (bg_col >> 5) & 31, b = (bg_col >> 10) & 31;
+            if (r + g + b > 45) cross_color = RGB15(0, 0, 0);
+            
+            for (int dx = -2; dx <= 2; dx++) {
+                if (picker_x + dx >= 64 && picker_x + dx <= 191) {
+                    canvas_buffer[picker_y * 256 + (picker_x + dx)] = cross_color;
+                }
+            }
+            for (int dy = -2; dy <= 2; dy++) {
+                if (picker_y + dy >= 54 && picker_y + dy <= 114) {
+                    canvas_buffer[(picker_y + dy) * 256 + picker_x] = cross_color;
+                }
+            }
+        }
+        
+        if (color_modal_tab == 0) {
+            char page_lbl[16];
+            sprintf(page_lbl, "%d/5", preset_page + 1);
+            renderDrawText(page_lbl, 172, 124, RGB15(0, 0, 0), 0);
+            
+            for (int i = 0; i < 4; i++) {
+                int preset_idx = preset_page * 4 + i;
+                int x0 = 12 + i * 44;
+                int x1 = x0 + 38;
+                int y0 = 134, y1 = 152;
+                
+                drawRectOutline(x0, y0, x1, y1, RGB15(0, 0, 0));
+                for (int c = 0; c < 5; c++) {
+                    int cx0 = x0 + 1 + c * 7;
+                    int cx1 = cx0 + 6;
+                    if (cx1 >= x1) cx1 = x1 - 1;
+                    drawRect(cx0, y0 + 1, cx1, y1 - 1, preset_palettes[preset_idx][c]);
+                }
+            }
+            
+            drawModalButtonAt(192, 214, 134, 152, "<-", false);
+            drawModalButtonAt(222, 244, 134, 152, "->", false);
+        } else {
+            char page_lbl[16];
+            sprintf(page_lbl, "%d/10", custom_page + 1);
+            renderDrawText(page_lbl, 160, 124, RGB15(0, 0, 0), 0);
+            
+            for (int i = 0; i < 5; i++) {
+                int global_idx = custom_page * 5 + i;
+                int x0 = 12 + i * 36;
+                int x1 = x0 + 30;
+                int y0 = 134, y1 = 152;
+                
+                bool is_sel = (selected_custom_slot == i);
+                uint16_t outline = is_sel ? RGB15(31, 0, 0) : RGB15(0, 0, 0);
+                drawRectOutline(x0, y0, x1, y1, outline);
+                if (is_sel) {
+                    drawRectOutline(x0 + 1, y0 + 1, x1 - 1, y1 - 1, outline);
+                }
+                
+                int pad = is_sel ? 2 : 1;
+                for (int c = 0; c < 5; c++) {
+                    int cx0 = x0 + pad + c * 5;
+                    int cx1 = cx0 + 4;
+                    if (cx1 >= x1 - pad) cx1 = x1 - pad - 1;
+                    drawRect(cx0, y0 + pad, cx1, y1 - pad, custom_palettes[global_idx][c]);
+                }
+            }
+            
+            drawModalButtonAt(12, 82, 154, 170, "GUARDAR", false);
+            drawModalButtonAt(182, 204, 154, 170, "<-", false);
+            drawModalButtonAt(212, 234, 154, 170, "->", false);
         }
     } 
     else if (open_modal == 3) {
-        drawModalButton(16, 66, "PEN", (drawing_mode == 0));
-        drawModalButton(72, 122, "ROT", (drawing_mode == 1));
-        drawModalButton(128, 178, "PT1", (drawing_mode == 2));
-        drawModalButton(184, 234, "PT2", (drawing_mode == 3));
+        uint16_t tab_active_bg = RGB15(28, 28, 28);
+        uint16_t tab_inactive_bg = RGB15(20, 20, 20);
+        uint16_t tab_border = RGB15(0, 0, 0);
+        
+        drawRect(8, 20, 127, 32, (bg_modal_tab == 0) ? tab_active_bg : tab_inactive_bg);
+        drawRect(128, 20, 247, 32, (bg_modal_tab == 1) ? tab_active_bg : tab_inactive_bg);
+        
+        drawRectOutline(8, 20, 127, 32, tab_border);
+        drawRectOutline(128, 20, 247, 32, tab_border);
+        
+        renderDrawText("PATRONES", 40, 23, (bg_modal_tab == 0) ? RGB15(0, 0, 0) : RGB15(16, 16, 16), 0);
+        renderDrawText("PERSPECTIVA", 148, 23, (bg_modal_tab == 1) ? RGB15(0, 0, 0) : RGB15(16, 16, 16), 0);
+        
+        if (bg_modal_tab == 0) {
+            for (int i = 0; i < 4; i++) {
+                drawPatternPreview(12 + i * 58, 38, 12 + i * 58 + 52, 78, i, (bg_pattern_idx == i));
+            }
+            for (int i = 0; i < 4; i++) {
+                drawPatternPreview(12 + i * 58, 84, 12 + i * 58 + 52, 124, 4 + i, (bg_pattern_idx == 4 + i));
+            }
+            
+            char color_p_lbl[16];
+            sprintf(color_p_lbl, "COL P:%d", bg_color_p_idx);
+            drawModalButtonAt(12, 70, 132, 150, color_p_lbl, false);
+            
+            char color_s_lbl[16];
+            sprintf(color_s_lbl, "COL S:%d", bg_color_s_idx);
+            drawModalButtonAt(74, 132, 132, 150, color_s_lbl, false);
+            
+            drawModalButtonAt(136, 194, 132, 150, bg_modifiable ? "MOD:SI" : "MOD:NO", bg_modifiable);
+            
+            char rot_lbl[16];
+            sprintf(rot_lbl, "ROT:%d", bg_angle);
+            drawModalButtonAt(198, 244, 132, 150, rot_lbl, false);
+        } else {
+            renderDrawText("MODO DE PERSPECTIVA", 16, 36, RGB15(0, 0, 0), 0);
+            
+            drawModalButtonAt(12, 64, 46, 62, "OFF", (perspective_mode == 0));
+            drawModalButtonAt(68, 122, 46, 62, "1 VP", (perspective_mode == 1));
+            drawModalButtonAt(126, 180, 46, 62, "2 VP", (perspective_mode == 2));
+            drawModalButtonAt(184, 244, 46, 62, "3 VP", (perspective_mode == 3));
+            
+            if (perspective_mode > 0) {
+                drawModalButtonAt(12, 244, 68, 84, "REUBICAR PUNTOS DE FUGA", false);
+            } else {
+                drawModalButtonAt(12, 244, 68, 84, "(SIN PERSPECTIVA)", false);
+            }
+            
+            char dens_lbl[32];
+            sprintf(dens_lbl, "DENSIDAD DE REJILLA: %d px", perspective_step);
+            drawModalButtonAt(12, 244, 90, 106, dens_lbl, false);
+        }
     } 
     else if (open_modal == 4) {
-        drawModalButton(16, 66, "BG0", (bg_pattern_idx == 0));
-        drawModalButton(72, 122, "BG1", (bg_pattern_idx == 1));
-        drawModalButton(128, 178, "BG2", (bg_pattern_idx == 2));
-        drawModalButton(184, 234, "BG3", (bg_pattern_idx == 3));
+        char label[32];
+        sprintf(label, "ANGULO DE LA PLUMA: %d", nib_angle);
+        renderDrawText(label, 16, 96, RGB15(0, 0, 0), 0);
+        
+        int cx = 128;
+        int cy = 132;
+        int r = 28;
+        drawCircleOutline(cx, cy, r, RGB15(0, 0, 0));
+        
+        drawRect(cx - 2, cy, cx + 2, cy, RGB15(15, 15, 15));
+        drawRect(cx, cy - 2, cx, cy + 2, RGB15(15, 15, 15));
+        
+        float rad = nib_angle * 3.14159265f / 180.0f;
+        int end_x = cx + (int)(cosf(rad) * 26.0f);
+        int end_y = cy + (int)(sinf(rad) * 26.0f);
+        drawLine(cx, cy, end_x, end_y, RGB15(31, 0, 0));
     }
 }
 
 void uiCloseModal(void) {
     if (open_modal == -1) return;
-    for (int y = 120; y < 176; y++) {
+    int y0, y1;
+    getModalYRange(open_modal, &y0, &y1);
+    for (int y = y0; y < 176; y++) {
         for (int x = 0; x < 256; x++) {
-            canvas_buffer[y * 256 + x] = modal_backup[(y - 120) * 256 + x];
+            canvas_buffer[y * 256 + x] = modal_backup[(y - y0) * 256 + x];
         }
     }
     open_modal = -1;
+}
+
+void uiUpdateModalBackup(void) {
+    if (open_modal == -1) return;
+    int y0, y1;
+    getModalYRange(open_modal, &y0, &y1);
+    
+    renderComposeCanvas();
+    
+    for (int y = y0; y < 176; y++) {
+        for (int x = 0; x < 256; x++) {
+            modal_backup[(y - y0) * 256 + x] = canvas_buffer[y * 256 + x];
+        }
+    }
+    
+    uiOpenModal(open_modal);
 }
 
 void uiDrawToolbar(void) {

@@ -9,6 +9,7 @@
 #include <string.h>
 #include <nds/arm9/keyboard.h>
 #include "log.h"
+#include <math.h>
 
 GameState current_state = STATE_DRAW;
 
@@ -22,6 +23,10 @@ static bool touch_started_in_toolbar = false;
 static int prev_x = 0;
 static int prev_y = 0;
 static int bg_sub_wizard = -1;
+
+bool placing_vanishing_points = false;
+int placing_point_idx = 0;
+bool ignore_touch_until_release = false;
 
 void gameInit(void) {
     // Enable 2D graphics systems
@@ -61,6 +66,11 @@ void gameInit(void) {
     // Center the 128x128 preview on the 256x192 top screen
     bgSet(bg_sub_preview, 0, 1 << 8, 1 << 8, -64 << 8, -32 << 8, 0, 0);
     bgUpdate();
+
+    drawing_buffer = (uint16_t*)malloc(256 * 192 * sizeof(uint16_t));
+    if (drawing_buffer == NULL) {
+        printf("[FATAL] Error de asignacion de memoria.\n");
+    }
 
     // Initialize drawing paper & toolbar
     renderInitCanvas();
@@ -251,81 +261,449 @@ void gameUpdate(void) {
     uint32_t keys_down = inputGetKeysDown();
     
     if (current_state == STATE_DRAW) {
+        if (placing_vanishing_points) {
+            touchPosition touch;
+            if (inputGetTouch(&touch)) {
+                was_touching = true;
+                prev_x = touch.px;
+                prev_y = touch.py;
+            } else {
+                if (was_touching) {
+                    if (prev_y >= 0 && prev_y < 176 && prev_x >= 0 && prev_x < 256) {
+                        perspective_points[placing_point_idx][0] = prev_x;
+                        perspective_points[placing_point_idx][1] = prev_y;
+                        placing_point_idx++;
+                        
+                        renderComposeCanvas();
+                        
+                        if (placing_point_idx >= perspective_mode) {
+                            placing_vanishing_points = false;
+                            uiDrawToolbar();
+                        }
+                        ignore_touch_until_release = true;
+                    }
+                    was_touching = false;
+                }
+            }
+            return;
+        }
         if (open_modal != -1) {
-            if (keys_down & KEY_TOUCH) {
+            // Drag interaction for size slider (open_modal == 1), color sliders (open_modal == 2), and angle selector (open_modal == 4)
+            if ((open_modal == 1 || open_modal == 2 || open_modal == 4) && (keys_held & KEY_TOUCH)) {
                 touchPosition touch;
                 if (inputGetTouch(&touch)) {
-                    // Check if tap is inside the modal: y = 120..170, x = 8..247
-                    if (touch.py >= 120 && touch.py <= 170 && touch.px >= 8 && touch.px <= 247) {
+                    if (open_modal == 1) {
+                        if (touch.py >= 120 && touch.py <= 170 && touch.px >= 8 && touch.px <= 247) {
+                            int tx = touch.px;
+                            if (tx < 24) tx = 24;
+                            if (tx > 232) tx = 232;
+                            
+                            if (is_eraser) {
+                                int new_size = 2 + (tx - 24) * 28 / 208;
+                                if (new_size < 2) new_size = 2;
+                                if (new_size > 30) new_size = 30;
+                                if (eraser_size != new_size) {
+                                    eraser_size = new_size;
+                                    uiOpenModal(1);
+                                }
+                            } else {
+                                int new_size = 1 + (tx - 24) * 14 / 208;
+                                if (new_size < 1) new_size = 1;
+                                if (new_size > 15) new_size = 15;
+                                if (active_brush_size != new_size) {
+                                    active_brush_size = new_size;
+                                    uiOpenModal(1);
+                                }
+                            }
+                        }
+                    } else if (open_modal == 2) {
+                        if (touch.px >= 64 && touch.px <= 191 && touch.py >= 54 && touch.py <= 114) {
+                            if (picker_x != touch.px || picker_y != touch.py) {
+                                picker_x = touch.px;
+                                picker_y = touch.py;
+                                extern uint16_t getSpectrumColor(int dx, int dy, int width, int height);
+                                palette_colors[active_color_idx] = getSpectrumColor(picker_x - 64, picker_y - 54, 128, 61);
+                                uiOpenModal(2);
+                                uiDrawToolbar();
+                            }
+                        }
+                    } else if (open_modal == 4) {
+                        float dx = touch.px - 128;
+                        float dy = touch.py - 132;
+                        if (dx*dx + dy*dy <= 28*28) {
+                            float rad = atan2f(dy, dx);
+                            int angle = (int)(rad * 180.0f / 3.14159f);
+                            if (angle < 0) angle += 360;
+                            if (nib_angle != angle) {
+                                nib_angle = angle;
+                                uiOpenModal(4);
+                                uiDrawToolbar();
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Click/tap interaction for selections
+            touchPosition touch;
+            if (inputGetTouch(&touch)) {
+                was_touching = true;
+                prev_x = touch.px;
+                prev_y = touch.py;
+            } else {
+                if (was_touching) {
+                    int modal_y0 = (open_modal == 0 || open_modal == 2 || open_modal == 3) ? 20 : ((open_modal == 4) ? 90 : 120);
+                    if (prev_y >= modal_y0 && prev_y <= 170 && prev_x >= 8 && prev_x <= 247) {
                         bool option_selected = false;
                         if (open_modal == 0) { // TOOL
-                            if (touch.px >= 16 && touch.px <= 86) {
-                                is_eraser = false;
-                                is_bucket = false;
-                                option_selected = true;
-                            } else if (touch.px >= 92 && touch.px <= 162) {
-                                is_eraser = true;
-                                is_bucket = false;
-                                option_selected = true;
-                            } else if (touch.px >= 168 && touch.px <= 238) {
-                                is_eraser = false;
-                                is_bucket = true;
-                                option_selected = true;
+                            // Row 1: UTENSILIO (y = 32..52)
+                            if (prev_y >= 32 && prev_y <= 52) {
+                                if (prev_x >= 16 && prev_x <= 86) {
+                                    is_eraser = false;
+                                    is_bucket = false;
+                                    option_selected = true;
+                                } else if (prev_x >= 92 && prev_x <= 162) {
+                                    is_eraser = true;
+                                    is_bucket = false;
+                                    option_selected = true;
+                                } else if (prev_x >= 168 && prev_x <= 238) {
+                                    is_eraser = false;
+                                    is_bucket = true;
+                                    option_selected = true;
+                                }
                             }
-                        } else if (open_modal == 1) { // SIZE
-                            if (touch.px >= 16 && touch.px <= 86) {
-                                if (is_eraser) eraser_size = 4;
-                                else active_brush_size = 1;
-                                option_selected = true;
-                            } else if (touch.px >= 92 && touch.px <= 162) {
-                                if (is_eraser) eraser_size = 8;
-                                else active_brush_size = 3;
-                                option_selected = true;
-                            } else if (touch.px >= 168 && touch.px <= 238) {
-                                if (is_eraser) eraser_size = 16;
-                                else active_brush_size = 5;
-                                option_selected = true;
+                            // Row 2: TRAZO (y = 66..86)
+                            else if (prev_y >= 66 && prev_y <= 86) {
+                                if (prev_x >= 16 && prev_x <= 86) {
+                                    drawing_mode = 0;
+                                    is_eraser = false;
+                                    is_bucket = false;
+                                    option_selected = true;
+                                } else if (prev_x >= 92 && prev_x <= 162) {
+                                    drawing_mode = 1;
+                                    is_eraser = false;
+                                    is_bucket = false;
+                                    option_selected = true;
+                                }
+                            }
+                            // Row 3: PATRON (y = 100..120)
+                            else if (prev_y >= 100 && prev_y <= 120) {
+                                for (int i = 0; i < 5; i++) {
+                                    int x0 = 16 + i * 46;
+                                    int x1 = x0 + 40;
+                                    if (prev_x >= x0 && prev_x <= x1) {
+                                        drawing_mode = 2 + i;
+                                        is_eraser = false;
+                                        is_bucket = false;
+                                        option_selected = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            // Row 4: PLUMAS (y = 134..154)
+                            else if (prev_y >= 134 && prev_y <= 154) {
+                                if (prev_x >= 16 && prev_x <= 56) {
+                                    drawing_mode = 7;
+                                    is_eraser = false;
+                                    is_bucket = false;
+                                    option_selected = true;
+                                } else if (prev_x >= 62 && prev_x <= 102) {
+                                    drawing_mode = 8;
+                                    is_eraser = false;
+                                    is_bucket = false;
+                                    option_selected = true;
+                                } else if (prev_x >= 108 && prev_x <= 148) {
+                                    drawing_mode = 9;
+                                    is_eraser = false;
+                                    is_bucket = false;
+                                    option_selected = true;
+                                } else if (prev_x >= 154 && prev_x <= 194) {
+                                    drawing_mode = 10;
+                                    is_eraser = false;
+                                    is_bucket = false;
+                                    option_selected = true;
+                                } else if (prev_x >= 200 && prev_x <= 240) {
+                                    uiOpenModal(4);
+                                    uiDrawToolbar();
+                                    option_selected = false;
+                                }
+                            }
+                        } else if (open_modal == 4) { // ANGLE
+                            float dx = prev_x - 128;
+                            float dy = prev_y - 132;
+                            if (dx*dx + dy*dy <= 28*28) {
+                                float rad = atan2f(dy, dx);
+                                int angle = (int)(rad * 180.0f / 3.14159f);
+                                if (angle < 0) angle += 360;
+                                nib_angle = angle;
+                                uiOpenModal(4);
+                                uiDrawToolbar();
                             }
                         } else if (open_modal == 2) { // COLOR
-                            for (int i = 0; i < 5; i++) {
-                                int x0 = 16 + i * 46;
-                                int x1 = x0 + 40;
-                                if (touch.px >= x0 && touch.px <= x1) {
-                                    active_color_idx = i;
-                                    is_eraser = false;
-                                    is_bucket = false;
-                                    option_selected = true;
-                                    break;
+                            // 1. Check tab bar (y = 20..32)
+                            if (prev_y >= 20 && prev_y <= 32) {
+                                if (prev_x >= 8 && prev_x <= 128) {
+                                    if (color_modal_tab != 0) {
+                                        color_modal_tab = 0;
+                                        uiOpenModal(2);
+                                    }
+                                } else if (prev_x > 128 && prev_x <= 247) {
+                                    if (color_modal_tab != 1) {
+                                        color_modal_tab = 1;
+                                        uiOpenModal(2);
+                                    }
                                 }
                             }
-                        } else if (open_modal == 3) { // MODE
-                            for (int i = 0; i < 4; i++) {
-                                int x0 = 16 + i * 56;
-                                int x1 = x0 + 50;
-                                if (touch.px >= x0 && touch.px <= x1) {
-                                    drawing_mode = i;
-                                    is_eraser = false;
-                                    is_bucket = false;
-                                    option_selected = true;
-                                    break;
+                            // 2. Check active swatches (y = 36..48)
+                            else if (prev_y >= 36 && prev_y <= 48) {
+                                for (int i = 0; i < 5; i++) {
+                                    int x0 = 16 + i * 46;
+                                    int x1 = x0 + 40;
+                                    if (prev_x >= x0 && prev_x <= x1) {
+                                        active_color_idx = i;
+                                        is_eraser = false;
+                                        uiUpdatePickerPosFromActiveColor();
+                                        uiOpenModal(2);
+                                        uiDrawToolbar();
+                                        break;
+                                    }
                                 }
                             }
-                        } else if (open_modal == 4) { // BG
-                            for (int i = 0; i < 4; i++) {
-                                int x0 = 16 + i * 56;
-                                int x1 = x0 + 50;
-                                if (touch.px >= x0 && touch.px <= x1) {
-                                    bg_pattern_idx = i;
-                                    renderApplyBackgroundPattern(bg_pattern_idx);
-                                    
-                                    // Close modal without restoring backup
-                                    open_modal = -1;
-                                    uiDrawToolbar();
-                                    
-                                    option_selected = false;
-                                    break;
+                            // 3. Check spectrum picker (y = 54..114, x = 64..191)
+                            else if (prev_x >= 64 && prev_x <= 191 && prev_y >= 54 && prev_y <= 114) {
+                                picker_x = prev_x;
+                                picker_y = prev_y;
+                                extern uint16_t getSpectrumColor(int dx, int dy, int width, int height);
+                                palette_colors[active_color_idx] = getSpectrumColor(picker_x - 64, picker_y - 54, 128, 61);
+                                is_eraser = false;
+                                uiOpenModal(2);
+                                uiDrawToolbar();
+                            }
+                            // 4. Check bottom area (y = 120..170)
+                            else if (prev_y >= 120 && prev_y <= 170) {
+                                if (color_modal_tab == 0) {
+                                    // PRESETS page buttons:
+                                    // Preset buttons: slot i (0..3) -> x0 = 12 + i * 44, x1 = x0 + 38, y = 134..152
+                                    if (prev_y >= 134 && prev_y <= 152) {
+                                        if (prev_x >= 12 && prev_x <= 186) {
+                                            for (int i = 0; i < 4; i++) {
+                                                int x0 = 12 + i * 44;
+                                                int x1 = x0 + 38;
+                                                if (prev_x >= x0 && prev_x <= x1) {
+                                                    int preset_idx = preset_page * 4 + i;
+                                                    if (preset_idx < 20) {
+                                                        memcpy(palette_colors, preset_palettes[preset_idx], sizeof(palette_colors));
+                                                        is_eraser = false;
+                                                        
+                                                        uiUpdatePickerPosFromActiveColor();
+                                                        uiOpenModal(2);
+                                                        uiDrawToolbar();
+                                                    }
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                        // Prev button <- (x = 192..214)
+                                        else if (prev_x >= 192 && prev_x <= 214) {
+                                            preset_page--;
+                                            if (preset_page < 0) preset_page = 4;
+                                            uiOpenModal(2);
+                                        }
+                                        // Next button -> (x = 222..244)
+                                        else if (prev_x >= 222 && prev_x <= 244) {
+                                            preset_page++;
+                                            if (preset_page > 4) preset_page = 0;
+                                            uiOpenModal(2);
+                                        }
+                                    }
+                                } else {
+                                    // MIS PALETAS:
+                                    // Slots buttons: slot i (0..4) -> x0 = 12 + i * 36, x1 = x0 + 30, y = 134..152
+                                    if (prev_y >= 134 && prev_y <= 152) {
+                                        if (prev_x >= 12 && prev_x <= 186) {
+                                            for (int i = 0; i < 5; i++) {
+                                                int x0 = 12 + i * 36;
+                                                int x1 = x0 + 30;
+                                                if (prev_x >= x0 && prev_x <= x1) {
+                                                    selected_custom_slot = i;
+                                                    int global_idx = custom_page * 5 + i;
+                                                    memcpy(palette_colors, custom_palettes[global_idx], sizeof(palette_colors));
+                                                    is_eraser = false;
+                                                    uiUpdatePickerPosFromActiveColor();
+                                                    uiOpenModal(2);
+                                                    uiDrawToolbar();
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
+                                    // GUARDAR & PAGE NAV buttons: y = 154..170
+                                    else if (prev_y >= 154 && prev_y <= 170) {
+                                        // GUARDAR button (x = 12..82)
+                                        if (prev_x >= 12 && prev_x <= 82) {
+                                            int global_idx = custom_page * 5 + selected_custom_slot;
+                                            memcpy(custom_palettes[global_idx], palette_colors, sizeof(palette_colors));
+                                            netSaveConfig();
+                                            uiOpenModal(2);
+                                            uiDrawToolbar();
+                                        }
+                                        // Prev button <- (x = 182..204)
+                                        else if (prev_x >= 182 && prev_x <= 204) {
+                                            custom_page--;
+                                            if (custom_page < 0) custom_page = 9;
+                                            int global_idx = custom_page * 5 + selected_custom_slot;
+                                            memcpy(palette_colors, custom_palettes[global_idx], sizeof(palette_colors));
+                                            uiUpdatePickerPosFromActiveColor();
+                                            uiOpenModal(2);
+                                            uiDrawToolbar();
+                                        }
+                                        // Next button -> (x = 212..234)
+                                        else if (prev_x >= 212 && prev_x <= 234) {
+                                            custom_page++;
+                                            if (custom_page > 9) custom_page = 0;
+                                            int global_idx = custom_page * 5 + selected_custom_slot;
+                                            memcpy(palette_colors, custom_palettes[global_idx], sizeof(palette_colors));
+                                            uiUpdatePickerPosFromActiveColor();
+                                            uiOpenModal(2);
+                                            uiDrawToolbar();
+                                        }
+                                    }
                                 }
                             }
+                            option_selected = false;
+                        } else if (open_modal == 3) { // BG
+                            // Check tab bar (y = 20..32)
+                            if (prev_y >= 20 && prev_y <= 32) {
+                                if (prev_x >= 8 && prev_x <= 128) {
+                                    if (bg_modal_tab != 0) {
+                                        bg_modal_tab = 0;
+                                        uiOpenModal(3);
+                                    }
+                                } else if (prev_x > 128 && prev_x <= 247) {
+                                    if (bg_modal_tab != 1) {
+                                        bg_modal_tab = 1;
+                                        uiOpenModal(3);
+                                    }
+                                }
+                            }
+                            // Tab 0: PATRONES
+                            else if (bg_modal_tab == 0) {
+                                // Row 1 (y = 38..78)
+                                if (prev_y >= 38 && prev_y <= 78) {
+                                    for (int i = 0; i < 4; i++) {
+                                        int x0 = 12 + i * 58;
+                                        int x1 = x0 + 52;
+                                        if (prev_x >= x0 && prev_x <= x1) {
+                                            bg_pattern_idx = i;
+                                            renderApplyBackgroundPattern(bg_pattern_idx);
+                                            renderComposeCanvas();
+                                            uiUpdateModalBackup();
+                                            uiOpenModal(3);
+                                            break;
+                                        }
+                                    }
+                                }
+                                // Row 2 (y = 84..124)
+                                else if (prev_y >= 84 && prev_y <= 124) {
+                                    for (int i = 0; i < 4; i++) {
+                                        int x0 = 12 + i * 58;
+                                        int x1 = x0 + 52;
+                                        if (prev_x >= x0 && prev_x <= x1) {
+                                            bg_pattern_idx = 4 + i;
+                                            renderApplyBackgroundPattern(bg_pattern_idx);
+                                            renderComposeCanvas();
+                                            uiUpdateModalBackup();
+                                            uiOpenModal(3);
+                                            break;
+                                        }
+                                    }
+                                }
+                                // Row 3 settings (y = 132..150)
+                                else if (prev_y >= 132 && prev_y <= 150) {
+                                    if (prev_x >= 12 && prev_x <= 70) {
+                                        // COLOR P
+                                        bg_color_p_idx = (bg_color_p_idx + 1) % 4;
+                                        renderApplyBackgroundPattern(bg_pattern_idx);
+                                        renderComposeCanvas();
+                                        uiUpdateModalBackup();
+                                        uiOpenModal(3);
+                                    } else if (prev_x >= 74 && prev_x <= 132) {
+                                        // COLOR S
+                                        bg_color_s_idx = (bg_color_s_idx + 1) % 4;
+                                        renderApplyBackgroundPattern(bg_pattern_idx);
+                                        renderComposeCanvas();
+                                        uiUpdateModalBackup();
+                                        uiOpenModal(3);
+                                    } else if (prev_x >= 136 && prev_x <= 194) {
+                                        // MODIFICABLE
+                                        bg_modifiable = !bg_modifiable;
+                                        renderApplyBackgroundPattern(bg_pattern_idx);
+                                        renderComposeCanvas();
+                                        uiUpdateModalBackup();
+                                        uiOpenModal(3);
+                                    } else if (prev_x >= 198 && prev_x <= 244) {
+                                        // ROTAR
+                                        bg_angle = (bg_angle + 45) % 180;
+                                        renderApplyBackgroundPattern(bg_pattern_idx);
+                                        renderComposeCanvas();
+                                        uiUpdateModalBackup();
+                                        uiOpenModal(3);
+                                    }
+                                }
+                            }
+                            // Tab 1: PERSPECTIVA
+                            else if (bg_modal_tab == 1) {
+                                // Mode buttons (y = 46..62)
+                                if (prev_y >= 46 && prev_y <= 62) {
+                                    if (prev_x >= 12 && prev_x <= 64) {
+                                        perspective_mode = 0;
+                                        renderComposeCanvas();
+                                        uiUpdateModalBackup();
+                                        uiOpenModal(3);
+                                    } else if (prev_x >= 68 && prev_x <= 122) {
+                                        perspective_mode = 1;
+                                        renderComposeCanvas();
+                                        uiUpdateModalBackup();
+                                        uiOpenModal(3);
+                                    } else if (prev_x >= 126 && prev_x <= 180) {
+                                        perspective_mode = 2;
+                                        renderComposeCanvas();
+                                        uiUpdateModalBackup();
+                                        uiOpenModal(3);
+                                    } else if (prev_x >= 184 && prev_x <= 244) {
+                                        perspective_mode = 3;
+                                        renderComposeCanvas();
+                                        uiUpdateModalBackup();
+                                        uiOpenModal(3);
+                                    }
+                                }
+                                // Placing points button (y = 68..84)
+                                else if (prev_y >= 68 && prev_y <= 84) {
+                                    if (prev_x >= 12 && prev_x <= 244) {
+                                        if (perspective_mode > 0) {
+                                            uiCloseModal();
+                                            placing_vanishing_points = true;
+                                            placing_point_idx = 0;
+                                            ignore_touch_until_release = true;
+                                        }
+                                    }
+                                }
+                                // Density button (y = 90..106)
+                                else if (prev_y >= 90 && prev_y <= 106) {
+                                    if (prev_x >= 12 && prev_x <= 244) {
+                                        if (perspective_step == 64) perspective_step = 32;
+                                        else if (perspective_step == 32) perspective_step = 16;
+                                        else if (perspective_step == 16) perspective_step = 12;
+                                        else if (perspective_step == 12) perspective_step = 8;
+                                        else perspective_step = 64;
+                                        
+                                        renderComposeCanvas();
+                                        uiUpdateModalBackup();
+                                        uiOpenModal(3);
+                                    }
+                                }
+                            }
+                            option_selected = false;
                         }
                         
                         if (option_selected) {
@@ -337,6 +715,7 @@ void gameUpdate(void) {
                         uiCloseModal();
                         uiDrawToolbar();
                     }
+                    was_touching = false;
                 }
             }
             return;
@@ -347,8 +726,8 @@ void gameUpdate(void) {
             uiCloseModal(); // Close open modal if any
             toolbar_hidden = !toolbar_hidden;
             if (toolbar_hidden) {
-                // Draw background pattern region on the bottom 16 pixels
-                renderDrawBackgroundRegion(176, 191);
+                // Compose background pattern region on the bottom 16 pixels
+                renderComposeCanvas();
             } else {
                 // Restore toolbar
                 uiDrawToolbar();
@@ -359,8 +738,14 @@ void gameUpdate(void) {
         printf("\x1b[12;0H"); 
         printf("Raw Keys: %08lX      \n", (unsigned long)keys_held);
         
+        if (ignore_touch_until_release) {
+            if (!(keys_held & KEY_TOUCH)) {
+                ignore_touch_until_release = false;
+            }
+        }
+        
         touchPosition touch;
-        if (inputGetTouch(&touch)) {
+        if (!ignore_touch_until_release && inputGetTouch(&touch)) {
             if (!was_touching) {
                 touch_started_in_toolbar = !toolbar_hidden && (touch.py >= 176);
             }
@@ -399,13 +784,21 @@ void gameUpdate(void) {
             }
         } else {
             if (was_touching && touch_started_in_toolbar && prev_y >= 176) {
-                int btn = prev_x / 32;
-                if (btn >= 0 && btn < 5) {
-                    uiOpenModal(btn);
+                if (prev_x >= 0 && prev_x < 56) {
+                    uiOpenModal(0);
                     uiDrawToolbar();
-                } else if (prev_x >= 160 && prev_x < 208) {
+                } else if (prev_x >= 56 && prev_x < 96) {
+                    uiOpenModal(1);
+                    uiDrawToolbar();
+                } else if (prev_x >= 96 && prev_x < 144) {
+                    uiOpenModal(2);
+                    uiDrawToolbar();
+                } else if (prev_x >= 144 && prev_x < 184) {
+                    uiOpenModal(3);
+                    uiDrawToolbar();
+                } else if (prev_x >= 184 && prev_x < 220) {
                     enterWizardState();
-                } else if (prev_x >= 208 && prev_x <= 255) {
+                } else if (prev_x >= 220 && prev_x <= 255) {
                     current_state = STATE_UPLOAD;
                 }
             }
@@ -414,27 +807,31 @@ void gameUpdate(void) {
         }
     } 
     else if (current_state == STATE_WIZARD) {
-        if (keys_down & KEY_TOUCH) {
-            touchPosition touch;
-            if (inputGetTouch(&touch)) {
+        touchPosition touch;
+        if (inputGetTouch(&touch)) {
+            was_touching = true;
+            prev_x = touch.px;
+            prev_y = touch.py;
+        } else {
+            if (was_touching) {
                 // 1. Check if they touched the tabs: y = 42 to 62
-                if (touch.py >= 42 && touch.py <= 62) {
-                    if (touch.px >= 10 && touch.px <= 70) {
+                if (prev_y >= 42 && prev_y <= 62) {
+                    if (prev_x >= 10 && prev_x <= 70) {
                         changeWizardStep(0);
-                    } else if (touch.px >= 76 && touch.px <= 136) {
+                    } else if (prev_x >= 76 && prev_x <= 136) {
                         changeWizardStep(1);
-                    } else if (touch.px >= 142 && touch.px <= 202) {
+                    } else if (prev_x >= 142 && prev_x <= 202) {
                         changeWizardStep(2);
                     }
                 }
                 // 2. Check if they touched the keyboard: y = 96 to 182
-                else if (touch.py >= 96 && touch.py <= 182) {
+                else if (prev_y >= 96 && prev_y <= 182) {
                     bool shift_toggled = false;
                     bool caps_toggled = false;
                     bool enter_pressed = false;
                     bool backspace_pressed = false;
                     
-                    char key = uiHandleKeyboardTouch(touch.px, touch.py, &shift_toggled, &caps_toggled, &enter_pressed, &backspace_pressed);
+                    char key = uiHandleKeyboardTouch(prev_x, prev_y, &shift_toggled, &caps_toggled, &enter_pressed, &backspace_pressed);
                     
                     if (shift_toggled || caps_toggled) {
                         uiDrawBottomForm(wizard_step, current_input);
@@ -447,6 +844,7 @@ void gameUpdate(void) {
                                 netDisconnect();
                             }
                             exitWizardState(false);
+                            was_touching = false;
                             return;
                         }
                     } else if (backspace_pressed) {
@@ -466,6 +864,7 @@ void gameUpdate(void) {
                         uiDrawBottomForm(wizard_step, current_input);
                     }
                 }
+                was_touching = false;
             }
         }
         
@@ -489,11 +888,13 @@ void gameUpdate(void) {
                 }
             }
             exitWizardState(false);
+            was_touching = false;
             return;
         }
 
         if (keys_down & KEY_B) {
             exitWizardState(true);
+            was_touching = false;
             return;
         }
     } 
