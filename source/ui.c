@@ -219,26 +219,27 @@ void uiDrawFormUI(int step, const char* input_text) {
     drawSubRect(6, 22, 86, 170, white);
     drawSubRectOutline(6, 22, 86, 170, black);
 
-    drawSubText("Connection 1", 10, 26, black, 0);
+    drawSubText("Conn. 1", 10, 26, black, 0);
 
     // Connection 1 Box (HTTP selected)
     drawSubRectOutline(8, 36, 84, 52, blue);
     drawSubRectOutline(9, 37, 83, 51, blue);
-    drawBlueArrow(12, 41);
-    drawSubText("HTTP", 20, 40, blue, 0);
+    drawBlueArrow(14, 41);
+    drawSubText("HTTP", 24, 40, blue, 0);
 
     // Dotted separator
     for (int x = 8; x < 84; x += 2) {
         drawSubPixel(x, 60, dark_grey);
     }
 
-    drawSubText("Connection 2", 10, 66, black, 0);
-    drawSubText("Not Configured", 10, 76, dark_grey, 0);
+    drawSubText("Conn. 2", 10, 66, black, 0);
+    drawSubText("Not Config", 10, 76, dark_grey, 0);
 
     drawSubLine(6, 120, 86, 120, black);
 
-    drawSubText("Create or modify", 10, 126, black, 0);
-    drawSubText("an HTTP server.", 10, 136, black, 0);
+    drawSubText("Configure", 10, 126, black, 0);
+    drawSubText("your HTTP", 10, 136, black, 0);
+    drawSubText("server.", 10, 146, black, 0);
 
     // 4. Right Panel (HTTP Configuration Fields)
     drawSubRect(92, 22, 250, 170, white);
