@@ -249,34 +249,34 @@ void uiDrawFormUI(int step, const char* input_text) {
     drawSubLine(92, 37, 250, 37, black);
     drawSubText("HTTP Configuration", 96, 26, black, 0);
 
-    // Field 0: IP Address
-    drawSubText("IP Address", 96, 48, black, 0);
-    drawSubRectOutline(152, 44, 244, 58, (step == 0) ? blue : black);
+    // Field 0: IP
+    drawSubText("IP", 96, 48, black, 0);
+    drawSubRectOutline(136, 44, 244, 58, (step == 0) ? blue : black);
     if (step == 0) {
-        drawSubRectOutline(153, 45, 243, 57, blue);
-        drawSubText(input_text, 156, 47, black, 0);
+        drawSubRectOutline(137, 45, 243, 57, blue);
+        drawSubText(input_text, 140, 47, black, 0);
     } else {
-        drawSubText(http_ip, 156, 47, black, 0);
+        drawSubText(http_ip, 140, 47, black, 0);
     }
 
     // Field 1: Port
     drawSubText("Port", 96, 72, black, 0);
-    drawSubRectOutline(152, 68, 206, 82, (step == 1) ? blue : black);
+    drawSubRectOutline(136, 68, 190, 82, (step == 1) ? blue : black);
     if (step == 1) {
-        drawSubRectOutline(153, 69, 205, 81, blue);
-        drawSubText(input_text, 156, 71, black, 0);
+        drawSubRectOutline(137, 69, 189, 81, blue);
+        drawSubText(input_text, 140, 71, black, 0);
     } else {
-        drawSubText(http_port_str, 156, 71, black, 0);
+        drawSubText(http_port_str, 140, 71, black, 0);
     }
 
-    // Field 2: WiFi SSID
-    drawSubText("WiFi SSID", 96, 96, black, 0);
-    drawSubRectOutline(152, 92, 244, 106, (step == 2) ? blue : black);
+    // Field 2: SSID
+    drawSubText("SSID", 96, 96, black, 0);
+    drawSubRectOutline(136, 92, 244, 106, (step == 2) ? blue : black);
     if (step == 2) {
-        drawSubRectOutline(153, 93, 243, 105, blue);
-        drawSubText(input_text, 156, 95, black, 0);
+        drawSubRectOutline(137, 93, 243, 105, blue);
+        drawSubText(input_text, 140, 95, black, 0);
     } else {
-        drawSubText(wifi_ssid, 156, 95, black, 0);
+        drawSubText(wifi_ssid, 140, 95, black, 0);
     }
 }
 
@@ -322,7 +322,7 @@ static void drawKeyboard(void) {
         int x0 = 4 + i * 18;
         drawKey(x0, 96, x0 + 16, 116, r1_labels[i], false);
     }
-    drawKey(220, 96, 252, 116, "Bksp", false);
+    drawKey(220, 96, 252, 116, "<-", false);
     
     // Row 2: q to backslash
     const char* r2_labels_low[] = {"q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "[", "]", "\\"};
@@ -333,17 +333,17 @@ static void drawKeyboard(void) {
     }
     
     // Row 3: Caps, a to ' and Rtrn
-    drawKey(4, 140, 29, 160, "Caps", caps_active);
+    drawKey(4, 140, 29, 160, "CPS", caps_active);
     const char* r3_labels_low[] = {"a", "s", "d", "f", "g", "h", "j", "k", "l", ";", "'"};
     const char* r3_labels_up[]  = {"A", "S", "D", "F", "G", "H", "J", "K", "L", ":", "\""};
     for (int i = 0; i < 11; i++) {
         int x0 = 31 + i * 18;
         drawKey(x0, 140, x0 + 16, 160, upper ? r3_labels_up[i] : r3_labels_low[i], false);
     }
-    drawKey(229, 140, 253, 160, "Entr", false);
+    drawKey(229, 140, 253, 160, "Ent", false);
     
     // Row 4: Shift, z to /, Space
-    drawKey(4, 162, 29, 182, "Shft", shift_active);
+    drawKey(4, 162, 29, 182, "SFT", shift_active);
     const char* r4_labels_low[] = {"z", "x", "c", "v", "b", "n", "m", ",", ".", "/"};
     const char* r4_labels_up[]  = {"Z", "X", "C", "V", "B", "N", "M", "<", ">", "?"};
     for (int i = 0; i < 10; i++) {
