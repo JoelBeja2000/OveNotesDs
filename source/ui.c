@@ -427,7 +427,61 @@ void rgb15_to_hsv(uint16_t color, int* h, int* s, int* v) {
 
 void uiUpdateColorPickerSelection(void) {
     if (open_modal != 2) return;
-    uiOpenModal(2);
+    
+    // 1. Redraw the top 5 color swatches
+    for (int i = 0; i < 5; i++) {
+        drawModalColorButtonAt(16 + i * 46, 16 + i * 46 + 40, 36, 48, palette_colors[i], (active_color_idx == i));
+    }
+    
+    // 2. Redraw the 2D Hue-Saturation Map: x = 16..136 (outline), inside: x = 17..135 (width 119), y = 57..115 (height 59)
+    for (int dy = 0; dy < 59; dy++) {
+        int s = 31 - (dy * 31) / 59;
+        for (int dx = 0; dx < 119; dx++) {
+            int h = (dx * 360) / 119;
+            canvas_buffer[(57 + dy) * 256 + (17 + dx)] = hsv_to_rgb15(h, s, 31);
+        }
+    }
+    
+    // Draw Hue-Saturation reticle
+    int reticle_x = 17 + (picker_h * 119) / 360;
+    int reticle_y = 57 + ((31 - picker_s) * 59) / 31;
+    if (reticle_x < 17) reticle_x = 17;
+    if (reticle_x > 135) reticle_x = 135;
+    if (reticle_y < 57) reticle_y = 57;
+    if (reticle_y > 115) reticle_y = 115;
+    uint16_t bg_col = hsv_to_rgb15(picker_h, picker_s, 31);
+    int r = bg_col & 31, g = (bg_col >> 5) & 31, b = (bg_col >> 10) & 31;
+    uint16_t reticle_color = (r + g + b > 45) ? RGB15(0, 0, 0) : RGB15(31, 31, 31);
+    drawCircleOutline(reticle_x, reticle_y, 3, reticle_color);
+
+    // 3. Draw the vertical Preview Swatch: x = 152..176 (outline), inside: x = 153..175, y = 57..115
+    uint16_t preview_color = palette_colors[active_color_idx];
+    drawRect(153, 57, 175, 115, preview_color);
+
+    // 4. Draw the vertical Value (brightness) slider: x = 192..216 (outline), inside: x = 193..215 (width 23), y = 57..115 (height 59)
+    for (int dy = 0; dy < 59; dy++) {
+        int v = 31 - (dy * 31) / 59;
+        uint16_t slider_color = hsv_to_rgb15(picker_h, picker_s, v);
+        for (int dx = 0; dx < 23; dx++) {
+            canvas_buffer[(57 + dy) * 256 + (193 + dx)] = slider_color;
+        }
+    }
+    
+    // Clear left and right sides of Value indicator line to grey background
+    drawRect(190, 57, 191, 115, RGB15(28, 28, 28));
+    drawRect(217, 57, 218, 115, RGB15(28, 28, 28));
+    // Restore vertical borders of Value slider
+    for (int y = 57; y <= 115; y++) {
+        canvas_buffer[y * 256 + 192] = RGB15(0, 0, 0);
+        canvas_buffer[y * 256 + 216] = RGB15(0, 0, 0);
+    }
+    
+    // Draw Value indicator line
+    int v_indicator_y = 57 + ((31 - picker_v) * 59) / 31;
+    if (v_indicator_y < 57) v_indicator_y = 57;
+    if (v_indicator_y > 115) v_indicator_y = 115;
+    drawRect(190, v_indicator_y - 1, 218, v_indicator_y + 1, RGB15(0, 0, 0));
+    drawRect(191, v_indicator_y, 217, v_indicator_y, RGB15(31, 31, 31));
 }
 
 void uiUpdatePickerPosFromActiveColor(void) {
