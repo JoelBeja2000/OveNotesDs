@@ -578,7 +578,12 @@ void gameUpdate(void) {
                 was_touching = true;
             } else {
                 if (was_touching) {
-                    int modal_y0 = (open_modal == 0 || open_modal == 2 || open_modal == 3) ? 20 : ((open_modal == 4) ? 90 : 120);
+                    int modal_y0;
+                    if (open_modal == 0 || open_modal == 2 || open_modal == 3) modal_y0 = 20;
+                    else if (open_modal == 4) modal_y0 = 90;
+                    else if (open_modal == 5) modal_y0 = 30;
+                    else if (open_modal == 6) modal_y0 = 50;
+                    else modal_y0 = 120; // open_modal == 1
                     if (prev_y >= modal_y0 && prev_y <= 170 && prev_x >= 8 && prev_x <= 247) {
                         bool option_selected = false;
                         if (open_modal == 0) { // TOOL
@@ -1014,6 +1019,62 @@ void gameUpdate(void) {
                             }
                             // Tab 2 (Capas) removed from here to become independent sidebar
                             option_selected = false;
+                        } else if (open_modal == 5) { // MENU options
+                            if (prev_x >= 24 && prev_x <= 232) {
+                                if (prev_y >= 52 && prev_y <= 74) {
+                                    // Guardar nota
+                                    uiCloseModal();
+                                    renderComposeCanvas();
+                                    bool success = ioSaveNote(canvas_buffer);
+                                    if (success) {
+                                        printf("[SYS] Nota guardada correctamente en la SD!\n");
+                                    } else {
+                                        printf("[SYS] Error al guardar la nota en la SD.\n");
+                                    }
+                                    uiDrawToolbar();
+                                    option_selected = false;
+                                } else if (prev_y >= 80 && prev_y <= 102) {
+                                    // Wifi
+                                    uiCloseModal();
+                                    enterWizardState();
+                                    option_selected = false;
+                                } else if (prev_y >= 108 && prev_y <= 130) {
+                                    // Volver al inicio -> Open confirmation modal (modal 6)
+                                    uiOpenModal(6);
+                                    option_selected = false;
+                                } else if (prev_y >= 136 && prev_y <= 158) {
+                                    // Cancelar
+                                    option_selected = true;
+                                }
+                            }
+                        } else if (open_modal == 6) { // Confirm save before exit
+                            if (prev_x >= 24 && prev_x <= 232) {
+                                if (prev_y >= 76 && prev_y <= 98) {
+                                    // SI, GUARDAR Y SALIR
+                                    uiCloseModal();
+                                    renderComposeCanvas();
+                                    ioSaveNote(canvas_buffer);
+                                    current_state = STATE_START_MENU;
+                                    videoSetModeSub(MODE_5_2D | DISPLAY_BG3_ACTIVE);
+                                    bg_sub_wizard = bgInitSub(3, BgType_Bmp16, BgSize_B16_256x256, 0, 0);
+                                    wizard_buffer = (uint16_t*)bgGetGfxPtr(bg_sub_wizard);
+                                    uiDrawStartMenu();
+                                    option_selected = false;
+                                } else if (prev_y >= 104 && prev_y <= 126) {
+                                    // NO, SALIR SIN GUARDAR
+                                    uiCloseModal();
+                                    current_state = STATE_START_MENU;
+                                    videoSetModeSub(MODE_5_2D | DISPLAY_BG3_ACTIVE);
+                                    bg_sub_wizard = bgInitSub(3, BgType_Bmp16, BgSize_B16_256x256, 0, 0);
+                                    wizard_buffer = (uint16_t*)bgGetGfxPtr(bg_sub_wizard);
+                                    uiDrawStartMenu();
+                                    option_selected = false;
+                                } else if (prev_y >= 132 && prev_y <= 154) {
+                                    // CANCELAR (go back to options modal 5)
+                                    uiOpenModal(5);
+                                    option_selected = false;
+                                }
+                            }
                         }
                         
                         if (option_selected) {
@@ -1297,7 +1358,8 @@ void gameUpdate(void) {
                         uiOpenModal(3);
                         uiDrawToolbar();
                     } else if (prev_x >= 168 && prev_x < 212) {
-                        enterWizardState();
+                        uiOpenModal(5);
+                        uiDrawToolbar();
                     } else if (prev_x >= 212 && prev_x <= 255) {
                         current_state = STATE_UPLOAD;
                     }

@@ -100,6 +100,12 @@ static void getModalYRange(int modal, int* y0, int* y1) {
     } else if (modal == 4) {
         *y0 = 90;
         *y1 = 170;
+    } else if (modal == 5) {
+        *y0 = 30;
+        *y1 = 170;
+    } else if (modal == 6) {
+        *y0 = 50;
+        *y1 = 170;
     } else { // modal == 1
         *y0 = 120;
         *y1 = 170;
@@ -858,6 +864,25 @@ void uiOpenModal(int modal_idx) {
         int end_y = cy + (int)(sinf(rad) * 26.0f);
         drawLine(cx, cy, end_x, end_y, RGB15(31, 0, 0));
     }
+    else if (open_modal == 5) {
+        // MENU DE LA NOTA
+        renderDrawText("MENU DE LA NOTA", 80, y0 + 6, RGB15(0, 0, 0), 0);
+        
+        // Draw options buttons
+        drawModalButtonAt(24, 232, y0 + 22, y0 + 44, "GUARDAR NOTA (SD)", false);
+        drawModalButtonAt(24, 232, y0 + 50, y0 + 72, "WIFI / CONEXION", false);
+        drawModalButtonAt(24, 232, y0 + 78, y0 + 100, "VOLVER AL MENU INICIO", false);
+        drawModalButtonAt(24, 232, y0 + 106, y0 + 128, "CANCELAR", false);
+    }
+    else if (open_modal == 6) {
+        // ¿GUARDAR ANTES DE SALIR?
+        renderDrawText("¿GUARDAR ANTES DE SALIR?", 56, y0 + 8, RGB15(31, 5, 5), 0);
+        
+        // Draw confirmation buttons
+        drawModalButtonAt(24, 232, y0 + 26, y0 + 48, "SI, GUARDAR Y SALIR", false);
+        drawModalButtonAt(24, 232, y0 + 54, y0 + 76, "NO, SALIR SIN GUARDAR", false);
+        drawModalButtonAt(24, 232, y0 + 82, y0 + 104, "CANCELAR", false);
+    }
 }
 
 static void drawFilledCircle(int xm, int ym, int r, uint16_t color) {
@@ -961,7 +986,11 @@ void uiDrawToolbar(void) {
     if (open_modal == 3) fillButtonBg(126, 168, RGB15(12, 12, 18));
 
     // Highlight Config (Button 4) and Publicar (Button 5)
-    fillButtonBg(168, 212, RGB15(6, 6, 12));
+    if (open_modal == 5) {
+        fillButtonBg(168, 212, RGB15(12, 12, 18));
+    } else {
+        fillButtonBg(168, 212, RGB15(6, 6, 12));
+    }
     fillButtonBg(212, 256, RGB15(2, 16, 2));
 
     uint16_t active_text_color = RGB15(31, 31, 31);
@@ -992,8 +1021,8 @@ void uiDrawToolbar(void) {
     sprintf(bg_label, "BG%d", bg_pattern_idx);
     renderDrawText(bg_label, 138, 180, active_text_color, 0);
 
-    // Button 4: CONFIG
-    renderDrawText("CONFIG", 172, 180, active_text_color, 0);
+    // Button 4: MENU
+    renderDrawText("MENU", 178, 180, active_text_color, 0);
 
     // Button 5: ENVIAR
     renderDrawText("ENVIAR", 216, 180, active_text_color, 0);
