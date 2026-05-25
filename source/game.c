@@ -343,10 +343,21 @@ void gameUpdate(void) {
                             float rad = atan2f(dy, dx);
                             int angle = (int)(rad * 180.0f / 3.14159f);
                             if (angle < 0) angle += 360;
-                            if (nib_angle != angle) {
-                                nib_angle = angle;
-                                uiOpenModal(4);
-                                uiDrawToolbar();
+                            if (angle_target == 1) {
+                                if (bg_angle != angle) {
+                                    bg_angle = angle;
+                                    renderApplyBackgroundPattern(bg_pattern_idx);
+                                    renderComposeCanvas();
+                                    uiUpdateModalBackup();
+                                    uiOpenModal(4);
+                                    uiDrawToolbar();
+                                }
+                            } else {
+                                if (nib_angle != angle) {
+                                    nib_angle = angle;
+                                    uiOpenModal(4);
+                                    uiDrawToolbar();
+                                }
                             }
                         }
                     }
@@ -451,6 +462,8 @@ void gameUpdate(void) {
                                 if (angle_target == 1) {
                                     bg_angle = angle;
                                     renderApplyBackgroundPattern(bg_pattern_idx);
+                                    renderComposeCanvas();
+                                    uiUpdateModalBackup();
                                 } else {
                                     nib_angle = angle;
                                 }
