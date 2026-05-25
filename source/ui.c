@@ -742,17 +742,14 @@ void uiOpenModal(int modal_idx) {
         uint16_t tab_inactive_bg = RGB15(20, 20, 20);
         uint16_t tab_border = RGB15(0, 0, 0);
         
-        drawRect(8, 20, 87, 32, (bg_modal_tab == 0) ? tab_active_bg : tab_inactive_bg);
-        drawRect(88, 20, 167, 32, (bg_modal_tab == 1) ? tab_active_bg : tab_inactive_bg);
-        drawRect(168, 20, 247, 32, (bg_modal_tab == 2) ? tab_active_bg : tab_inactive_bg);
+        drawRect(8, 20, 127, 32, (bg_modal_tab == 0) ? tab_active_bg : tab_inactive_bg);
+        drawRect(128, 20, 247, 32, (bg_modal_tab == 1) ? tab_active_bg : tab_inactive_bg);
         
-        drawRectOutline(8, 20, 87, 32, tab_border);
-        drawRectOutline(88, 20, 167, 32, tab_border);
-        drawRectOutline(168, 20, 247, 32, tab_border);
+        drawRectOutline(8, 20, 127, 32, tab_border);
+        drawRectOutline(128, 20, 247, 32, tab_border);
         
-        renderDrawText("PATRON", 24, 23, (bg_modal_tab == 0) ? RGB15(0, 0, 0) : RGB15(16, 16, 16), 0);
-        renderDrawText("PERSPECT", 96, 23, (bg_modal_tab == 1) ? RGB15(0, 0, 0) : RGB15(16, 16, 16), 0);
-        renderDrawText("CAPAS", 188, 23, (bg_modal_tab == 2) ? RGB15(0, 0, 0) : RGB15(16, 16, 16), 0);
+        renderDrawText("PATRONES", 44, 23, (bg_modal_tab == 0) ? RGB15(0, 0, 0) : RGB15(16, 16, 16), 0);
+        renderDrawText("PERSPECTIVA", 152, 23, (bg_modal_tab == 1) ? RGB15(0, 0, 0) : RGB15(16, 16, 16), 0);
         
         if (bg_modal_tab == 0) {
             for (int i = 0; i < 4; i++) {
@@ -775,23 +772,6 @@ void uiOpenModal(int modal_idx) {
             char rot_lbl[16];
             sprintf(rot_lbl, "ROT:%d", bg_angle);
             drawModalButtonAt(198, 244, 132, 150, rot_lbl, false);
-        } else if (bg_modal_tab == 2) {
-            renderDrawText("SISTEMA DE CAPAS", 16, 36, RGB15(0, 0, 0), 0);
-            
-            drawModalButtonAt(12, 120, 50, 70, (active_layer == 2) ? "CAPA 2 (ACTIVA)" : "CAPA 2", (active_layer == 2));
-            drawModalButtonAt(126, 180, 50, 70, layer2_visible ? "VER: SI" : "VER: NO", layer2_visible);
-            drawModalButtonAt(186, 244, 50, 70, "LIMPIAR", false);
-            
-            drawModalButtonAt(12, 120, 80, 100, (active_layer == 1) ? "CAPA 1 (ACTIVA)" : "CAPA 1", (active_layer == 1));
-            drawModalButtonAt(126, 180, 80, 100, layer1_visible ? "VER: SI" : "VER: NO", layer1_visible);
-            drawModalButtonAt(186, 244, 80, 100, "LIMPIAR", false);
-            
-            drawModalButtonAt(12, 120, 110, 130, "FONDO", false);
-            
-            drawModalButtonAt(126, 244, 110, 130, bg_modifiable ? "  UNLOCKED" : "  LOCKED", !bg_modifiable);
-            drawLockIcon(134, 115, !bg_modifiable);
-            
-            drawModalButtonAt(12, 244, 140, 160, "COMBINAR CAPA 2 HACIA ABAJO", false);
         } else {
             renderDrawText("MODO DE PERSPECTIVA", 16, 36, RGB15(0, 0, 0), 0);
             
@@ -1406,4 +1386,118 @@ char uiHandleKeyboardTouch(int tx, int ty, bool* shift_toggled, bool* caps_toggl
     }
     
     return 0;
+}
+
+static void uiDrawLayersSidebar(void) {
+    uint16_t panel_bg = RGB15(22, 22, 25);
+    uint16_t border_col = RGB15(0, 0, 0);
+    uint16_t text_col = RGB15(31, 31, 31);
+    
+    // Fill sidebar region: x = 160..255, y = 0..176
+    for (int y = 0; y < 176; y++) {
+        for (int x = 160; x < 256; x++) {
+            canvas_buffer[y * 256 + x] = panel_bg;
+        }
+        canvas_buffer[y * 256 + 159] = border_col;
+    }
+    
+    // Header title "CAPAS"
+    renderDrawText("CAPAS", 164, 4, text_col, 0);
+    
+    // Close button "X" (red on dark red) at x = 236..252, y = 2..14
+    drawRect(236, 2, 252, 14, RGB15(15, 3, 3));
+    drawRectOutline(236, 2, 252, 14, border_col);
+    renderDrawText("X", 241, 4, RGB15(31, 10, 10), 0);
+    
+    // "+ CAPA" button at x = 164..252, y = 18..32
+    if (layers_count < MAX_LAYERS) {
+        drawRect(164, 18, 252, 32, RGB15(5, 18, 5));
+        drawRectOutline(164, 18, 252, 32, border_col);
+        renderDrawText("+ CAPA", 182, 21, RGB15(20, 31, 20), 0);
+    } else {
+        drawRect(164, 18, 252, 32, RGB15(12, 12, 12));
+        drawRectOutline(164, 18, 252, 32, border_col);
+        renderDrawText("LLENO", 188, 21, RGB15(18, 18, 18), 0);
+    }
+    
+    // Draw layer items from layers_count-1 down to 0
+    for (int i = layers_count - 1; i >= 0; i--) {
+        int idx_from_top = layers_count - 1 - i;
+        int y_pos = 36 + idx_from_top * 16;
+        
+        // Active indicator / selection button: x = 164..212, y = y_pos..y_pos+14
+        bool is_active = (active_layer_idx == i);
+        uint16_t btn_bg = is_active ? RGB15(4, 10, 24) : RGB15(12, 12, 14);
+        uint16_t btn_border = is_active ? RGB15(10, 16, 31) : border_col;
+        uint16_t btn_txt = is_active ? RGB15(20, 25, 31) : text_col;
+        
+        drawRect(164, y_pos, 212, y_pos + 14, btn_bg);
+        drawRectOutline(164, y_pos, 212, y_pos + 14, btn_border);
+        
+        char layer_name[16];
+        sprintf(layer_name, "CAPA %d", i);
+        renderDrawText(layer_name, 168, y_pos + 3, btn_txt, 0);
+        
+        // Visibility toggle button: x = 216..232, y = y_pos..y_pos+14
+        bool is_visible = layers_visible[i];
+        uint16_t vis_bg = is_visible ? RGB15(20, 18, 5) : RGB15(8, 8, 8);
+        uint16_t vis_txt = is_visible ? RGB15(31, 28, 15) : RGB15(15, 15, 15);
+        
+        drawRect(216, y_pos, 232, y_pos + 14, vis_bg);
+        drawRectOutline(216, y_pos, 232, y_pos + 14, border_col);
+        renderDrawText(is_visible ? "V" : "H", 220, y_pos + 3, vis_txt, 0);
+        
+        // Delete button: x = 236..252, y = y_pos..y_pos+14
+        if (i > 0) {
+            drawRect(236, y_pos, 252, y_pos + 14, RGB15(20, 5, 5));
+            drawRectOutline(236, y_pos, 252, y_pos + 14, border_col);
+            renderDrawText("X", 241, y_pos + 3, RGB15(31, 15, 15), 0);
+        } else {
+            drawRect(236, y_pos, 252, y_pos + 14, RGB15(8, 8, 8));
+            drawRectOutline(236, y_pos, 252, y_pos + 14, border_col);
+            renderDrawText("-", 241, y_pos + 3, RGB15(15, 15, 15), 0);
+        }
+    }
+    
+    // Draw "FONDO" item at y_pos = 36 + layers_count * 16
+    int bg_y = 36 + layers_count * 16;
+    drawRect(164, bg_y, 212, bg_y + 14, RGB15(12, 12, 14));
+    drawRectOutline(164, bg_y, 212, bg_y + 14, border_col);
+    renderDrawText("FONDO", 168, bg_y + 3, text_col, 0);
+    
+    // Lock toggle: x = 216..252, y = bg_y..bg_y+14
+    drawRect(216, bg_y, 252, bg_y + 14, bg_modifiable ? RGB15(5, 18, 5) : RGB15(20, 5, 5));
+    drawRectOutline(216, bg_y, 252, bg_y + 14, border_col);
+    renderDrawText(bg_modifiable ? " MOD" : " LOK", 218, bg_y + 3, text_col, 0);
+    drawLockIcon(244, bg_y + 1, !bg_modifiable);
+    
+    // Draw "COMBINAR" button at y = 154..168
+    bool can_merge = (active_layer_idx > 0);
+    uint16_t merge_bg = can_merge ? RGB15(22, 12, 3) : RGB15(8, 8, 8);
+    uint16_t merge_txt = can_merge ? RGB15(31, 20, 10) : RGB15(15, 15, 15);
+    
+    drawRect(164, 154, 252, 168, merge_bg);
+    drawRectOutline(164, 154, 252, 168, border_col);
+    renderDrawText("COMBINAR", 182, 157, merge_txt, 0);
+}
+
+void uiDrawLayersOverlay(void) {
+    if (layers_panel_open) {
+        uiDrawLayersSidebar();
+    } else {
+        // Draw a small floating tab button on the right edge: x = 244..255, y = 70..106
+        uint16_t tab_bg = RGB15(15, 15, 20);
+        uint16_t tab_border = RGB15(0, 0, 0);
+        
+        drawRect(244, 70, 255, 106, tab_bg);
+        drawRectOutline(244, 70, 255, 106, tab_border);
+        
+        // Stack of three sheets
+        uint16_t sheet_col = RGB15(25, 25, 28);
+        drawRect(247, 76, 252, 78, sheet_col);
+        drawRect(247, 82, 252, 84, sheet_col);
+        drawRect(247, 88, 252, 90, sheet_col);
+        
+        renderDrawText("<", 247, 96, RGB15(31, 31, 31), 0);
+    }
 }

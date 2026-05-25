@@ -42,6 +42,7 @@ void rgb15_to_hsv(uint16_t color, int* h, int* s, int* v);
 void uiUpdatePickerPosFromActiveColor(void);
 void uiUpdateColorPickerSelection(void);
 void uiUpdateAngleWheelVisuals(void);
+void uiDrawLayersOverlay(void);
 void uiDrawFormUI(int step, const char* input_text);
 void uiDrawBottomForm(int step, const char* input_text);
 char uiHandleKeyboardTouch(int tx, int ty, bool* shift_toggled, bool* caps_toggled, bool* enter_pressed, bool* backspace_pressed);

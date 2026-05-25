@@ -14,11 +14,16 @@ extern uint16_t* canvas_buffer;
 extern uint16_t* preview_buffer;
 extern uint16_t* wizard_buffer;
 extern uint16_t* drawing_buffer;
-extern uint16_t* layer1_buffer;
-extern uint16_t* layer2_buffer;
-extern int active_layer;
-extern bool layer1_visible;
-extern bool layer2_visible;
+#define MAX_LAYERS 8
+extern uint16_t* layers[MAX_LAYERS];
+extern int layers_count;
+extern int active_layer_idx;
+extern bool layers_visible[MAX_LAYERS];
+extern bool layers_panel_open;
+
+void renderAddLayer(void);
+void renderDeleteLayer(int idx);
+void renderMergeActiveLayerDown(void);
 extern bool toolbar_hidden;
 
 extern bool bg_modifiable;

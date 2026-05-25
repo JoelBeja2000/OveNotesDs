@@ -68,19 +68,7 @@ void gameInit(void) {
     bgSet(bg_sub_preview, 0, 1 << 8, 1 << 8, -64 << 8, -32 << 8, 0, 0);
     bgUpdate();
 
-    layer1_buffer = (uint16_t*)malloc(256 * 192 * sizeof(uint16_t));
-    layer2_buffer = (uint16_t*)malloc(256 * 192 * sizeof(uint16_t));
-    if (layer1_buffer == NULL || layer2_buffer == NULL) {
-        printf("[FATAL] Error de asignacion de memoria.\n");
-    }
-    
-    for (int i = 0; i < 256 * 192; i++) {
-        layer1_buffer[i] = RGB15(31, 31, 31);
-        layer2_buffer[i] = RGB15(31, 31, 31);
-    }
-    
-    active_layer = 1;
-    drawing_buffer = layer1_buffer;
+    // layers and drawing_buffer are dynamically initialized inside renderInitCanvas()
 
     // Initialize drawing paper & toolbar
     renderInitCanvas();
@@ -643,19 +631,14 @@ void gameUpdate(void) {
                         } else if (open_modal == 3) { // BG
                             // Check tab bar (y = 20..32)
                             if (prev_y >= 20 && prev_y <= 32) {
-                                if (prev_x >= 8 && prev_x <= 87) {
+                                if (prev_x >= 8 && prev_x <= 127) {
                                     if (bg_modal_tab != 0) {
                                         bg_modal_tab = 0;
                                         uiOpenModal(3);
                                     }
-                                } else if (prev_x >= 88 && prev_x <= 167) {
+                                } else if (prev_x >= 128 && prev_x <= 247) {
                                     if (bg_modal_tab != 1) {
                                         bg_modal_tab = 1;
-                                        uiOpenModal(3);
-                                    }
-                                } else if (prev_x >= 168 && prev_x <= 247) {
-                                    if (bg_modal_tab != 2) {
-                                        bg_modal_tab = 2;
                                         uiOpenModal(3);
                                     }
                                 }
@@ -836,74 +819,7 @@ void gameUpdate(void) {
                                     }
                                 }
                             }
-                            // Tab 2: CAPAS
-                            else if (bg_modal_tab == 2) {
-                                // Row 1: Capa 2 (y = 50..70)
-                                if (prev_y >= 50 && prev_y <= 70) {
-                                    if (prev_x >= 12 && prev_x <= 120) {
-                                        active_layer = 2;
-                                        drawing_buffer = layer2_buffer;
-                                        uiOpenModal(3);
-                                    } else if (prev_x >= 126 && prev_x <= 180) {
-                                        layer2_visible = !layer2_visible;
-                                        renderComposeCanvas();
-                                        uiUpdateModalBackup();
-                                        uiOpenModal(3);
-                                    } else if (prev_x >= 186 && prev_x <= 244) {
-                                        for (int i = 0; i < 256 * 192; i++) {
-                                            layer2_buffer[i] = RGB15(31, 31, 31);
-                                        }
-                                        renderComposeCanvas();
-                                        uiUpdateModalBackup();
-                                        uiOpenModal(3);
-                                    }
-                                }
-                                // Row 2: Capa 1 (y = 80..100)
-                                else if (prev_y >= 80 && prev_y <= 100) {
-                                    if (prev_x >= 12 && prev_x <= 120) {
-                                        active_layer = 1;
-                                        drawing_buffer = layer1_buffer;
-                                        uiOpenModal(3);
-                                    } else if (prev_x >= 126 && prev_x <= 180) {
-                                        layer1_visible = !layer1_visible;
-                                        renderComposeCanvas();
-                                        uiUpdateModalBackup();
-                                        uiOpenModal(3);
-                                    } else if (prev_x >= 186 && prev_x <= 244) {
-                                        for (int i = 0; i < 256 * 192; i++) {
-                                            layer1_buffer[i] = RGB15(31, 31, 31);
-                                        }
-                                        renderComposeCanvas();
-                                        uiUpdateModalBackup();
-                                        uiOpenModal(3);
-                                    }
-                                }
-                                // Row 3: Fondo & Lock (y = 110..130)
-                                else if (prev_y >= 110 && prev_y <= 130) {
-                                    if (prev_x >= 126 && prev_x <= 244) {
-                                        bg_modifiable = !bg_modifiable;
-                                        renderApplyBackgroundPattern(bg_pattern_idx);
-                                        renderComposeCanvas();
-                                        uiUpdateModalBackup();
-                                        uiOpenModal(3);
-                                    }
-                                }
-                                // Row 4: Merge button (y = 140..160)
-                                else if (prev_y >= 140 && prev_y <= 160) {
-                                    if (prev_x >= 12 && prev_x <= 244) {
-                                        for (int i = 0; i < 256 * 192; i++) {
-                                            uint16_t p2 = layer2_buffer[i];
-                                            if (p2 != RGB15(31, 31, 31)) {
-                                                layer1_buffer[i] = p2;
-                                            }
-                                            layer2_buffer[i] = RGB15(31, 31, 31);
-                                        }
-                                        renderComposeCanvas();
-                                        uiUpdateModalBackup();
-                                        uiOpenModal(3);
-                                    }
-                                }
-                            }
+                            // Tab 2 (Capas) removed from here to become independent sidebar
                             option_selected = false;
                         }
                         
@@ -954,20 +870,25 @@ void gameUpdate(void) {
             int limit_y = toolbar_hidden ? 192 : 176;
             if (touch.py < limit_y) {
                 if (!touch_started_in_toolbar) {
-                    if (is_bucket) {
-                        if (!was_touching) {
-                            renderFloodFill(touch.px, touch.py, palette_colors[active_color_idx]);
-                            renderUpdatePreview();
-                        }
-                    } else {
-                        uint16_t draw_color = is_eraser ? RGB15(31, 31, 31) : palette_colors[active_color_idx];
-                        if (was_touching && prev_y < limit_y) {
-                            renderDrawLine(prev_x, prev_y, touch.px, touch.py, draw_color, is_eraser ? eraser_size : active_brush_size, is_eraser);
+                    bool ignore_draw = (layers_panel_open && touch.px >= 160);
+                    if (!ignore_draw) {
+                        if (is_bucket) {
+                            if (!was_touching) {
+                                renderFloodFill(touch.px, touch.py, palette_colors[active_color_idx]);
+                                renderUpdatePreview();
+                            }
                         } else {
-                            if (is_eraser) {
-                                renderDrawEraserPoint(touch.px, touch.py);
+                            uint16_t draw_color = is_eraser ? RGB15(31, 31, 31) : palette_colors[active_color_idx];
+                            if (was_touching && prev_y < limit_y) {
+                                if (!layers_panel_open || (prev_x < 160 && touch.px < 160)) {
+                                    renderDrawLine(prev_x, prev_y, touch.px, touch.py, draw_color, is_eraser ? eraser_size : active_brush_size, is_eraser);
+                                }
                             } else {
-                                renderDrawBrushPoint(touch.px, touch.py, draw_color, active_brush_size);
+                                if (is_eraser) {
+                                    renderDrawEraserPoint(touch.px, touch.py);
+                                } else {
+                                    renderDrawBrushPoint(touch.px, touch.py, draw_color, active_brush_size);
+                                }
                             }
                         }
                     }
@@ -986,23 +907,93 @@ void gameUpdate(void) {
                 was_touching = true;
             }
         } else {
-            if (was_touching && touch_started_in_toolbar && prev_y >= 176) {
-                if (prev_x >= 0 && prev_x < 42) {
-                    uiOpenModal(0);
-                    uiDrawToolbar();
-                } else if (prev_x >= 42 && prev_x < 84) {
-                    uiOpenModal(1);
-                    uiDrawToolbar();
-                } else if (prev_x >= 84 && prev_x < 126) {
-                    uiOpenModal(2);
-                    uiDrawToolbar();
-                } else if (prev_x >= 126 && prev_x < 168) {
-                    uiOpenModal(3);
-                    uiDrawToolbar();
-                } else if (prev_x >= 168 && prev_x < 212) {
-                    enterWizardState();
-                } else if (prev_x >= 212 && prev_x <= 255) {
-                    current_state = STATE_UPLOAD;
+            if (was_touching) {
+                bool sidebar_action_taken = false;
+                if (layers_panel_open) {
+                    if (prev_x >= 160 && prev_y < 176) {
+                        // Close button "X"
+                        if (prev_x >= 236 && prev_x <= 252 && prev_y >= 2 && prev_y <= 14) {
+                            layers_panel_open = false;
+                            renderComposeCanvas();
+                            sidebar_action_taken = true;
+                        }
+                        // "+ CAPA" button
+                        else if (prev_x >= 164 && prev_x <= 252 && prev_y >= 18 && prev_y <= 32) {
+                            renderAddLayer();
+                            sidebar_action_taken = true;
+                        }
+                        // COMBINAR button
+                        else if (prev_x >= 164 && prev_x <= 252 && prev_y >= 154 && prev_y <= 168) {
+                            renderMergeActiveLayerDown();
+                            sidebar_action_taken = true;
+                        }
+                        // FONDO or Layer items
+                        else {
+                            int bg_y = 36 + layers_count * 16;
+                            if (prev_y >= bg_y && prev_y <= bg_y + 14) {
+                                if (prev_x >= 216 && prev_x <= 252) {
+                                    bg_modifiable = !bg_modifiable;
+                                    renderComposeCanvas();
+                                    sidebar_action_taken = true;
+                                }
+                            } else {
+                                for (int i = layers_count - 1; i >= 0; i--) {
+                                    int idx_from_top = layers_count - 1 - i;
+                                    int y_pos = 36 + idx_from_top * 16;
+                                    if (prev_y >= y_pos && prev_y <= y_pos + 14) {
+                                        if (prev_x >= 164 && prev_x <= 212) {
+                                            active_layer_idx = i;
+                                            drawing_buffer = layers[i];
+                                            renderComposeCanvas();
+                                            sidebar_action_taken = true;
+                                        } else if (prev_x >= 216 && prev_x <= 232) {
+                                            layers_visible[i] = !layers_visible[i];
+                                            renderComposeCanvas();
+                                            sidebar_action_taken = true;
+                                        } else if (prev_x >= 236 && prev_x <= 252 && i > 0) {
+                                            renderDeleteLayer(i);
+                                            sidebar_action_taken = true;
+                                        }
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    // Floating layers tab: x = 244..255, y = 70..106
+                    if (prev_x >= 244 && prev_y >= 70 && prev_y <= 106) {
+                        layers_panel_open = true;
+                        uiCloseModal();
+                        renderComposeCanvas();
+                        sidebar_action_taken = true;
+                    }
+                }
+                
+                if (sidebar_action_taken) {
+                    renderUpdatePreview();
+                }
+                
+                if (touch_started_in_toolbar && prev_y >= 176) {
+                    layers_panel_open = false;
+                    
+                    if (prev_x >= 0 && prev_x < 42) {
+                        uiOpenModal(0);
+                        uiDrawToolbar();
+                    } else if (prev_x >= 42 && prev_x < 84) {
+                        uiOpenModal(1);
+                        uiDrawToolbar();
+                    } else if (prev_x >= 84 && prev_x < 126) {
+                        uiOpenModal(2);
+                        uiDrawToolbar();
+                    } else if (prev_x >= 126 && prev_x < 168) {
+                        uiOpenModal(3);
+                        uiDrawToolbar();
+                    } else if (prev_x >= 168 && prev_x < 212) {
+                        enterWizardState();
+                    } else if (prev_x >= 212 && prev_x <= 255) {
+                        current_state = STATE_UPLOAD;
+                    }
                 }
             }
             was_touching = false;

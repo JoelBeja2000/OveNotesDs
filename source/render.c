@@ -11,11 +11,11 @@ uint16_t* canvas_buffer = NULL;
 uint16_t* preview_buffer = NULL;
 uint16_t* wizard_buffer = NULL;
 uint16_t* drawing_buffer = NULL;
-uint16_t* layer1_buffer = NULL;
-uint16_t* layer2_buffer = NULL;
-int active_layer = 1;
-bool layer1_visible = true;
-bool layer2_visible = true;
+uint16_t* layers[MAX_LAYERS] = {NULL};
+int layers_count = 1;
+int active_layer_idx = 0;
+bool layers_visible[MAX_LAYERS] = {false};
+bool layers_panel_open = false;
 bool toolbar_hidden = false;
 
 bool bg_modifiable = false;
@@ -66,25 +66,18 @@ uint16_t blendRGB555_int(uint16_t src, uint16_t dst, int alpha_32) {
 }
 
 uint16_t renderGetComposedPixel(int x, int y) {
-    uint16_t p1 = RGB15(31, 31, 31);
-    uint16_t p2 = RGB15(31, 31, 31);
-    
-    if (layer1_buffer != NULL) p1 = layer1_buffer[y * 256 + x];
-    if (layer2_buffer != NULL) p2 = layer2_buffer[y * 256 + x];
-    
-    if (layer1_buffer == NULL && layer2_buffer == NULL && drawing_buffer != NULL) {
-        p1 = drawing_buffer[y * 256 + x];
-    }
-    
     bool pixel_drawn = false;
     uint16_t out_color = RGB15(31, 31, 31);
     
-    if (layer2_visible && p2 != RGB15(31, 31, 31)) {
-        out_color = p2;
-        pixel_drawn = true;
-    } else if (layer1_visible && p1 != RGB15(31, 31, 31)) {
-        out_color = p1;
-        pixel_drawn = true;
+    for (int i = layers_count - 1; i >= 0; i--) {
+        if (layers[i] != NULL && layers_visible[i]) {
+            uint16_t p = layers[i][y * 256 + x];
+            if (p != RGB15(31, 31, 31)) {
+                out_color = p;
+                pixel_drawn = true;
+                break;
+            }
+        }
     }
     
     if (!pixel_drawn) {
@@ -392,6 +385,8 @@ void renderComposeCanvas(void) {
             drawPerspectiveCrosshair(perspective_points[i][0], perspective_points[i][1], RGB15(31, 0, 0));
         }
     }
+    
+    uiDrawLayersOverlay();
 }
 
 void renderApplyBackgroundPattern(int pat_index) {
@@ -653,18 +648,91 @@ void renderDrawLine(int x0, int y0, int x1, int y1, uint16_t color, int size, bo
 }
 
 void renderInitCanvas(void) {
-    if (layer1_buffer != NULL) {
+    for (int i = 0; i < MAX_LAYERS; i++) {
+        if (layers[i] != NULL) {
+            free(layers[i]);
+            layers[i] = NULL;
+        }
+        layers_visible[i] = false;
+    }
+    
+    layers[0] = (uint16_t*)malloc(256 * 192 * sizeof(uint16_t));
+    if (layers[0] != NULL) {
         for (int i = 0; i < 256 * 192; i++) {
-            layer1_buffer[i] = RGB15(31, 31, 31);
+            layers[0][i] = RGB15(31, 31, 31);
         }
     }
-    if (layer2_buffer != NULL) {
-        for (int i = 0; i < 256 * 192; i++) {
-            layer2_buffer[i] = RGB15(31, 31, 31);
-        }
-    }
+    
+    layers_count = 1;
+    active_layer_idx = 0;
+    layers_visible[0] = true;
+    drawing_buffer = layers[0];
+    
     renderComposeCanvas();
     uiDrawToolbar();
+}
+
+void renderAddLayer(void) {
+    if (layers_count >= MAX_LAYERS) return;
+    
+    uint16_t* new_layer = (uint16_t*)malloc(256 * 192 * sizeof(uint16_t));
+    if (new_layer == NULL) return;
+    
+    for (int i = 0; i < 256 * 192; i++) {
+        new_layer[i] = RGB15(31, 31, 31);
+    }
+    
+    layers[layers_count] = new_layer;
+    layers_visible[layers_count] = true;
+    active_layer_idx = layers_count;
+    drawing_buffer = layers[active_layer_idx];
+    layers_count++;
+    
+    renderComposeCanvas();
+}
+
+void renderDeleteLayer(int idx) {
+    if (idx < 0 || idx >= layers_count) return;
+    if (layers_count <= 1) return;
+    
+    if (layers[idx] != NULL) {
+        free(layers[idx]);
+        layers[idx] = NULL;
+    }
+    
+    for (int i = idx; i < layers_count - 1; i++) {
+        layers[i] = layers[i + 1];
+        layers_visible[i] = layers_visible[i + 1];
+    }
+    layers[layers_count - 1] = NULL;
+    layers_visible[layers_count - 1] = false;
+    layers_count--;
+    
+    if (active_layer_idx >= layers_count) {
+        active_layer_idx = layers_count - 1;
+    }
+    drawing_buffer = layers[active_layer_idx];
+    
+    renderComposeCanvas();
+}
+
+void renderMergeActiveLayerDown(void) {
+    if (active_layer_idx <= 0 || active_layer_idx >= layers_count) return;
+    
+    int dst_idx = active_layer_idx - 1;
+    int src_idx = active_layer_idx;
+    
+    if (layers[dst_idx] != NULL && layers[src_idx] != NULL) {
+        for (int i = 0; i < 256 * 192; i++) {
+            uint16_t src_pixel = layers[src_idx][i];
+            if (src_pixel != RGB15(31, 31, 31)) {
+                layers[dst_idx][i] = src_pixel;
+            }
+        }
+    }
+    
+    active_layer_idx = dst_idx;
+    renderDeleteLayer(src_idx);
 }
 
 void renderInitPreview(void) {
