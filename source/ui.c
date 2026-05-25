@@ -642,24 +642,22 @@ void uiDrawToolbar(void) {
 
     // Draw vertical separators
     for (int y = 176; y < 192; y++) {
-        renderSetPixel(32, y, RGB15(15, 15, 17));
-        renderSetPixel(64, y, RGB15(15, 15, 17));
-        renderSetPixel(96, y, RGB15(15, 15, 17));
-        renderSetPixel(128, y, RGB15(15, 15, 17));
-        renderSetPixel(160, y, RGB15(15, 15, 17));
-        renderSetPixel(208, y, RGB15(15, 15, 17));
+        renderSetPixel(42, y, RGB15(15, 15, 17));
+        renderSetPixel(84, y, RGB15(15, 15, 17));
+        renderSetPixel(126, y, RGB15(15, 15, 17));
+        renderSetPixel(168, y, RGB15(15, 15, 17));
+        renderSetPixel(212, y, RGB15(15, 15, 17));
     }
 
     // Highlight the active open modal button
-    if (open_modal == 0) fillButtonBg(0, 32, RGB15(12, 12, 18));
-    if (open_modal == 1) fillButtonBg(32, 64, RGB15(12, 12, 18));
-    if (open_modal == 2) fillButtonBg(64, 96, RGB15(12, 12, 18));
-    if (open_modal == 3) fillButtonBg(96, 128, RGB15(12, 12, 18));
-    if (open_modal == 4) fillButtonBg(128, 160, RGB15(12, 12, 18));
+    if (open_modal == 0) fillButtonBg(0, 42, RGB15(12, 12, 18));
+    if (open_modal == 1) fillButtonBg(42, 84, RGB15(12, 12, 18));
+    if (open_modal == 2) fillButtonBg(84, 126, RGB15(12, 12, 18));
+    if (open_modal == 3) fillButtonBg(126, 168, RGB15(12, 12, 18));
 
-    // Highlight Config (Button 5) and Publicar (Button 6)
-    fillButtonBg(160, 208, RGB15(6, 6, 12));
-    fillButtonBg(208, 256, RGB15(2, 16, 2));
+    // Highlight Config (Button 4) and Publicar (Button 5)
+    fillButtonBg(168, 212, RGB15(6, 6, 12));
+    fillButtonBg(212, 256, RGB15(2, 16, 2));
 
     uint16_t active_text_color = RGB15(31, 31, 31);
 
@@ -667,37 +665,33 @@ void uiDrawToolbar(void) {
     const char* tool_label = "PINC";
     if (is_eraser) tool_label = "BORR";
     else if (is_bucket) tool_label = "FILL";
-    renderDrawText(tool_label, 4, 180, active_text_color, 0);
+    renderDrawText(tool_label, 9, 180, active_text_color, 0);
 
     // Button 1: SIZE
     char size_label[6];
     if (is_eraser) sprintf(size_label, "S:%d", eraser_size);
     else sprintf(size_label, "S:%d", active_brush_size);
-    renderDrawText(size_label, 36, 180, active_text_color, 0);
+    renderDrawText(size_label, 50, 180, active_text_color, 0);
 
     // Button 2: COLOR
     uint16_t current_color = palette_colors[active_color_idx];
-    renderDrawText("COL", 68, 180, active_text_color, 0);
-    for (int dy = 0; dy < 4; dy++) {
-        for (int dx = 0; dx < 4; dx++) {
-            renderSetPixel(88 + dx, 182 + dy, current_color);
+    renderDrawText("COL", 90, 180, active_text_color, 0);
+    for (int dy = 0; dy < 6; dy++) {
+        for (int dx = 0; dx < 6; dx++) {
+            renderSetPixel(112 + dx, 181 + dy, current_color);
         }
     }
 
-    // Button 3: MODE
-    const char* mode_labels[4] = {"PEN", "ROT", "PT1", "PT2"};
-    renderDrawText(mode_labels[drawing_mode], 100, 180, active_text_color, 0);
-
-    // Button 4: BG
+    // Button 3: BG
     char bg_label[6];
     sprintf(bg_label, "BG%d", bg_pattern_idx);
-    renderDrawText(bg_label, 132, 180, active_text_color, 0);
+    renderDrawText(bg_label, 138, 180, active_text_color, 0);
 
-    // Button 5: CONFIG
-    renderDrawText("CONFIG", 166, 180, active_text_color, 0);
+    // Button 4: CONFIG
+    renderDrawText("CONFIG", 172, 180, active_text_color, 0);
 
-    // Button 6: PUBLICAR
-    renderDrawText("ENVIAR", 214, 180, active_text_color, 0);
+    // Button 5: ENVIAR
+    renderDrawText("ENVIAR", 216, 180, active_text_color, 0);
 }
 
 #include "font8x8.h"

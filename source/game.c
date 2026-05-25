@@ -792,21 +792,21 @@ void gameUpdate(void) {
             }
         } else {
             if (was_touching && touch_started_in_toolbar && prev_y >= 176) {
-                if (prev_x >= 0 && prev_x < 56) {
+                if (prev_x >= 0 && prev_x < 42) {
                     uiOpenModal(0);
                     uiDrawToolbar();
-                } else if (prev_x >= 56 && prev_x < 96) {
+                } else if (prev_x >= 42 && prev_x < 84) {
                     uiOpenModal(1);
                     uiDrawToolbar();
-                } else if (prev_x >= 96 && prev_x < 144) {
+                } else if (prev_x >= 84 && prev_x < 126) {
                     uiOpenModal(2);
                     uiDrawToolbar();
-                } else if (prev_x >= 144 && prev_x < 184) {
+                } else if (prev_x >= 126 && prev_x < 168) {
                     uiOpenModal(3);
                     uiDrawToolbar();
-                } else if (prev_x >= 184 && prev_x < 220) {
+                } else if (prev_x >= 168 && prev_x < 212) {
                     enterWizardState();
-                } else if (prev_x >= 220 && prev_x <= 255) {
+                } else if (prev_x >= 212 && prev_x <= 255) {
                     current_state = STATE_UPLOAD;
                 }
             }
