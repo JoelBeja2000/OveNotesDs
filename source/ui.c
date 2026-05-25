@@ -215,69 +215,66 @@ void uiDrawFormUI(int step, const char* input_text) {
     drawSubText("A", 207, 181, black, 0);
     drawSubText("Save", 220, 181, black, 0);
 
-    // 3. Left Panel (Connection 1 / Connection 2)
-    drawSubRect(6, 22, 86, 170, white);
-    drawSubRectOutline(6, 22, 86, 170, black);
+    // 3. Left Panel (Connection 1 / Connection 2) - Shrunk height to 110
+    drawSubRect(6, 22, 86, 110, white);
+    drawSubRectOutline(6, 22, 86, 110, black);
 
-    drawSubText("Conn. 1", 10, 44, black, 0);
+    drawSubText("Conn. 1", 10, 26, black, 0);
 
     // Connection 1 Box (HTTP selected)
-    drawSubRectOutline(8, 54, 84, 70, blue);
-    drawSubRectOutline(9, 55, 83, 69, blue);
-    drawBlueArrow(14, 59);
-    drawSubText("HTTP", 24, 58, blue, 0);
+    drawSubRectOutline(8, 36, 84, 52, blue);
+    drawSubRectOutline(9, 37, 83, 51, blue);
+    drawBlueArrow(14, 41);
+    drawSubText("HTTP", 24, 40, blue, 0);
 
     // Dotted separator
     for (int x = 8; x < 84; x += 2) {
-        drawSubPixel(x, 82, dark_grey);
+        drawSubPixel(x, 58, dark_grey);
     }
 
-    drawSubText("Conn. 2", 10, 92, black, 0);
-    drawSubText("Not Config", 10, 102, dark_grey, 0);
+    drawSubText("Conn. 2", 10, 64, black, 0);
+    drawSubText("Not Config", 10, 74, dark_grey, 0);
 
-    drawSubLine(6, 120, 86, 120, black);
+    // Center help description text on the grid background below the panels
+    drawSubText("Configure your HTTP server.", 47, 136, black, 0);
 
-    drawSubText("Configure", 10, 128, black, 0);
-    drawSubText("your HTTP", 10, 138, black, 0);
-    drawSubText("server.", 10, 148, black, 0);
-
-    // 4. Right Panel (HTTP Configuration Fields)
-    drawSubRect(92, 22, 250, 170, white);
-    drawSubRectOutline(92, 22, 250, 170, black);
+    // 4. Right Panel (HTTP Configuration Fields) - Shrunk height to 110
+    drawSubRect(92, 22, 250, 110, white);
+    drawSubRectOutline(92, 22, 250, 110, black);
 
     // Inner Header (HTTP Configuration)
     drawSubRect(93, 23, 249, 36, light_grey);
     drawSubLine(92, 37, 250, 37, black);
     drawSubText("HTTP Configuration", 96, 26, black, 0);
 
-    // Field 0: IP (y = 60 to 74)
-    drawSubText("IP", 96, 64, black, 0);
-    drawSubRectOutline(136, 60, 244, 74, (step == 0) ? blue : black);
+    // Field 0: IP (y = 44 to 58)
+    drawSubText("IP", 96, 48, black, 0);
+    drawSubRectOutline(136, 44, 244, 58, (step == 0) ? blue : black);
     if (step == 0) {
-        drawSubRectOutline(137, 61, 243, 73, blue);
-        drawSubText(input_text, 140, 63, black, 0);
+        drawSubRectOutline(137, 45, 243, 57, blue);
+        drawSubText(input_text, 140, 47, black, 0);
     } else {
-        drawSubText(http_ip, 140, 63, black, 0);
+        drawSubText(http_ip, 140, 47, black, 0);
     }
 
-    // Field 1: Port (y = 96 to 110)
-    drawSubText("Port", 96, 100, black, 0);
-    drawSubRectOutline(136, 96, 190, 110, (step == 1) ? blue : black);
+    // Field 1: Port (y = 66 to 80)
+    drawSubText("Port", 96, 70, black, 0);
+    drawSubRectOutline(136, 66, 190, 80, (step == 1) ? blue : black);
     if (step == 1) {
-        drawSubRectOutline(137, 97, 189, 109, blue);
-        drawSubText(input_text, 140, 99, black, 0);
+        drawSubRectOutline(137, 67, 189, 79, blue);
+        drawSubText(input_text, 140, 69, black, 0);
     } else {
-        drawSubText(http_port_str, 140, 99, black, 0);
+        drawSubText(http_port_str, 140, 69, black, 0);
     }
 
-    // Field 2: SSID (y = 132 to 146)
-    drawSubText("SSID", 96, 136, black, 0);
-    drawSubRectOutline(136, 132, 244, 146, (step == 2) ? blue : black);
+    // Field 2: SSID (y = 88 to 102)
+    drawSubText("SSID", 96, 92, black, 0);
+    drawSubRectOutline(136, 88, 244, 102, (step == 2) ? blue : black);
     if (step == 2) {
-        drawSubRectOutline(137, 133, 243, 145, blue);
-        drawSubText(input_text, 140, 135, black, 0);
+        drawSubRectOutline(137, 89, 243, 101, blue);
+        drawSubText(input_text, 140, 91, black, 0);
     } else {
-        drawSubText(wifi_ssid, 140, 135, black, 0);
+        drawSubText(wifi_ssid, 140, 91, black, 0);
     }
 }
 
