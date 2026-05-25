@@ -21,12 +21,12 @@ void renderSetCanvasPixel(int x, int y, uint16_t color) {
 }
 
 void renderDrawChar(char c, int x, int y, uint16_t color, uint16_t bg_color) {
-    if (c < 32 || c > 127) return;
-    const unsigned char *glyph = font8x8_basic[(unsigned char)c];
-    for (int dy = 0; dy < 8; dy++) {
-        unsigned char row = glyph[dy];
-        for (int dx = 0; dx < 8; dx++) {
-            if (row & (1 << dx)) {
+    if ((unsigned char)c < 32) return;
+    const unsigned char *glyph = &font5x7[((unsigned char)c) * 5];
+    for (int dx = 0; dx < 5; dx++) {
+        unsigned char col_data = glyph[dx];
+        for (int dy = 0; dy < 8; dy++) {
+            if (col_data & (1 << dy)) {
                 renderSetPixel(x + dx, y + dy, color);
             } else if (bg_color != 0) {
                 renderSetPixel(x + dx, y + dy, bg_color);
@@ -38,7 +38,7 @@ void renderDrawChar(char c, int x, int y, uint16_t color, uint16_t bg_color) {
 void renderDrawText(const char* text, int x, int y, uint16_t color, uint16_t bg_color) {
     while (*text) {
         renderDrawChar(*text, x, y, color, bg_color);
-        x += 8;
+        x += 6;
         text++;
     }
 }

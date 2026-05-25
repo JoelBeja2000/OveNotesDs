@@ -71,9 +71,9 @@ void uiDrawToolbar(void) {
     // Draw labels (Spanish)
     uint16_t text_color = RGB15(22, 22, 24);
     uint16_t active_text_color = RGB15(31, 31, 31);
-    renderDrawText("BORR", 94, 180, is_eraser ? active_text_color : text_color, 0);
-    renderDrawText("CONFIG", 133, 180, active_text_color, 0);
-    renderDrawText("PUBLICAR", 188, 180, active_text_color, 0);
+    renderDrawText("BORR", 98, 180, is_eraser ? active_text_color : text_color, 0);
+    renderDrawText("CONFIG", 140, 180, active_text_color, 0);
+    renderDrawText("PUBLICAR", 196, 180, active_text_color, 0);
 }
 
 #include "font8x8.h"
@@ -126,12 +126,12 @@ static void drawSubLine(int x0, int y0, int x1, int y1, uint16_t color) {
 }
 
 static void drawSubChar(char c, int x, int y, uint16_t color, uint16_t bg_color) {
-    if (c < 32 || c > 127) return;
-    const unsigned char *glyph = font8x8_basic[(unsigned char)c];
-    for (int dy = 0; dy < 8; dy++) {
-        unsigned char row = glyph[dy];
-        for (int dx = 0; dx < 8; dx++) {
-            if (row & (1 << dx)) {
+    if ((unsigned char)c < 32) return;
+    const unsigned char *glyph = &font5x7[((unsigned char)c) * 5];
+    for (int dx = 0; dx < 5; dx++) {
+        unsigned char col_data = glyph[dx];
+        for (int dy = 0; dy < 8; dy++) {
+            if (col_data & (1 << dy)) {
                 drawSubPixel(x + dx, y + dy, color);
             } else if (bg_color != 0) {
                 drawSubPixel(x + dx, y + dy, bg_color);
@@ -143,7 +143,7 @@ static void drawSubChar(char c, int x, int y, uint16_t color, uint16_t bg_color)
 static void drawSubText(const char* text, int x, int y, uint16_t color, uint16_t bg_color) {
     while (*text) {
         drawSubChar(*text, x, y, color, bg_color);
-        x += 8;
+        x += 6;
         text++;
     }
 }
@@ -306,8 +306,9 @@ static void drawKey(int x0, int y0, int x1, int y1, const char* label, bool high
     
     // Center label
     int len = strlen(label);
-    int text_w = len * 8;
-    int text_h = 8;
+    int text_w = len * 6 - 1; // 5px per char + 1px spacing (excluding last character's spacing)
+    if (text_w < 0) text_w = 0;
+    int text_h = 7;
     int tx = x0 + (x1 - x0 + 1 - text_w) / 2;
     int ty = y0 + (y1 - y0 + 1 - text_h) / 2;
     renderDrawText(label, tx, ty, text_color, 0);
