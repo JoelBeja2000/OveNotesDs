@@ -3,6 +3,7 @@
 #include "input.h"
 #include "ui.h"
 #include "net.h"
+#include "io.h"
 #include "lodepng.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,7 +12,7 @@
 #include "log.h"
 #include <math.h>
 
-GameState current_state = STATE_DRAW;
+GameState current_state = STATE_START_MENU;
 
 static char current_input[64] = "";
 static int input_len = 0;
@@ -27,6 +28,10 @@ static bool touch_started_in_toolbar = false;
 static int prev_x = 0;
 static int prev_y = 0;
 static int bg_sub_wizard = -1;
+
+static char gallery_filenames[100][32];
+static int gallery_count = 0;
+static int gallery_selected_idx = 0;
 
 bool placing_vanishing_points = false;
 int placing_point_idx = 0;
@@ -77,14 +82,14 @@ void gameInit(void) {
     // Initialize drawing paper & toolbar
     renderInitCanvas();
     renderInitPreview();
-    renderUpdatePreview();
 
-    // Display title & welcome info
-    printf("OveNotes DS v1.0\n");
-    printf("====================\n");
-    printf("Dibuje en la pantalla inferior.\n");
-    printf("Seleccione pincel o borrador.\n");
-    printf("Presione PUBLICAR para subir.\n\n");
+    // Set top screen to 16-bit bitmap for the start menu logo
+    videoSetModeSub(MODE_5_2D | DISPLAY_BG3_ACTIVE);
+    bg_sub_wizard = bgInitSub(3, BgType_Bmp16, BgSize_B16_256x256, 0, 0);
+    wizard_buffer = (uint16_t*)bgGetGfxPtr(bg_sub_wizard);
+    
+    current_state = STATE_START_MENU;
+    uiDrawStartMenu();
 }
 
 static void enterWizardState(void) {
@@ -262,7 +267,191 @@ void gameUpdate(void) {
     uint32_t keys_held = inputGetKeysHeld();
     uint32_t keys_down = inputGetKeysDown();
     
-    if (current_state == STATE_DRAW) {
+    if (current_state == STATE_START_MENU) {
+        touchPosition touch;
+        if (inputGetTouch(&touch)) {
+            if (!was_touching) {
+                prev_x = touch.px;
+                prev_y = touch.py;
+            }
+            was_touching = true;
+        } else {
+            if (was_touching) {
+                // Button 1: Crear Nueva Nota (y = 56..80, x = 32..224)
+                if (prev_x >= 32 && prev_x <= 224 && prev_y >= 56 && prev_y <= 80) {
+                    videoBgDisableSub(3);
+                    consoleInit(&subConsole, 
+                                0,                  // layer 0
+                                BgType_Text4bpp,     // text mode
+                                BgSize_T_256x256,    // map size 256x256
+                                28,                 // map base 28 (56KB offset)
+                                4,                  // tile base 4 (64KB offset)
+                                false,              // false = Sub Engine
+                                true);              // load default graphics
+                    consoleSelect(&subConsole);
+                    videoSetModeSub(MODE_5_2D | DISPLAY_BG0_ACTIVE | DISPLAY_BG2_ACTIVE);
+                    
+                    renderInitCanvas();
+                    renderInitPreview();
+                    renderComposeCanvas();
+                    renderUpdatePreview();
+                    if (!toolbar_hidden) {
+                        uiDrawToolbar();
+                    }
+                    
+                    current_state = STATE_DRAW;
+                }
+                // Button 2: Ver Notas Creadas (y = 92..116, x = 32..224)
+                else if (prev_x >= 32 && prev_x <= 224 && prev_y >= 92 && prev_y <= 116) {
+                    char filenames[100][32];
+                    int count = ioGetNoteList(filenames, 100);
+                    
+                    gallery_count = count;
+                    for (int i = 0; i < count; i++) {
+                        strcpy(gallery_filenames[i], filenames[i]);
+                    }
+                    gallery_selected_idx = 0;
+                    current_state = STATE_NOTES_GALLERY;
+                    
+                    if (wizard_buffer != NULL) {
+                        for (int i = 0; i < 256 * 256; i++) {
+                            wizard_buffer[i] = RGB15(0, 0, 0);
+                        }
+                    }
+                    
+                    if (gallery_count > 0) {
+                        ioLoadNote(gallery_filenames[0], wizard_buffer);
+                    }
+                    
+                    uiDrawNotesGallery(gallery_selected_idx, gallery_count, gallery_filenames);
+                }
+                // Button 3: Cambiar Tema (y = 128..152, x = 32..224)
+                else if (prev_x >= 32 && prev_x <= 224 && prev_y >= 128 && prev_y <= 152) {
+                    active_theme_idx = (active_theme_idx + 1) % 5;
+                    app_theme_color = theme_colors[active_theme_idx];
+                    uiDrawStartMenu();
+                }
+                was_touching = false;
+            }
+        }
+        
+        if (keys_down & (KEY_L | KEY_R)) {
+            if (keys_down & KEY_L) {
+                active_theme_idx = (active_theme_idx - 1 + 5) % 5;
+            } else {
+                active_theme_idx = (active_theme_idx + 1) % 5;
+            }
+            app_theme_color = theme_colors[active_theme_idx];
+            uiDrawStartMenu();
+        }
+        return;
+    }
+    else if (current_state == STATE_NOTES_GALLERY) {
+        touchPosition touch;
+        if (inputGetTouch(&touch)) {
+            if (!was_touching) {
+                prev_x = touch.px;
+                prev_y = touch.py;
+            }
+            was_touching = true;
+        } else {
+            if (was_touching) {
+                // Back button: x = 180..250, y = 1..13
+                if (prev_x >= 180 && prev_x <= 250 && prev_y >= 1 && prev_y <= 13) {
+                    current_state = STATE_START_MENU;
+                    uiDrawStartMenu();
+                }
+                // Row items: 5 visible rows starting from y = 24
+                else if (prev_x >= 10 && prev_x <= 246 && prev_y >= 24 && prev_y <= 24 + 5 * 26) {
+                    int clicked_row = (prev_y - 24) / 26;
+                    int start_visible = (gallery_selected_idx / 5) * 5;
+                    int target_idx = start_visible + clicked_row;
+                    if (target_idx < gallery_count) {
+                        if (gallery_selected_idx == target_idx) {
+                            renderInitCanvas();
+                            ioLoadNote(gallery_filenames[gallery_selected_idx], layers[0]);
+                            
+                            videoBgDisableSub(3);
+                            consoleInit(&subConsole, 
+                                        0,                  // layer 0
+                                        BgType_Text4bpp,     // text mode
+                                        BgSize_T_256x256,    // map size 256x256
+                                        28,                 // map base 28 (56KB offset)
+                                        4,                  // tile base 4 (64KB offset)
+                                        false,              // false = Sub Engine
+                                        true);              // load default graphics
+                            consoleSelect(&subConsole);
+                            videoSetModeSub(MODE_5_2D | DISPLAY_BG0_ACTIVE | DISPLAY_BG2_ACTIVE);
+                            
+                            active_layer_idx = 0;
+                            drawing_buffer = layers[0];
+                            
+                            renderComposeCanvas();
+                            renderUpdatePreview();
+                            if (!toolbar_hidden) {
+                                uiDrawToolbar();
+                            }
+                            current_state = STATE_DRAW;
+                        } else {
+                            gallery_selected_idx = target_idx;
+                            ioLoadNote(gallery_filenames[gallery_selected_idx], wizard_buffer);
+                            uiDrawNotesGallery(gallery_selected_idx, gallery_count, gallery_filenames);
+                        }
+                    }
+                }
+                was_touching = false;
+            }
+        }
+        
+        if (keys_down & KEY_UP) {
+            if (gallery_selected_idx > 0) {
+                gallery_selected_idx--;
+                ioLoadNote(gallery_filenames[gallery_selected_idx], wizard_buffer);
+                uiDrawNotesGallery(gallery_selected_idx, gallery_count, gallery_filenames);
+            }
+        }
+        if (keys_down & KEY_DOWN) {
+            if (gallery_selected_idx < gallery_count - 1) {
+                gallery_selected_idx++;
+                ioLoadNote(gallery_filenames[gallery_selected_idx], wizard_buffer);
+                uiDrawNotesGallery(gallery_selected_idx, gallery_count, gallery_filenames);
+            }
+        }
+        if (keys_down & KEY_B) {
+            current_state = STATE_START_MENU;
+            uiDrawStartMenu();
+        }
+        if (keys_down & KEY_A) {
+            if (gallery_count > 0) {
+                renderInitCanvas();
+                ioLoadNote(gallery_filenames[gallery_selected_idx], layers[0]);
+                
+                videoBgDisableSub(3);
+                consoleInit(&subConsole, 
+                            0,                  // layer 0
+                            BgType_Text4bpp,     // text mode
+                            BgSize_T_256x256,    // map size 256x256
+                            28,                 // map base 28 (56KB offset)
+                            4,                  // tile base 4 (64KB offset)
+                            false,              // false = Sub Engine
+                            true);              // load default graphics
+                consoleSelect(&subConsole);
+                videoSetModeSub(MODE_5_2D | DISPLAY_BG0_ACTIVE | DISPLAY_BG2_ACTIVE);
+                
+                active_layer_idx = 0;
+                drawing_buffer = layers[0];
+                
+                renderComposeCanvas();
+                renderUpdatePreview();
+                if (!toolbar_hidden) {
+                    uiDrawToolbar();
+                }
+                current_state = STATE_DRAW;
+            }
+        }
+        return;
+    }
+    else if (current_state == STATE_DRAW) {
         if (placing_vanishing_points) {
             touchPosition touch;
             if (inputGetTouch(&touch)) {
@@ -854,6 +1043,17 @@ void gameUpdate(void) {
                 uiDrawToolbar();
             }
             renderUpdatePreview();
+        }
+
+        // Save note to SD Card with KEY_SELECT
+        if (keys_down & KEY_SELECT) {
+            renderComposeCanvas();
+            bool success = ioSaveNote(canvas_buffer);
+            if (success) {
+                printf("[SYS] Nota guardada correctamente en la SD!\n");
+            } else {
+                printf("[SYS] Error al guardar la nota en la SD.\n");
+            }
         }
 
         printf("\x1b[12;0H"); 

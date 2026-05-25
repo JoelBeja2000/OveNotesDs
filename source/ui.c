@@ -1,6 +1,7 @@
 #include "ui.h"
 #include "render.h"
 #include "net.h"
+#include "logo_data.h"
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
@@ -24,6 +25,23 @@ uint16_t palette_colors[5] = {
     RGB15(0, 20, 0),      // Green
     RGB15(30, 10, 20)     // Pink
 };
+
+uint16_t theme_colors[5] = {
+    RGB15(31, 31, 0),   // Yellow / Banana
+    RGB15(0, 31, 15),   // Mint Green
+    RGB15(0, 15, 31),   // Sky Blue
+    RGB15(31, 5, 5),    // Strawberry Red
+    RGB15(20, 5, 31)    // Grape Purple
+};
+const char* theme_names[5] = {
+    "BANANA (AMARILLO)",
+    "MENTA (VERDE)",
+    "CIELO (AZUL)",
+    "FRESA (ROJO)",
+    "UVA (MORADO)"
+};
+int active_theme_idx = 0;
+uint16_t app_theme_color = RGB15(31, 31, 0);
 
 int preset_page = 0;
 int custom_page = 0;
@@ -1601,4 +1619,155 @@ void uiDrawUndoRedoButtons(void) {
     drawRectOutline(24, 4, 40, 20, border_col);
     uint16_t redo_text_col = (redo_count > 0) ? RGB15(31, 31, 31) : RGB15(12, 12, 12);
     renderDrawText(">", 29, 8, redo_text_col, 0);
+}
+
+void uiDrawLogo(void) {
+    if (wizard_buffer == NULL) return;
+    uint16_t bg_color = RGB15(4, 4, 5); // dark charcoal background
+    for (int y = 0; y < 192; y++) {
+        for (int x = 0; x < 256; x++) {
+            uint8_t alpha = logo_data[y * 256 + x]; // 0 to 255
+            // Convert alpha 0-255 to 0-32
+            int alpha_32 = alpha >> 3;
+            uint16_t blended_pixel = blendRGB555_int(app_theme_color, bg_color, alpha_32);
+            wizard_buffer[y * 256 + x] = blended_pixel;
+        }
+    }
+    // Clean remaining lines of 256x256
+    for (int y = 192; y < 256; y++) {
+        for (int x = 0; x < 256; x++) {
+            wizard_buffer[y * 256 + x] = bg_color;
+        }
+    }
+}
+
+void uiDrawStartMenu(void) {
+    // Fill bottom screen with dark charcoal
+    uint16_t bg_color = RGB15(4, 4, 5);
+    for (int y = 0; y < 192; y++) {
+        for (int x = 0; x < 256; x++) {
+            canvas_buffer[y * 256 + x] = bg_color;
+        }
+    }
+    
+    // Draw grid
+    uint16_t grid_color = RGB15(8, 8, 10);
+    for (int y = 0; y < 192; y += 16) {
+        for (int x = 0; x < 256; x += 16) {
+            renderSetPixel(x, y, grid_color);
+        }
+    }
+    
+    // Draw welcome title
+    renderDrawText("BIENVENIDO A OVENOTES DS", 32, 24, app_theme_color, 0);
+    
+    // Button 1: Crear Nueva Nota
+    // x = 32..224, y = 56..80
+    drawRect(32, 56, 224, 80, RGB15(10, 10, 12));
+    drawRectOutline(32, 56, 224, 80, app_theme_color);
+    renderDrawText("CREAR NUEVA NOTA", 64, 64, RGB15(31, 31, 31), 0);
+    
+    // Button 2: Ver Notas Creadas
+    // x = 32..224, y = 92..116
+    drawRect(32, 92, 224, 116, RGB15(10, 10, 12));
+    drawRectOutline(32, 92, 224, 116, app_theme_color);
+    renderDrawText("VER NOTAS CREADAS", 60, 100, RGB15(31, 31, 31), 0);
+    
+    // Button 3: Cambiar Tema
+    // x = 32..224, y = 128..152
+    drawRect(32, 128, 224, 152, RGB15(10, 10, 12));
+    drawRectOutline(32, 128, 224, 152, app_theme_color);
+    char theme_lbl[48];
+    sprintf(theme_lbl, "TEMA: %s", theme_names[active_theme_idx]);
+    int pad = (24 - strlen(theme_lbl)) * 4;
+    if (pad < 0) pad = 0;
+    renderDrawText(theme_lbl, 44 + pad, 136, RGB15(31, 31, 31), 0);
+    
+    // Bottom instructions
+    renderDrawText("Toca una opcion para comenzar", 20, 172, RGB15(20, 20, 22), 0);
+    
+    uiDrawLogo();
+}
+
+void uiDrawNotesGallery(int selected_idx, int total_count, const char filenames[][32]) {
+    // Fill bottom screen with dark charcoal background
+    uint16_t bg_color = RGB15(4, 4, 5);
+    for (int y = 0; y < 192; y++) {
+        for (int x = 0; x < 256; x++) {
+            canvas_buffer[y * 256 + x] = bg_color;
+        }
+    }
+    
+    // Draw screen grid
+    uint16_t grid_color = RGB15(8, 8, 10);
+    for (int y = 0; y < 192; y += 16) {
+        for (int x = 0; x < 256; x += 16) {
+            renderSetPixel(x, y, grid_color);
+        }
+    }
+    
+    // Header
+    drawRect(0, 0, 255, 14, RGB15(12, 12, 12));
+    renderDrawText("VER NOTAS CREADAS", 8, 3, app_theme_color, 0);
+    
+    // Back button
+    // x = 180..250, y = 1..13
+    drawRect(180, 1, 250, 13, RGB15(24, 6, 6));
+    drawRectOutline(180, 1, 250, 13, RGB15(31, 0, 0));
+    renderDrawText("VOLVER(B)", 186, 3, RGB15(31, 31, 31), 0);
+    
+    // If no notes are present
+    if (total_count == 0) {
+        renderDrawText("No se encontraron notas.", 32, 80, RGB15(20, 20, 22), 0);
+        renderDrawText("Crea una nota en el menu de inicio.", 16, 96, RGB15(16, 16, 18), 0);
+        
+        // Clean top screen preview to indicate empty
+        if (wizard_buffer != NULL) {
+            for (int i = 0; i < 256 * 256; i++) {
+                wizard_buffer[i] = RGB15(0, 0, 0);
+            }
+            for (int y = 0; y < 192; y++) {
+                for (int x = 0; x < 256; x++) {
+                    if (x == 0 || x == 255 || y == 0 || y == 191) {
+                        wizard_buffer[y * 256 + x] = app_theme_color;
+                    }
+                }
+            }
+        }
+        return;
+    }
+    
+    // Draw list of notes (max 5 visible at a time)
+    int start_visible = (selected_idx / 5) * 5;
+    int end_visible = start_visible + 5;
+    if (end_visible > total_count) end_visible = total_count;
+    
+    int row_y = 24;
+    for (int i = start_visible; i < end_visible; i++) {
+        bool is_selected = (i == selected_idx);
+        uint16_t row_bg = is_selected ? RGB15(12, 12, 18) : RGB15(6, 6, 8);
+        uint16_t border_col = is_selected ? app_theme_color : RGB15(12, 12, 14);
+        
+        // Row box: x = 10..246, y = row_y..row_y+20
+        drawRect(10, row_y, 246, row_y + 20, row_bg);
+        drawRectOutline(10, row_y, 246, row_y + 20, border_col);
+        
+        // Note text
+        char label[64];
+        sprintf(label, "%s %s", is_selected ? ">" : " ", filenames[i]);
+        renderDrawText(label, 18, row_y + 6, is_selected ? RGB15(31, 31, 31) : RGB15(24, 24, 24), 0);
+        
+        row_y += 26;
+    }
+    
+    // Draw scrolling markers if needed
+    if (start_visible > 0) {
+        renderDrawText("^ MAS NOTAS ARRIBA ^", 48, 18, app_theme_color, 0);
+    }
+    if (end_visible < total_count) {
+        renderDrawText("v MAS NOTAS ABAJO v", 52, 156, app_theme_color, 0);
+    }
+    
+    // Instructions at the very bottom
+    renderDrawText("Usa DPAD Arriba/Abajo o Stylus", 12, 172, RGB15(16, 16, 18), 0);
 }

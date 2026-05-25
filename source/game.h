@@ -4,6 +4,8 @@
 #include <nds.h>
 
 typedef enum {
+    STATE_START_MENU,
+    STATE_NOTES_GALLERY,
     STATE_DRAW,
     STATE_WIZARD,
     STATE_UPLOAD,
