@@ -33,6 +33,141 @@ static void fillButtonBg(int x_start, int x_end, uint16_t color) {
 
 
 
+static uint16_t modal_backup[256 * 56];
+int open_modal = -1;
+
+static void drawModalButton(int x0, int x1, const char* text, bool selected) {
+    uint16_t bg = selected ? RGB15(12, 12, 18) : RGB15(31, 31, 31);
+    uint16_t outline = RGB15(0, 0, 0);
+    uint16_t text_color = selected ? RGB15(31, 31, 31) : RGB15(0, 0, 0);
+    
+    for (int y = 130; y <= 160; y++) {
+        for (int x = x0; x <= x1; x++) {
+            canvas_buffer[y * 256 + x] = bg;
+        }
+    }
+    for (int x = x0; x <= x1; x++) {
+        canvas_buffer[130 * 256 + x] = outline;
+        canvas_buffer[160 * 256 + x] = outline;
+    }
+    for (int y = 130; y <= 160; y++) {
+        canvas_buffer[y * 256 + x0] = outline;
+        canvas_buffer[y * 256 + x1] = outline;
+    }
+    
+    // Center text
+    int text_len = strlen(text);
+    int text_w = text_len * 6 - 1;
+    int tx = x0 + (x1 - x0 - text_w) / 2;
+    renderDrawText(text, tx, 142, text_color, 0);
+}
+
+static void drawModalColorButton(int x0, int x1, const char* text, uint16_t color, bool selected) {
+    uint16_t bg = color;
+    uint16_t outline = selected ? RGB15(31, 0, 0) : RGB15(0, 0, 0);
+    int outline_width = selected ? 2 : 1;
+    
+    for (int y = 130; y <= 160; y++) {
+        for (int x = x0; x <= x1; x++) {
+            canvas_buffer[y * 256 + x] = bg;
+        }
+    }
+    
+    for (int w = 0; w < outline_width; w++) {
+        for (int x = x0; x <= x1; x++) {
+            canvas_buffer[(130 + w) * 256 + x] = outline;
+            canvas_buffer[(160 - w) * 256 + x] = outline;
+        }
+        for (int y = 130; y <= 160; y++) {
+            canvas_buffer[y * 256 + (x0 + w)] = outline;
+            canvas_buffer[y * 256 + (x1 - w)] = outline;
+        }
+    }
+    
+    uint16_t text_color = (color == RGB15(0, 0, 0) || color == RGB15(0, 0, 28) || color == RGB15(28, 0, 0)) ? RGB15(31, 31, 31) : RGB15(0, 0, 0);
+    int text_len = strlen(text);
+    int text_w = text_len * 6 - 1;
+    int tx = x0 + (x1 - x0 - text_w) / 2;
+    renderDrawText(text, tx, 142, text_color, 0);
+}
+
+void uiOpenModal(int modal_idx) {
+    if (open_modal != -1) {
+        uiCloseModal();
+    }
+    open_modal = modal_idx;
+    
+    // Backup canvas area y = 120 to 175
+    for (int y = 120; y < 176; y++) {
+        for (int x = 0; x < 256; x++) {
+            modal_backup[(y - 120) * 256 + x] = canvas_buffer[y * 256 + x];
+        }
+    }
+    
+    // Draw background
+    uint16_t light_grey = RGB15(28, 28, 28);
+    uint16_t black = RGB15(0, 0, 0);
+    for (int y = 120; y <= 170; y++) {
+        for (int x = 8; x <= 247; x++) {
+            canvas_buffer[y * 256 + x] = light_grey;
+        }
+    }
+    for (int x = 8; x <= 247; x++) {
+        canvas_buffer[120 * 256 + x] = black;
+        canvas_buffer[170 * 256 + x] = black;
+    }
+    for (int y = 120; y <= 170; y++) {
+        canvas_buffer[y * 256 + 8] = black;
+        canvas_buffer[y * 256 + 247] = black;
+    }
+    
+    // Options
+    if (open_modal == 0) {
+        drawModalButton(16, 86, "PINCEL", (!is_eraser && !is_bucket));
+        drawModalButton(92, 162, "BORRADOR", is_eraser);
+        drawModalButton(168, 238, "RELLENO", is_bucket);
+    } 
+    else if (open_modal == 1) {
+        if (is_eraser) {
+            drawModalButton(16, 86, "B:4px", (eraser_size == 4));
+            drawModalButton(92, 162, "B:8px", (eraser_size == 8));
+            drawModalButton(168, 238, "B:16px", (eraser_size == 16));
+        } else {
+            drawModalButton(16, 86, "P:1px", (active_brush_size == 1));
+            drawModalButton(92, 162, "P:3px", (active_brush_size == 3));
+            drawModalButton(168, 238, "P:5px", (active_brush_size == 5));
+        }
+    } 
+    else if (open_modal == 2) {
+        const char* color_names[5] = {"NEGRO", "AZUL", "ROJO", "VERDE", "ROSA"};
+        for (int i = 0; i < 5; i++) {
+            drawModalColorButton(16 + i * 46, 16 + i * 46 + 40, color_names[i], palette_colors[i], (active_color_idx == i));
+        }
+    } 
+    else if (open_modal == 3) {
+        drawModalButton(16, 66, "PEN", (drawing_mode == 0));
+        drawModalButton(72, 122, "ROT", (drawing_mode == 1));
+        drawModalButton(128, 178, "PT1", (drawing_mode == 2));
+        drawModalButton(184, 234, "PT2", (drawing_mode == 3));
+    } 
+    else if (open_modal == 4) {
+        drawModalButton(16, 66, "BG0", (bg_pattern_idx == 0));
+        drawModalButton(72, 122, "BG1", (bg_pattern_idx == 1));
+        drawModalButton(128, 178, "BG2", (bg_pattern_idx == 2));
+        drawModalButton(184, 234, "BG3", (bg_pattern_idx == 3));
+    }
+}
+
+void uiCloseModal(void) {
+    if (open_modal == -1) return;
+    for (int y = 120; y < 176; y++) {
+        for (int x = 0; x < 256; x++) {
+            canvas_buffer[y * 256 + x] = modal_backup[(y - 120) * 256 + x];
+        }
+    }
+    open_modal = -1;
+}
+
 void uiDrawToolbar(void) {
     // Fill toolbar background (dark blue-gray)
     for (int y = 176; y < 192; y++) {
@@ -43,71 +178,62 @@ void uiDrawToolbar(void) {
 
     // Draw vertical separators
     for (int y = 176; y < 192; y++) {
-        for (int i = 1; i < 8; i++) {
-            renderSetPixel(i * 32, y, RGB15(15, 15, 17));
-        }
+        renderSetPixel(32, y, RGB15(15, 15, 17));
+        renderSetPixel(64, y, RGB15(15, 15, 17));
+        renderSetPixel(96, y, RGB15(15, 15, 17));
+        renderSetPixel(128, y, RGB15(15, 15, 17));
+        renderSetPixel(160, y, RGB15(15, 15, 17));
+        renderSetPixel(208, y, RGB15(15, 15, 17));
     }
 
-    // Highlight active tool buttons:
-    // Button 0 (Pincel): Highlight if !is_eraser && !is_bucket
-    if (!is_eraser && !is_bucket) {
-        fillButtonBg(0, 32, RGB15(12, 12, 18));
-    }
-    // Button 1 (Borrador): Highlight if is_eraser
-    if (is_eraser) {
-        fillButtonBg(32, 64, RGB15(12, 12, 18));
-    }
-    // Button 4 (Relleno): Highlight if is_bucket
-    if (is_bucket) {
-        fillButtonBg(128, 160, RGB15(12, 12, 18));
-    }
+    // Highlight the active open modal button
+    if (open_modal == 0) fillButtonBg(0, 32, RGB15(12, 12, 18));
+    if (open_modal == 1) fillButtonBg(32, 64, RGB15(12, 12, 18));
+    if (open_modal == 2) fillButtonBg(64, 96, RGB15(12, 12, 18));
+    if (open_modal == 3) fillButtonBg(96, 128, RGB15(12, 12, 18));
+    if (open_modal == 4) fillButtonBg(128, 160, RGB15(12, 12, 18));
 
-    // Highlight Config (Button 6) and Publicar (Button 7)
-    fillButtonBg(192, 224, RGB15(6, 6, 12));
-    fillButtonBg(224, 256, RGB15(2, 16, 2));
+    // Highlight Config (Button 5) and Publicar (Button 6)
+    fillButtonBg(160, 208, RGB15(6, 6, 12));
+    fillButtonBg(208, 256, RGB15(2, 16, 2));
 
-    // Draw Labels for each button
-    uint16_t text_color = RGB15(22, 22, 24);
     uint16_t active_text_color = RGB15(31, 31, 31);
 
-    // Button 0: Pincel
-    char brush_label[4];
-    sprintf(brush_label, "P%d", active_brush_size);
-    renderDrawText(brush_label, 10, 180, (!is_eraser && !is_bucket) ? active_text_color : text_color, 0);
+    // Button 0: TOOL
+    const char* tool_label = "PINC";
+    if (is_eraser) tool_label = "BORR";
+    else if (is_bucket) tool_label = "FILL";
+    renderDrawText(tool_label, 4, 180, active_text_color, 0);
 
-    // Button 1: Borrador
-    char eraser_label[4];
-    sprintf(eraser_label, "B%d", eraser_size);
-    renderDrawText(eraser_label, 42, 180, is_eraser ? active_text_color : text_color, 0);
+    // Button 1: SIZE
+    char size_label[6];
+    if (is_eraser) sprintf(size_label, "S:%d", eraser_size);
+    else sprintf(size_label, "S:%d", active_brush_size);
+    renderDrawText(size_label, 36, 180, active_text_color, 0);
 
-    // Button 2: Color
+    // Button 2: COLOR
     uint16_t current_color = palette_colors[active_color_idx];
-    fillButtonBg(64, 96, blendRGB555_int(current_color, RGB15(5, 5, 7), 8));
-    renderDrawText("COL", 70, 180, active_text_color, 0);
-    // Draw a small 4x4 square of the active color next to the text
+    renderDrawText("COL", 68, 180, active_text_color, 0);
     for (int dy = 0; dy < 4; dy++) {
         for (int dx = 0; dx < 4; dx++) {
-            renderSetPixel(89 + dx, 182 + dy, current_color);
+            renderSetPixel(88 + dx, 182 + dy, current_color);
         }
     }
 
-    // Button 3: Modo
+    // Button 3: MODE
     const char* mode_labels[4] = {"PEN", "ROT", "PT1", "PT2"};
-    renderDrawText(mode_labels[drawing_mode], 102, 180, active_text_color, 0);
+    renderDrawText(mode_labels[drawing_mode], 100, 180, active_text_color, 0);
 
-    // Button 4: Cubo / Relleno
-    renderDrawText("FILL", 134, 180, is_bucket ? active_text_color : text_color, 0);
-
-    // Button 5: Fondo
-    char bg_label[4];
+    // Button 4: BG
+    char bg_label[6];
     sprintf(bg_label, "BG%d", bg_pattern_idx);
-    renderDrawText(bg_label, 166, 180, active_text_color, 0);
+    renderDrawText(bg_label, 132, 180, active_text_color, 0);
 
-    // Button 6: Config
-    renderDrawText("CFG", 198, 180, active_text_color, 0);
+    // Button 5: CONFIG
+    renderDrawText("CONFIG", 166, 180, active_text_color, 0);
 
-    // Button 7: Publicar
-    renderDrawText("PUB", 230, 180, active_text_color, 0);
+    // Button 6: PUBLICAR
+    renderDrawText("ENVIAR", 214, 180, active_text_color, 0);
 }
 
 #include "font8x8.h"

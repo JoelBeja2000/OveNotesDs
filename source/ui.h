@@ -15,7 +15,11 @@ extern int bg_pattern_idx;
 extern bool is_eraser;
 extern uint16_t palette_colors[5];
 
+extern int open_modal;
+
 void uiDrawToolbar(void);
+void uiOpenModal(int modal_idx);
+void uiCloseModal(void);
 void uiDrawFormUI(int step, const char* input_text);
 void uiDrawBottomForm(int step, const char* input_text);
 char uiHandleKeyboardTouch(int tx, int ty, bool* shift_toggled, bool* caps_toggled, bool* enter_pressed, bool* backspace_pressed);
