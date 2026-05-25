@@ -264,9 +264,11 @@ void gameUpdate(void) {
         if (placing_vanishing_points) {
             touchPosition touch;
             if (inputGetTouch(&touch)) {
+                if (!was_touching) {
+                    prev_x = touch.px;
+                    prev_y = touch.py;
+                }
                 was_touching = true;
-                prev_x = touch.px;
-                prev_y = touch.py;
             } else {
                 if (was_touching) {
                     if (prev_y >= 0 && prev_y < 176 && prev_x >= 0 && prev_x < 256) {
@@ -347,9 +349,11 @@ void gameUpdate(void) {
             // Click/tap interaction for selections
             touchPosition touch;
             if (inputGetTouch(&touch)) {
+                if (!was_touching) {
+                    prev_x = touch.px;
+                    prev_y = touch.py;
+                }
                 was_touching = true;
-                prev_x = touch.px;
-                prev_y = touch.py;
             } else {
                 if (was_touching) {
                     int modal_y0 = (open_modal == 0 || open_modal == 2 || open_modal == 3) ? 20 : ((open_modal == 4) ? 90 : 120);
@@ -780,8 +784,10 @@ void gameUpdate(void) {
                     renderUpdatePreview();
                 }
             } else {
-                prev_x = touch.px;
-                prev_y = touch.py;
+                if (!was_touching) {
+                    prev_x = touch.px;
+                    prev_y = touch.py;
+                }
                 was_touching = true;
             }
         } else {
@@ -811,9 +817,11 @@ void gameUpdate(void) {
     else if (current_state == STATE_WIZARD) {
         touchPosition touch;
         if (inputGetTouch(&touch)) {
+            if (!was_touching) {
+                prev_x = touch.px;
+                prev_y = touch.py;
+            }
             was_touching = true;
-            prev_x = touch.px;
-            prev_y = touch.py;
         } else {
             if (was_touching) {
                 // 1. Check if they touched the tabs: y = 42 to 62
