@@ -434,7 +434,9 @@ void gameUpdate(void) {
                                     is_bucket = false;
                                     option_selected = true;
                                 } else if (prev_x >= 200 && prev_x <= 240) {
-                                    uiOpenModal(4);
+                                    nib_angle = (nib_angle + 45) % 180;
+                                    angle_target = 0;
+                                    uiOpenModal(0);
                                     uiDrawToolbar();
                                     option_selected = false;
                                 }
@@ -446,7 +448,12 @@ void gameUpdate(void) {
                                 float rad = atan2f(dy, dx);
                                 int angle = (int)(rad * 180.0f / 3.14159f);
                                 if (angle < 0) angle += 360;
-                                nib_angle = angle;
+                                if (angle_target == 1) {
+                                    bg_angle = angle;
+                                    renderApplyBackgroundPattern(bg_pattern_idx);
+                                } else {
+                                    nib_angle = angle;
+                                }
                                 uiOpenModal(4);
                                 uiDrawToolbar();
                             }
@@ -655,12 +662,9 @@ void gameUpdate(void) {
                                         uiUpdateModalBackup();
                                         uiOpenModal(3);
                                     } else if (prev_x >= 198 && prev_x <= 244) {
-                                        // ROTAR
-                                        bg_angle = (bg_angle + 45) % 180;
-                                        renderApplyBackgroundPattern(bg_pattern_idx);
-                                        renderComposeCanvas();
-                                        uiUpdateModalBackup();
-                                        uiOpenModal(3);
+                                         angle_target = 1;
+                                         uiOpenModal(4);
+                                         uiDrawToolbar();
                                     }
                                 }
                             }

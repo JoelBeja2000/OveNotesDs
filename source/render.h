@@ -18,6 +18,7 @@ extern bool toolbar_hidden;
 
 extern bool bg_modifiable;
 extern int bg_angle;
+extern int angle_target;
 extern int bg_color_p_idx;
 extern int bg_color_s_idx;
 extern const uint16_t bg_primary_palette[4];

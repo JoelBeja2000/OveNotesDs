@@ -556,7 +556,9 @@ void uiOpenModal(int modal_idx) {
         drawPlumaButtonAt(62, 102, 134, 154, "PL2", 8, (drawing_mode == 8));
         drawPlumaButtonAt(108, 148, 134, 154, "PL3", 9, (drawing_mode == 9));
         drawPlumaButtonAt(154, 194, 134, 154, "PL4", 10, (drawing_mode == 10));
-        drawModalButtonAt(200, 240, 134, 154, "ANGULO", false);
+        char ang_lbl[16];
+        sprintf(ang_lbl, "ANG:%d", nib_angle);
+        drawModalButtonAt(200, 240, 134, 154, ang_lbl, false);
     } 
     else if (open_modal == 1) {
         char label[32];
@@ -749,7 +751,11 @@ void uiOpenModal(int modal_idx) {
     } 
     else if (open_modal == 4) {
         char label[32];
-        sprintf(label, "ANGULO DE LA PLUMA: %d", nib_angle);
+        if (angle_target == 1) {
+            sprintf(label, "ROTACION FONDO: %d", bg_angle);
+        } else {
+            sprintf(label, "ANGULO DE LA PLUMA: %d", nib_angle);
+        }
         renderDrawText(label, 16, 96, RGB15(0, 0, 0), 0);
         
         int cx = 128;
@@ -760,7 +766,8 @@ void uiOpenModal(int modal_idx) {
         drawRect(cx - 2, cy, cx + 2, cy, RGB15(15, 15, 15));
         drawRect(cx, cy - 2, cx, cy + 2, RGB15(15, 15, 15));
         
-        float rad = nib_angle * 3.14159265f / 180.0f;
+        int current_angle = (angle_target == 1) ? bg_angle : nib_angle;
+        float rad = current_angle * 3.14159265f / 180.0f;
         int end_x = cx + (int)(cosf(rad) * 26.0f);
         int end_y = cy + (int)(sinf(rad) * 26.0f);
         drawLine(cx, cy, end_x, end_y, RGB15(31, 0, 0));
