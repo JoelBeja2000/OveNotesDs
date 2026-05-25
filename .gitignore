@@ -1,0 +1,20 @@
+# BlocksDS Build outputs
+build/
+*.nds
+*.elf
+*.map
+*.bin
+
+# Local servers / dependencies
+node_modules/
+devKitPro/
+Notas_Publicadas/
+
+# Logs
+debug_log.txt
+*.log
+
+# OS / Editor temporary files
+.vscode/
+Thumbs.db
+.DS_Store

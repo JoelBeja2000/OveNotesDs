@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OveNotesDS Board</title>
+    <!-- Modern Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0b0d13;
+            --bg-secondary: rgba(18, 22, 33, 0.7);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --accent-primary: #00ffaa;
+            --accent-glow: rgba(0, 255, 170, 0.25);
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --card-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-primary);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(0, 255, 170, 0.08) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(118, 75, 162, 0.08) 0px, transparent 50%);
+            color: var(--text-main);
+            min-height: 100vh;
+            padding: 2rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        header {
+            width: 100%;
+            max-width: 1100px;
+            text-align: center;
+            margin-bottom: 3rem;
+            animation: fadeInDown 0.8s ease;
+        }
+
+        h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.8rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #ffffff 30%, var(--accent-primary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -1px;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            font-weight: 300;
+        }
+
+        main {
+            width: 100%;
+            max-width: 1100px;
+            flex-grow: 1;
+        }
+
+        .board-container {
+            background: var(--bg-secondary);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 2.5rem;
+            box-shadow: var(--card-shadow);
+            animation: fadeInUp 0.8s ease;
+        }
+
+        .board-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 1rem;
+        }
+
+        .board-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.4rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .pulse-dot {
+            width: 10px;
+            height: 10px;
+            background-color: var(--accent-primary);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--accent-primary);
+            animation: pulse 1.8s infinite;
+        }
+
+        .notes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 1.8rem;
+            transition: all 0.3s ease;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 5rem 0;
+            color: var(--text-muted);
+            font-weight: 300;
+            font-size: 1.1rem;
+            width: 100%;
+            grid-column: 1 / -1;
+        }
+
+        /* Note Cards */
+        .note-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            border-radius: 18px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s, box-shadow 0.3s;
+            position: relative;
+            animation: noteEntrance 0.5s ease forwards;
+        }
+
+        .note-card:hover {
+            transform: translateY(-6px);
+            border-color: rgba(0, 255, 170, 0.3);
+            box-shadow: 0 10px 20px rgba(0, 255, 170, 0.05);
+        }
+
+        .img-container {
+            width: 100%;
+            aspect-ratio: 256/176;
+            background: #181d28;
+            overflow: hidden;
+            cursor: zoom-in;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .img-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            image-rendering: pixelated;
+            transition: transform 0.5s;
+        }
+
+        .note-card:hover .img-container img {
+            transform: scale(1.05);
+        }
+
+        .card-details {
+            padding: 1.2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(10, 12, 18, 0.5);
+        }
+
+        .timestamp {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .delete-btn {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s, transform 0.2s;
+        }
+
+        .delete-btn:hover {
+            background: #ef4444;
+            color: #fff;
+            transform: scale(1.1);
+        }
+
+        /* Fullscreen Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(5, 7, 10, 0.95);
+            backdrop-filter: blur(8px);
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal-content {
+            max-width: 90%;
+            max-height: 80%;
+            box-shadow: 0 20px 50px rgba(0, 255, 170, 0.1);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            background: #000;
+            transform: scale(0.9);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .modal.active .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-content img {
+            display: block;
+            max-width: 100%;
+            max-height: 75vh;
+            width: 768px; /* 3x NDS width */
+            image-rendering: pixelated;
+            object-fit: contain;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 2rem;
+            right: 2rem;
+            background: none;
+            border: none;
+            color: var(--text-main);
+            font-size: 2rem;
+            cursor: pointer;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+        .modal-close:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        /* Animations */
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes noteEntrance {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(0, 255, 170, 0.5);
+            }
+            70% {
+                transform: scale(1);
+                box-shadow: 0 0 0 8px rgba(0, 255, 170, 0);
+            }
+            100% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(0, 255, 170, 0);
+            }
+        }
+
+        @media (max-width: 640px) {
+            h1 {
+                font-size: 2rem;
+            }
+            .board-container {
+                padding: 1.5rem;
+            }
+            .notes-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>OveNotesDS board</h1>
+        <p class="subtitle">Visualizador de notas en tiempo real enviadas desde la Nintendo DS</p>
+    </header>
+
+    <main>
+        <section class="board-container">
+            <div class="board-header">
+                <div class="board-title">
+                    <span class="pulse-dot"></span>
+                    <span>Notas recibidas</span>
+                </div>
+            </div>
+
+            <div class="notes-grid" id="notesGrid">
+                <!-- Notes will populate here -->
+                <div class="empty-state">No se han recibido notas todavía. ¡Envía una nota desde tu Nintendo DS!</div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Fullscreen Lightbox Modal -->
+    <div class="modal" id="imageModal">
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+        <div class="modal-content">
+            <img id="modalImg" src="" alt="Ampliado">
+        </div>
+    </div>
+
+    <script>
+        let cachedNotes = [];
+
+        function formatTime(timestamp) {
+            const diff = Date.now() - timestamp;
+            const secs = Math.floor(diff / 1000);
+            if (secs < 60) return 'Hace unos segundos';
+            const mins = Math.floor(secs / 60);
+            if (mins < 60) return `Hace ${mins} min${mins > 1 ? 's' : ''}`;
+            const hours = Math.floor(mins / 60);
+            if (hours < 24) return `Hace ${hours} hora${hours > 1 ? 's' : ''}`;
+            const date = new Date(timestamp);
+            return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
+        async function fetchNotes() {
+            try {
+                const response = await fetch('/api/notas');
+                if (!response.ok) return;
+                const notes = await response.json();
+                
+                // Compare and update only if changes occurred
+                const isChanged = JSON.stringify(notes) !== JSON.stringify(cachedNotes);
+                if (isChanged) {
+                    cachedNotes = notes;
+                    renderNotes(notes);
+                }
+            } catch (err) {
+                console.error('Error fetching notes:', err);
+            }
+        }
+
+        function renderNotes(notes) {
+            const grid = document.getElementById('notesGrid');
+            if (notes.length === 0) {
+                grid.innerHTML = '<div class="empty-state">No se han recibido notas todavía. ¡Envía una nota desde tu Nintendo DS!</div>';
+                return;
+            }
+
+            grid.innerHTML = '';
+            notes.forEach(note => {
+                const card = document.createElement('div');
+                card.className = 'note-card';
+                card.innerHTML = `
+                    <div class="img-container" onclick="openModal('/notas/${note.name}')">
+                        <img src="/notas/${note.name}" alt="Nota">
+                    </div>
+                    <div class="card-details">
+                        <span class="timestamp">${formatTime(note.time)}</span>
+                        <button class="delete-btn" onclick="deleteNote('${note.name}', event)">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            </svg>
+                        </button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        async function deleteNote(filename, event) {
+            event.stopPropagation();
+            if (!confirm('¿Seguro que deseas eliminar esta nota?')) return;
+            
+            try {
+                const response = await fetch(`/api/notas/${filename}`, { method: 'DELETE' });
+                if (response.ok) {
+                    fetchNotes();
+                }
+            } catch (err) {
+                console.error('Error deleting note:', err);
+            }
+        }
+
+        function openModal(src) {
+            const modal = document.getElementById('imageModal');
+            const img = document.getElementById('modalImg');
+            img.src = src;
+            modal.classList.add('active');
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('imageModal');
+            modal.classList.remove('active');
+        }
+
+        // Close modal on click outside content
+        document.getElementById('imageModal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+
+        // Polling loop
+        fetchNotes();
+        setInterval(fetchNotes, 2000);
+    </script>
+</body>
+</html>
