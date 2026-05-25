@@ -326,40 +326,31 @@ void gameUpdate(void) {
                             }
                         }
                     } else if (open_modal == 2) {
-                        if (touch.px >= 48 && touch.px <= 224) {
-                            if (touch.py >= 52 && touch.py <= 70) {
-                                int h = ((touch.px - 48) * 360) / 176;
-                                if (h < 0) h = 0;
-                                if (h > 360) h = 360;
-                                if (picker_h != h) {
-                                    picker_h = h;
-                                    palette_colors[active_color_idx] = hsv_to_rgb15(picker_h, picker_s, picker_v);
-                                    is_eraser = false;
-                                    uiUpdateColorPickerSelection();
-                                    uiDrawToolbar();
-                                }
-                            } else if (touch.py >= 72 && touch.py <= 90) {
-                                int s = ((touch.px - 48) * 31) / 176;
-                                if (s < 0) s = 0;
-                                if (s > 31) s = 31;
-                                if (picker_s != s) {
-                                    picker_s = s;
-                                    palette_colors[active_color_idx] = hsv_to_rgb15(picker_h, picker_s, picker_v);
-                                    is_eraser = false;
-                                    uiUpdateColorPickerSelection();
-                                    uiDrawToolbar();
-                                }
-                            } else if (touch.py >= 92 && touch.py <= 110) {
-                                int v = ((touch.px - 48) * 31) / 176;
-                                if (v < 0) v = 0;
-                                if (v > 31) v = 31;
-                                if (picker_v != v) {
-                                    picker_v = v;
-                                    palette_colors[active_color_idx] = hsv_to_rgb15(picker_h, picker_s, picker_v);
-                                    is_eraser = false;
-                                    uiUpdateColorPickerSelection();
-                                    uiDrawToolbar();
-                                }
+                        if (touch.px >= 16 && touch.px <= 136 && touch.py >= 56 && touch.py <= 116) {
+                            int h = (touch.px - 16) * 3;
+                            int s = 31 - ((touch.py - 56) * 31) / 60;
+                            if (h < 0) h = 0;
+                            if (h > 360) h = 360;
+                            if (s < 0) s = 0;
+                            if (s > 31) s = 31;
+                            if (picker_h != h || picker_s != s) {
+                                picker_h = h;
+                                picker_s = s;
+                                palette_colors[active_color_idx] = hsv_to_rgb15(picker_h, picker_s, picker_v);
+                                is_eraser = false;
+                                uiUpdateColorPickerSelection();
+                                uiDrawToolbar();
+                            }
+                        } else if (touch.px >= 192 && touch.px <= 216 && touch.py >= 56 && touch.py <= 116) {
+                            int v = 31 - ((touch.py - 56) * 31) / 60;
+                            if (v < 0) v = 0;
+                            if (v > 31) v = 31;
+                            if (picker_v != v) {
+                                picker_v = v;
+                                palette_colors[active_color_idx] = hsv_to_rgb15(picker_h, picker_s, picker_v);
+                                is_eraser = false;
+                                uiUpdateColorPickerSelection();
+                                uiDrawToolbar();
                             }
                         }
                     } else if (open_modal == 4) {
@@ -521,36 +512,30 @@ void gameUpdate(void) {
                                     }
                                 }
                             }
-                            // 3. Check HSV sliders
-                            else if (prev_x >= 48 && prev_x <= 224) {
-                                if (prev_y >= 52 && prev_y <= 70) {
-                                    int h = ((prev_x - 48) * 360) / 176;
-                                    if (h < 0) h = 0;
-                                    if (h > 360) h = 360;
-                                    picker_h = h;
-                                    palette_colors[active_color_idx] = hsv_to_rgb15(picker_h, picker_s, picker_v);
-                                    is_eraser = false;
-                                    uiUpdateColorPickerSelection();
-                                    uiDrawToolbar();
-                                } else if (prev_y >= 72 && prev_y <= 90) {
-                                    int s = ((prev_x - 48) * 31) / 176;
-                                    if (s < 0) s = 0;
-                                    if (s > 31) s = 31;
-                                    picker_s = s;
-                                    palette_colors[active_color_idx] = hsv_to_rgb15(picker_h, picker_s, picker_v);
-                                    is_eraser = false;
-                                    uiUpdateColorPickerSelection();
-                                    uiDrawToolbar();
-                                } else if (prev_y >= 92 && prev_y <= 110) {
-                                    int v = ((prev_x - 48) * 31) / 176;
-                                    if (v < 0) v = 0;
-                                    if (v > 31) v = 31;
-                                    picker_v = v;
-                                    palette_colors[active_color_idx] = hsv_to_rgb15(picker_h, picker_s, picker_v);
-                                    is_eraser = false;
-                                    uiUpdateColorPickerSelection();
-                                    uiDrawToolbar();
-                                }
+                            // 3. Check 2D Hue-Saturation Map or Value slider
+                            else if (prev_x >= 16 && prev_x <= 136 && prev_y >= 56 && prev_y <= 116) {
+                                int h = (prev_x - 16) * 3;
+                                int s = 31 - ((prev_y - 56) * 31) / 60;
+                                if (h < 0) h = 0;
+                                if (h > 360) h = 360;
+                                if (s < 0) s = 0;
+                                if (s > 31) s = 31;
+                                picker_h = h;
+                                picker_s = s;
+                                palette_colors[active_color_idx] = hsv_to_rgb15(picker_h, picker_s, picker_v);
+                                is_eraser = false;
+                                uiUpdateColorPickerSelection();
+                                uiDrawToolbar();
+                            }
+                            else if (prev_x >= 192 && prev_x <= 216 && prev_y >= 56 && prev_y <= 116) {
+                                int v = 31 - ((prev_y - 56) * 31) / 60;
+                                if (v < 0) v = 0;
+                                if (v > 31) v = 31;
+                                picker_v = v;
+                                palette_colors[active_color_idx] = hsv_to_rgb15(picker_h, picker_s, picker_v);
+                                is_eraser = false;
+                                uiUpdateColorPickerSelection();
+                                uiDrawToolbar();
                             }
                             // 4. Check bottom area (y = 120..170)
                             else if (prev_y >= 120 && prev_y <= 170) {

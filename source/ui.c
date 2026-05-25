@@ -532,65 +532,49 @@ void uiOpenModal(int modal_idx) {
             drawModalColorButtonAt(16 + i * 46, 16 + i * 46 + 40, 36, 48, palette_colors[i], (active_color_idx == i));
         }
         
-        // 1. Draw HUE slider (H: 0..360) at y: 56..66, x: 48..224
-        renderDrawText("H", 24, 58, RGB15(0, 0, 0), 0);
-        char h_val_lbl[8];
-        sprintf(h_val_lbl, "%d", picker_h);
-        renderDrawText(h_val_lbl, 230, 58, RGB15(0, 0, 0), 0);
-        for (int dx = 0; dx < 176; dx++) {
-            int h = (dx * 360) / 176;
-            uint16_t color = hsv_to_rgb15(h, 31, 31);
-            for (int dy = 0; dy < 10; dy++) {
-                canvas_buffer[(56 + dy) * 256 + (48 + dx)] = color;
+        // 1. Draw the 2D Hue-Saturation Map: x = 16..136 (width 120), y = 56..116 (height 60)
+        for (int dy = 0; dy < 60; dy++) {
+            int s = 31 - (dy * 31) / 60;
+            for (int dx = 0; dx < 120; dx++) {
+                int h = dx * 3;
+                canvas_buffer[(56 + dy) * 256 + (16 + dx)] = hsv_to_rgb15(h, s, 31);
             }
         }
-        drawRectOutline(48, 56, 224, 66, RGB15(0, 0, 0));
-        // Draw Hue indicator knob
-        int h_knob_x = 48 + (picker_h * 176) / 360;
-        if (h_knob_x < 48) h_knob_x = 48;
-        if (h_knob_x > 224) h_knob_x = 224;
-        drawRect(h_knob_x - 1, 54, h_knob_x + 1, 68, RGB15(0, 0, 0));
-        drawRect(h_knob_x, 55, h_knob_x, 67, RGB15(31, 31, 31));
+        drawRectOutline(16, 56, 136, 116, RGB15(0, 0, 0));
+        
+        // Draw Hue-Saturation reticle
+        int reticle_x = 16 + (picker_h * 120) / 360;
+        int reticle_y = 56 + ((31 - picker_s) * 60) / 31;
+        if (reticle_x < 16) reticle_x = 16;
+        if (reticle_x > 136) reticle_x = 136;
+        if (reticle_y < 56) reticle_y = 56;
+        if (reticle_y > 116) reticle_y = 116;
+        uint16_t bg_col = hsv_to_rgb15(picker_h, picker_s, 31);
+        int r = bg_col & 31, g = (bg_col >> 5) & 31, b = (bg_col >> 10) & 31;
+        uint16_t reticle_color = (r + g + b > 45) ? RGB15(0, 0, 0) : RGB15(31, 31, 31);
+        drawCircleOutline(reticle_x, reticle_y, 3, reticle_color);
 
-        // 2. Draw SATURATION slider (S: 0..31) at y: 76..86, x: 48..224
-        renderDrawText("S", 24, 78, RGB15(0, 0, 0), 0);
-        char s_val_lbl[8];
-        sprintf(s_val_lbl, "%d", picker_s);
-        renderDrawText(s_val_lbl, 230, 78, RGB15(0, 0, 0), 0);
-        for (int dx = 0; dx < 176; dx++) {
-            int s = (dx * 31) / 176;
-            uint16_t color = hsv_to_rgb15(picker_h, s, picker_v);
-            for (int dy = 0; dy < 10; dy++) {
-                canvas_buffer[(76 + dy) * 256 + (48 + dx)] = color;
-            }
-        }
-        drawRectOutline(48, 76, 224, 86, RGB15(0, 0, 0));
-        // Draw Saturation indicator knob
-        int s_knob_x = 48 + (picker_s * 176) / 31;
-        if (s_knob_x < 48) s_knob_x = 48;
-        if (s_knob_x > 224) s_knob_x = 224;
-        drawRect(s_knob_x - 1, 74, s_knob_x + 1, 88, RGB15(0, 0, 0));
-        drawRect(s_knob_x, 75, s_knob_x, 87, RGB15(31, 31, 31));
+        // 2. Draw the vertical Preview Swatch: x = 152..176 (width 24), y = 56..116 (height 60)
+        uint16_t preview_color = palette_colors[active_color_idx];
+        drawRect(152, 56, 176, 116, preview_color);
+        drawRectOutline(152, 56, 176, 116, RGB15(0, 0, 0));
 
-        // 3. Draw VALUE slider (V: 0..31) at y: 96..106, x: 48..224
-        renderDrawText("V", 24, 98, RGB15(0, 0, 0), 0);
-        char v_val_lbl[8];
-        sprintf(v_val_lbl, "%d", picker_v);
-        renderDrawText(v_val_lbl, 230, 98, RGB15(0, 0, 0), 0);
-        for (int dx = 0; dx < 176; dx++) {
-            int v = (dx * 31) / 176;
-            uint16_t color = hsv_to_rgb15(picker_h, picker_s, v);
-            for (int dy = 0; dy < 10; dy++) {
-                canvas_buffer[(96 + dy) * 256 + (48 + dx)] = color;
+        // 3. Draw the vertical Value (brightness) slider: x = 192..216 (width 24), y = 56..116 (height 60)
+        for (int dy = 0; dy < 60; dy++) {
+            int v = 31 - (dy * 31) / 60;
+            uint16_t slider_color = hsv_to_rgb15(picker_h, picker_s, v);
+            for (int dx = 0; dx < 24; dx++) {
+                canvas_buffer[(56 + dy) * 256 + (192 + dx)] = slider_color;
             }
         }
-        drawRectOutline(48, 96, 224, 106, RGB15(0, 0, 0));
-        // Draw Value indicator knob
-        int v_knob_x = 48 + (picker_v * 176) / 31;
-        if (v_knob_x < 48) v_knob_x = 48;
-        if (v_knob_x > 224) v_knob_x = 224;
-        drawRect(v_knob_x - 1, 94, v_knob_x + 1, 108, RGB15(0, 0, 0));
-        drawRect(v_knob_x, 95, v_knob_x, 107, RGB15(31, 31, 31));
+        drawRectOutline(192, 56, 216, 116, RGB15(0, 0, 0));
+        
+        // Draw Value indicator line
+        int v_indicator_y = 56 + ((31 - picker_v) * 60) / 31;
+        if (v_indicator_y < 56) v_indicator_y = 56;
+        if (v_indicator_y > 116) v_indicator_y = 116;
+        drawRect(190, v_indicator_y - 1, 218, v_indicator_y + 1, RGB15(0, 0, 0));
+        drawRect(191, v_indicator_y, 217, v_indicator_y, RGB15(31, 31, 31));
         
         if (color_modal_tab == 0) {
             char page_lbl[16];
