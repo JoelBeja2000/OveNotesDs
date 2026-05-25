@@ -20,7 +20,7 @@ int bg_color_s_idx = 0;
 int angle_target = 0; // 0 = brush, 1 = background
 
 int perspective_mode = 0;
-int perspective_points[3][2] = { {0, 0}, {0, 0}, {0, 0} };
+int perspective_points[3][2] = { {32, 88}, {224, 88}, {128, 150} };
 int perspective_step = 32;
 int nib_angle = 0;
 

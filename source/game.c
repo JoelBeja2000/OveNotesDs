@@ -668,16 +668,28 @@ void gameUpdate(void) {
                                         uiOpenModal(3);
                                     } else if (prev_x >= 68 && prev_x <= 122) {
                                         perspective_mode = 1;
+                                        perspective_points[0][0] = 128;
+                                        perspective_points[0][1] = 88;
                                         renderComposeCanvas();
                                         uiUpdateModalBackup();
                                         uiOpenModal(3);
                                     } else if (prev_x >= 126 && prev_x <= 180) {
                                         perspective_mode = 2;
+                                        perspective_points[0][0] = 32;
+                                        perspective_points[0][1] = 88;
+                                        perspective_points[1][0] = 224;
+                                        perspective_points[1][1] = 88;
                                         renderComposeCanvas();
                                         uiUpdateModalBackup();
                                         uiOpenModal(3);
                                     } else if (prev_x >= 184 && prev_x <= 244) {
                                         perspective_mode = 3;
+                                        perspective_points[0][0] = 32;
+                                        perspective_points[0][1] = 64;
+                                        perspective_points[1][0] = 224;
+                                        perspective_points[1][1] = 64;
+                                        perspective_points[2][0] = 128;
+                                        perspective_points[2][1] = 150;
                                         renderComposeCanvas();
                                         uiUpdateModalBackup();
                                         uiOpenModal(3);
