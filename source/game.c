@@ -1209,6 +1209,7 @@ void gameUpdate(void) {
                             if (was_touching && prev_y < limit_y) {
                                 if (!layers_panel_open || (prev_x < 144 && touch.px < 144)) {
                                     renderDrawLine(prev_x, prev_y, touch.px, touch.py, draw_color, is_eraser ? eraser_size : active_brush_size, is_eraser);
+                                    if (perspective_mode > 0) renderOverlayPerspectiveGuides();
                                 }
                             } else {
                                 renderSaveUndoState();
@@ -1217,6 +1218,7 @@ void gameUpdate(void) {
                                 } else {
                                     renderDrawBrushPoint(touch.px, touch.py, draw_color, active_brush_size);
                                 }
+                                if (perspective_mode > 0) renderOverlayPerspectiveGuides();
                             }
                         }
                     }
@@ -1368,6 +1370,11 @@ void gameUpdate(void) {
                         renderComposeCanvas();
                         renderUpdatePreview();
                     }
+                }
+                
+                // If it was a drawing stroke, recompose to restore perspective grid
+                if (!touch_started_in_toolbar && !layers_panel_open && dragging_layer_idx == -1 && !sidebar_action_taken) {
+                    renderComposeCanvas();
                 }
             }
             was_touching = false;

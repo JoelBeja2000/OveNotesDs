@@ -176,9 +176,12 @@ static void drawCircleOutline(int xc, int yc, int r, uint16_t color) {
 }
 
 static void drawModalButtonAt(int x0, int x1, int y0, int y1, const char* text, bool selected) {
-    uint16_t bg = selected ? RGB15(12, 12, 18) : RGB15(31, 31, 31);
-    uint16_t outline = RGB15(0, 0, 0);
-    uint16_t text_color = selected ? RGB15(31, 31, 31) : RGB15(0, 0, 0);
+    uint16_t bg = selected ? blendRGB555_int(app_theme_color, RGB15(4, 4, 5), 8) : RGB15(2, 2, 3);
+    uint16_t outline = selected ? app_theme_color : blendRGB555_int(app_theme_color, RGB15(2, 2, 3), 8);
+    uint16_t text_color = RGB15(31, 31, 31);
+    if (selected && active_theme_idx == 0) {
+        text_color = RGB15(0, 0, 0);
+    }
     
     drawRect(x0, y0, x1, y1, bg);
     drawRectOutline(x0, y0, x1, y1, outline);
@@ -191,9 +194,9 @@ static void drawModalButtonAt(int x0, int x1, int y0, int y1, const char* text, 
 }
 
 static void drawModalButtonDisabledAt(int x0, int x1, int y0, int y1, const char* text) {
-    uint16_t bg = RGB15(22, 22, 22);
-    uint16_t outline = RGB15(15, 15, 15);
-    uint16_t text_color = RGB15(12, 12, 12);
+    uint16_t bg = RGB15(1, 1, 2);
+    uint16_t outline = RGB15(4, 4, 5);
+    uint16_t text_color = RGB15(8, 8, 8);
     
     drawRect(x0, y0, x1, y1, bg);
     drawRectOutline(x0, y0, x1, y1, outline);
@@ -206,9 +209,17 @@ static void drawModalButtonDisabledAt(int x0, int x1, int y0, int y1, const char
 }
 
 static void drawToolButtonWithIconAt(int x0, int x1, int y0, int y1, const char* text, int icon_type, bool selected) {
-    uint16_t bg = selected ? RGB15(12, 12, 18) : RGB15(31, 31, 31);
-    uint16_t outline = selected ? RGB15(31, 0, 0) : RGB15(0, 0, 0);
-    uint16_t text_color = selected ? RGB15(31, 31, 31) : RGB15(0, 0, 0);
+    uint16_t bg = selected ? blendRGB555_int(app_theme_color, RGB15(4, 4, 5), 8) : RGB15(2, 2, 3);
+    uint16_t outline = selected ? app_theme_color : blendRGB555_int(app_theme_color, RGB15(2, 2, 3), 8);
+    uint16_t text_color = RGB15(31, 31, 31);
+    uint16_t icon_draw_color = RGB15(31, 31, 31);
+    if (selected && active_theme_idx == 0) {
+        text_color = RGB15(0, 0, 0);
+        icon_draw_color = RGB15(0, 0, 0);
+    } else if (!selected) {
+        text_color = RGB15(22, 22, 24);
+        icon_draw_color = RGB15(22, 22, 24);
+    }
     
     drawRect(x0, y0, x1, y1, bg);
     drawRectOutline(x0, y0, x1, y1, outline);
@@ -218,8 +229,6 @@ static void drawToolButtonWithIconAt(int x0, int x1, int y0, int y1, const char*
     
     int icon_x0 = x0 + 4;
     int icon_y0 = y0 + (y1 - y0 - 12) / 2;
-    
-    uint16_t icon_draw_color = selected ? RGB15(31, 31, 31) : RGB15(0, 0, 0);
     
     if (icon_type == 0) { // Pincel
         drawRect(icon_x0 + 4, icon_y0 + 2, icon_x0 + 10, icon_y0 + 7, icon_draw_color);
@@ -250,9 +259,14 @@ static void drawToolButtonWithIconAt(int x0, int x1, int y0, int y1, const char*
 }
 
 static void drawPatternBrushButtonAt(int x0, int x1, int y0, int y1, int pat_idx, bool selected) {
-    uint16_t outline = selected ? RGB15(31, 0, 0) : RGB15(0, 0, 0);
-    uint16_t p_color = selected ? RGB15(12, 12, 18) : RGB15(31, 31, 31);
-    uint16_t pat_color = selected ? RGB15(31, 31, 31) : RGB15(0, 0, 0);
+    uint16_t outline = selected ? app_theme_color : blendRGB555_int(app_theme_color, RGB15(2, 2, 3), 8);
+    uint16_t p_color = selected ? blendRGB555_int(app_theme_color, RGB15(4, 4, 5), 8) : RGB15(2, 2, 3);
+    uint16_t pat_color = RGB15(31, 31, 31);
+    if (selected && active_theme_idx == 0) {
+        pat_color = RGB15(0, 0, 0);
+    } else if (!selected) {
+        pat_color = RGB15(22, 22, 24);
+    }
     
     drawRect(x0, y0, x1, y1, p_color);
     drawRectOutline(x0, y0, x1, y1, outline);
@@ -286,9 +300,17 @@ static void drawPatternBrushButtonAt(int x0, int x1, int y0, int y1, int pat_idx
 }
 
 static void drawPlumaButtonAt(int x0, int x1, int y0, int y1, const char* label, int pl_type, bool selected) {
-    uint16_t bg = selected ? RGB15(12, 12, 18) : RGB15(31, 31, 31);
-    uint16_t outline = selected ? RGB15(31, 0, 0) : RGB15(0, 0, 0);
-    uint16_t text_color = selected ? RGB15(31, 31, 31) : RGB15(0, 0, 0);
+    uint16_t bg = selected ? blendRGB555_int(app_theme_color, RGB15(4, 4, 5), 8) : RGB15(2, 2, 3);
+    uint16_t outline = selected ? app_theme_color : blendRGB555_int(app_theme_color, RGB15(2, 2, 3), 8);
+    uint16_t text_color = RGB15(31, 31, 31);
+    uint16_t stroke_color = RGB15(31, 31, 31);
+    if (selected && active_theme_idx == 0) {
+        text_color = RGB15(0, 0, 0);
+        stroke_color = RGB15(0, 0, 0);
+    } else if (!selected) {
+        text_color = RGB15(22, 22, 24);
+        stroke_color = RGB15(22, 22, 24);
+    }
     
     drawRect(x0, y0, x1, y1, bg);
     drawRectOutline(x0, y0, x1, y1, outline);
@@ -300,8 +322,6 @@ static void drawPlumaButtonAt(int x0, int x1, int y0, int y1, const char* label,
     
     int cx = (x0 + x1) / 2;
     int cy = (y0 + y1) / 2 + 2;
-    
-    uint16_t stroke_color = selected ? RGB15(31, 31, 31) : RGB15(0, 0, 0);
     
     if (pl_type == 7) {
         for (int d = -4; d <= 4; d++) {
@@ -330,7 +350,7 @@ static void drawPlumaButtonAt(int x0, int x1, int y0, int y1, const char* label,
 }
 
 static void drawModalColorButtonAt(int x0, int x1, int y0, int y1, uint16_t color, bool selected) {
-    uint16_t outline = selected ? RGB15(31, 0, 0) : RGB15(0, 0, 0);
+    uint16_t outline = selected ? app_theme_color : RGB15(0, 0, 0);
     int outline_width = selected ? 2 : 1;
     
     drawRect(x0, y0, x1, y1, color);
@@ -344,7 +364,7 @@ static void drawPatternPreview(int x0, int y0, int x1, int y1, int pat_idx, bool
     uint16_t p_color = bg_primary_palette[bg_color_p_idx];
     uint16_t s_color = bg_secondary_palette[bg_color_s_idx];
     uint16_t red_margin = RGB15(30, 8, 8);
-    uint16_t outline = selected ? RGB15(31, 0, 0) : RGB15(0, 0, 0);
+    uint16_t outline = selected ? app_theme_color : RGB15(0, 0, 0);
     
     drawRect(x0, y0, x1, y1, p_color);
     
@@ -587,27 +607,26 @@ void uiOpenModal(int modal_idx) {
         }
     }
     
-    uint16_t light_grey = RGB15(28, 28, 28);
-    uint16_t black = RGB15(0, 0, 0);
-    drawRect(8, y0, 247, y1, light_grey);
-    drawRectOutline(8, y0, 247, y1, black);
+    uint16_t modal_bg = RGB15(4, 4, 5);
+    drawRect(8, y0, 247, y1, modal_bg);
+    drawRectOutline(8, y0, 247, y1, app_theme_color);
     
     if (open_modal == 0) {
-        renderDrawText("UTENSILIO", 16, y0 + 2, RGB15(0, 0, 0), 0);
+        renderDrawText("UTENSILIO", 16, y0 + 2, RGB15(31, 31, 31), 0);
         drawToolButtonWithIconAt(16, 86, 32, 52, "PINCEL", 0, (!is_eraser && !is_bucket));
         drawToolButtonWithIconAt(92, 162, 32, 52, "BORRADOR", 1, is_eraser);
         drawToolButtonWithIconAt(168, 238, 32, 52, "RELLENO", 2, is_bucket);
         
-        renderDrawText("TRAZO", 16, y0 + 36, RGB15(0, 0, 0), 0);
+        renderDrawText("TRAZO", 16, y0 + 36, RGB15(31, 31, 31), 0);
         drawToolButtonWithIconAt(16, 86, 66, 86, "NORMAL", 3, (drawing_mode == 0));
         drawToolButtonWithIconAt(92, 162, 66, 86, "ROTUL.", 4, (drawing_mode == 1));
         
-        renderDrawText("PATRON BRUSH", 16, y0 + 70, RGB15(0, 0, 0), 0);
+        renderDrawText("PATRON BRUSH", 16, y0 + 70, RGB15(31, 31, 31), 0);
         for (int i = 0; i < 5; i++) {
             drawPatternBrushButtonAt(16 + i * 46, 16 + i * 46 + 40, 100, 120, 2 + i, (drawing_mode == 2 + i));
         }
         
-        renderDrawText("PLUMAS", 16, y0 + 104, RGB15(0, 0, 0), 0);
+        renderDrawText("PLUMAS", 16, y0 + 104, RGB15(31, 31, 31), 0);
         drawPlumaButtonAt(16, 56, 134, 154, "PL1", 7, (drawing_mode == 7));
         drawPlumaButtonAt(62, 102, 134, 154, "PL2", 8, (drawing_mode == 8));
         drawPlumaButtonAt(108, 148, 134, 154, "PL3", 9, (drawing_mode == 9));
@@ -623,7 +642,7 @@ void uiOpenModal(int modal_idx) {
         } else {
             sprintf(label, "GROSOR PINCEL: %d px", active_brush_size);
         }
-        renderDrawText(label, 16, 126, RGB15(0, 0, 0), 0);
+        renderDrawText(label, 16, 126, RGB15(31, 31, 31), 0);
         
         drawRect(24, 144, 232, 148, RGB15(20, 20, 20));
         drawRectOutline(24, 144, 232, 148, RGB15(0, 0, 0));
@@ -641,18 +660,18 @@ void uiOpenModal(int modal_idx) {
         drawRectOutline(knob_x - 4, 138, knob_x + 4, 154, RGB15(0, 0, 0));
     } 
     else if (open_modal == 2) {
-        uint16_t tab_active_bg = RGB15(28, 28, 28);
-        uint16_t tab_inactive_bg = RGB15(20, 20, 20);
-        uint16_t tab_border = RGB15(0, 0, 0);
+        uint16_t tab_active_bg = blendRGB555_int(app_theme_color, RGB15(4, 4, 5), 6);
+        uint16_t tab_inactive_bg = RGB15(2, 2, 3);
+        uint16_t tab_border = app_theme_color;
         
         drawRect(8, 20, 127, 32, (color_modal_tab == 0) ? tab_active_bg : tab_inactive_bg);
         drawRect(128, 20, 247, 32, (color_modal_tab == 1) ? tab_active_bg : tab_inactive_bg);
         
-        drawRectOutline(8, 20, 127, 32, tab_border);
-        drawRectOutline(128, 20, 247, 32, tab_border);
+        drawRectOutline(8, 20, 127, 32, (color_modal_tab == 0) ? tab_border : blendRGB555_int(app_theme_color, RGB15(2,2,3), 8));
+        drawRectOutline(128, 20, 247, 32, (color_modal_tab == 1) ? tab_border : blendRGB555_int(app_theme_color, RGB15(2,2,3), 8));
         
-        renderDrawText("PRESETS", 44, 23, (color_modal_tab == 0) ? RGB15(0, 0, 0) : RGB15(16, 16, 16), 0);
-        renderDrawText("MIS PALETAS", 152, 23, (color_modal_tab == 1) ? RGB15(0, 0, 0) : RGB15(16, 16, 16), 0);
+        renderDrawText("PRESETS", 44, 23, (color_modal_tab == 0) ? RGB15(31, 31, 31) : RGB15(15, 15, 15), 0);
+        renderDrawText("MIS PALETAS", 152, 23, (color_modal_tab == 1) ? RGB15(31, 31, 31) : RGB15(15, 15, 15), 0);
         
         for (int i = 0; i < 5; i++) {
             drawModalColorButtonAt(16 + i * 46, 16 + i * 46 + 40, 36, 48, palette_colors[i], (active_color_idx == i));
@@ -679,12 +698,12 @@ void uiOpenModal(int modal_idx) {
         int r = bg_col & 31, g = (bg_col >> 5) & 31, b = (bg_col >> 10) & 31;
         uint16_t reticle_color = (r + g + b > 45) ? RGB15(0, 0, 0) : RGB15(31, 31, 31);
         drawCircleOutline(reticle_x, reticle_y, 3, reticle_color);
-
+ 
         // 2. Draw the vertical Preview Swatch: x = 152..176 (outline), inside: x = 153..175, y = 57..115
         uint16_t preview_color = palette_colors[active_color_idx];
         drawRect(153, 57, 175, 115, preview_color);
         drawRectOutline(152, 56, 176, 116, RGB15(0, 0, 0));
-
+ 
         // 3. Draw the vertical Value (brightness) slider: x = 192..216 (outline), inside: x = 193..215 (width 23), y = 57..115 (height 59)
         for (int dy = 0; dy < 59; dy++) {
             int v = 31 - (dy * 31) / 59;
@@ -725,7 +744,7 @@ void uiOpenModal(int modal_idx) {
             }
             
             drawModalButtonAt(74, 114, 154, 170, "<-", false);
-            renderDrawText(page_lbl, 122, 158, RGB15(0, 0, 0), 0);
+            renderDrawText(page_lbl, 122, 158, RGB15(31, 31, 31), 0);
             drawModalButtonAt(142, 182, 154, 170, "->", false);
         } else {
             char page_lbl[16];
@@ -738,7 +757,7 @@ void uiOpenModal(int modal_idx) {
                 int y0 = 134, y1 = 152;
                 
                 bool is_sel = (selected_custom_slot == i);
-                uint16_t outline = is_sel ? RGB15(31, 0, 0) : RGB15(0, 0, 0);
+                uint16_t outline = is_sel ? app_theme_color : RGB15(0, 0, 0);
                 drawRectOutline(x0, y0, x1, y1, outline);
                 if (is_sel) {
                     drawRectOutline(x0 + 1, y0 + 1, x1 - 1, y1 - 1, outline);
@@ -758,22 +777,22 @@ void uiOpenModal(int modal_idx) {
             drawModalButtonAt(12, 82, 154, 170, "GUARDAR", false);
             drawModalButtonAt(114, 144, 154, 170, "<-", false);
             drawModalButtonAt(174, 204, 154, 170, "->", false);
-            renderDrawText(page_lbl, 210, 158, RGB15(0, 0, 0), 0);
+            renderDrawText(page_lbl, 210, 158, RGB15(31, 31, 31), 0);
         }
     }
     else if (open_modal == 3) {
-        uint16_t tab_active_bg = RGB15(28, 28, 28);
-        uint16_t tab_inactive_bg = RGB15(20, 20, 20);
-        uint16_t tab_border = RGB15(0, 0, 0);
+        uint16_t tab_active_bg = blendRGB555_int(app_theme_color, RGB15(4, 4, 5), 6);
+        uint16_t tab_inactive_bg = RGB15(2, 2, 3);
+        uint16_t tab_border = app_theme_color;
         
         drawRect(8, 20, 127, 32, (bg_modal_tab == 0) ? tab_active_bg : tab_inactive_bg);
         drawRect(128, 20, 247, 32, (bg_modal_tab == 1) ? tab_active_bg : tab_inactive_bg);
         
-        drawRectOutline(8, 20, 127, 32, tab_border);
-        drawRectOutline(128, 20, 247, 32, tab_border);
+        drawRectOutline(8, 20, 127, 32, (bg_modal_tab == 0) ? tab_border : blendRGB555_int(app_theme_color, RGB15(2,2,3), 8));
+        drawRectOutline(128, 20, 247, 32, (bg_modal_tab == 1) ? tab_border : blendRGB555_int(app_theme_color, RGB15(2,2,3), 8));
         
-        renderDrawText("PATRONES", 44, 23, (bg_modal_tab == 0) ? RGB15(0, 0, 0) : RGB15(16, 16, 16), 0);
-        renderDrawText("PERSPECTIVA", 152, 23, (bg_modal_tab == 1) ? RGB15(0, 0, 0) : RGB15(16, 16, 16), 0);
+        renderDrawText("PATRONES", 44, 23, (bg_modal_tab == 0) ? RGB15(31, 31, 31) : RGB15(15, 15, 15), 0);
+        renderDrawText("PERSPECTIVA", 152, 23, (bg_modal_tab == 1) ? RGB15(31, 31, 31) : RGB15(15, 15, 15), 0);
         
         if (bg_modal_tab == 0) {
             for (int i = 0; i < 4; i++) {
@@ -797,7 +816,7 @@ void uiOpenModal(int modal_idx) {
             sprintf(rot_lbl, "ROT:%d", bg_angle);
             drawModalButtonAt(198, 244, 132, 150, rot_lbl, false);
         } else {
-            renderDrawText("MODO DE PERSPECTIVA", 16, 36, RGB15(0, 0, 0), 0);
+            renderDrawText("MODO DE PERSPECTIVA", 16, 36, RGB15(31, 31, 31), 0);
             
             drawModalButtonAt(12, 53, 46, 62, "OFF", (perspective_mode == 0));
             drawModalButtonAt(57, 101, 46, 62, "1 VP", (perspective_mode == 1));
@@ -848,12 +867,12 @@ void uiOpenModal(int modal_idx) {
         } else {
             sprintf(label, "ANGULO DE LA PLUMA: %d", nib_angle);
         }
-        renderDrawText(label, 16, 96, RGB15(0, 0, 0), 0);
+        renderDrawText(label, 16, 96, RGB15(31, 31, 31), 0);
         
         int cx = 128;
         int cy = 132;
         int r = 28;
-        drawCircleOutline(cx, cy, r, RGB15(0, 0, 0));
+        drawCircleOutline(cx, cy, r, app_theme_color);
         
         drawRect(cx - 2, cy, cx + 2, cy, RGB15(15, 15, 15));
         drawRect(cx, cy - 2, cx, cy + 2, RGB15(15, 15, 15));
@@ -866,7 +885,7 @@ void uiOpenModal(int modal_idx) {
     }
     else if (open_modal == 5) {
         // MENU DE LA NOTA
-        renderDrawText("MENU DE LA NOTA", 80, y0 + 6, RGB15(0, 0, 0), 0);
+        renderDrawText("MENU DE LA NOTA", 80, y0 + 6, RGB15(31, 31, 31), 0);
         
         // Draw options buttons
         drawModalButtonAt(24, 232, y0 + 22, y0 + 44, "GUARDAR NOTA (SD)", false);
@@ -966,50 +985,56 @@ void uiDrawToolbar(void) {
     // Fill toolbar background (dark blue-gray)
     for (int y = 176; y < 192; y++) {
         for (int x = 0; x < 256; x++) {
-            canvas_buffer[y * 256 + x] = RGB15(5, 5, 7);
+            canvas_buffer[y * 256 + x] = RGB15(2, 2, 3);
         }
     }
 
     // Draw vertical separators
     for (int y = 176; y < 192; y++) {
-        renderSetPixel(42, y, RGB15(15, 15, 17));
-        renderSetPixel(84, y, RGB15(15, 15, 17));
-        renderSetPixel(126, y, RGB15(15, 15, 17));
-        renderSetPixel(168, y, RGB15(15, 15, 17));
-        renderSetPixel(212, y, RGB15(15, 15, 17));
+        renderSetPixel(42, y, RGB15(6, 6, 8));
+        renderSetPixel(84, y, RGB15(6, 6, 8));
+        renderSetPixel(126, y, RGB15(6, 6, 8));
+        renderSetPixel(168, y, RGB15(6, 6, 8));
+        renderSetPixel(212, y, RGB15(6, 6, 8));
     }
 
     // Highlight the active open modal button
-    if (open_modal == 0) fillButtonBg(0, 42, RGB15(12, 12, 18));
-    if (open_modal == 1) fillButtonBg(42, 84, RGB15(12, 12, 18));
-    if (open_modal == 2) fillButtonBg(84, 126, RGB15(12, 12, 18));
-    if (open_modal == 3) fillButtonBg(126, 168, RGB15(12, 12, 18));
+    uint16_t active_bg = blendRGB555_int(app_theme_color, RGB15(4, 4, 5), 8);
+    if (open_modal == 0) fillButtonBg(0, 42, active_bg);
+    if (open_modal == 1) fillButtonBg(42, 84, active_bg);
+    if (open_modal == 2) fillButtonBg(84, 126, active_bg);
+    if (open_modal == 3) fillButtonBg(126, 168, active_bg);
 
     // Highlight Config (Button 4) and Publicar (Button 5)
     if (open_modal == 5) {
-        fillButtonBg(168, 212, RGB15(12, 12, 18));
+        fillButtonBg(168, 212, active_bg);
     } else {
-        fillButtonBg(168, 212, RGB15(6, 6, 12));
+        fillButtonBg(168, 212, RGB15(3, 3, 4));
     }
-    fillButtonBg(212, 256, RGB15(2, 16, 2));
+    
+    fillButtonBg(212, 256, RGB15(1, 5, 2));
 
+    uint16_t default_text_color = RGB15(22, 22, 24);
     uint16_t active_text_color = RGB15(31, 31, 31);
+    if (active_theme_idx == 0) { // Yellow theme text flip
+        active_text_color = RGB15(0, 0, 0);
+    }
 
     // Button 0: TOOL
     const char* tool_label = "PINC";
     if (is_eraser) tool_label = "BORR";
     else if (is_bucket) tool_label = "FILL";
-    renderDrawText(tool_label, 9, 180, active_text_color, 0);
+    renderDrawText(tool_label, 9, 180, (open_modal == 0) ? active_text_color : default_text_color, 0);
 
     // Button 1: SIZE
     char size_label[6];
     if (is_eraser) sprintf(size_label, "S:%d", eraser_size);
     else sprintf(size_label, "S:%d", active_brush_size);
-    renderDrawText(size_label, 50, 180, active_text_color, 0);
+    renderDrawText(size_label, 50, 180, (open_modal == 1) ? active_text_color : default_text_color, 0);
 
     // Button 2: COLOR
     uint16_t current_color = palette_colors[active_color_idx];
-    renderDrawText("COL", 90, 180, active_text_color, 0);
+    renderDrawText("COL", 90, 180, (open_modal == 2) ? active_text_color : default_text_color, 0);
     for (int dy = 0; dy < 6; dy++) {
         for (int dx = 0; dx < 6; dx++) {
             renderSetPixel(112 + dx, 181 + dy, current_color);
@@ -1019,13 +1044,13 @@ void uiDrawToolbar(void) {
     // Button 3: BG
     char bg_label[6];
     sprintf(bg_label, "BG%d", bg_pattern_idx);
-    renderDrawText(bg_label, 138, 180, active_text_color, 0);
+    renderDrawText(bg_label, 138, 180, (open_modal == 3) ? active_text_color : default_text_color, 0);
 
     // Button 4: MENU
-    renderDrawText("MENU", 178, 180, active_text_color, 0);
+    renderDrawText("MENU", 178, 180, (open_modal == 5) ? active_text_color : default_text_color, 0);
 
     // Button 5: ENVIAR
-    renderDrawText("ENVIAR", 216, 180, active_text_color, 0);
+    renderDrawText("ENVIAR", 216, 180, RGB15(20, 31, 20), 0);
 }
 
 #include "font8x8.h"
@@ -1123,15 +1148,10 @@ static void drawBlueArrow(int x, int y) {
 
 
 static void drawSubGridBackground(void) {
-    drawSubRect(0, 0, 255, 191, RGB15(31, 31, 31));
-    uint16_t grid_color = RGB15(29, 29, 29);
-    for (int y = 0; y < 192; y += 8) {
-        for (int x = 0; x < 256; x++) {
-            drawSubPixel(x, y, grid_color);
-        }
-    }
-    for (int x = 0; x < 256; x += 8) {
-        for (int y = 0; y < 192; y += 8) {
+    drawSubRect(0, 0, 255, 191, RGB15(4, 4, 5));
+    uint16_t grid_color = RGB15(6, 6, 8);
+    for (int y = 0; y < 192; y += 16) {
+        for (int x = 0; x < 256; x += 16) {
             drawSubPixel(x, y, grid_color);
         }
     }
@@ -1142,91 +1162,97 @@ void uiDrawFormUI(int step, const char* input_text) {
 
     drawSubGridBackground();
 
-    uint16_t black = RGB15(0, 0, 0);
-    uint16_t white = RGB15(31, 31, 31);
-    uint16_t light_grey = RGB15(26, 26, 26);
-    uint16_t dark_grey = RGB15(12, 12, 12);
-    uint16_t blue = RGB15(0, 16, 30);
+    uint16_t text_col = RGB15(31, 31, 31);
+    uint16_t panel_bg = RGB15(2, 2, 3);
+    uint16_t header_bg = blendRGB555_int(app_theme_color, RGB15(2, 2, 3), 6);
+    uint16_t border_col = app_theme_color;
+    uint16_t inactive_text = RGB15(15, 15, 15);
+    uint16_t active_col = app_theme_color;
+    uint16_t header_text_col = text_col;
+    
+    if (active_theme_idx == 0) {
+        header_text_col = RGB15(0, 0, 0);
+    }
 
     // 1. Header (Connection Settings)
-    drawSubRect(0, 0, 255, 15, light_grey);
-    drawSubLine(0, 16, 255, 16, black);
-    drawSubText("Connection Settings", 8, 4, black, 0);
+    drawSubRect(0, 0, 255, 15, header_bg);
+    drawSubLine(0, 16, 255, 16, border_col);
+    drawSubText("Connection Settings", 8, 4, header_text_col, 0);
 
     // 2. Footer (Cancel / Save)
-    drawSubRect(0, 176, 255, 191, light_grey);
-    drawSubLine(0, 175, 255, 175, black);
+    drawSubRect(0, 176, 255, 191, header_bg);
+    drawSubLine(0, 175, 255, 175, border_col);
 
     // [B] Cancel
-    drawSubRectOutline(8, 180, 20, 188, black);
-    drawSubText("B", 11, 181, black, 0);
-    drawSubText("Cancel", 24, 181, black, 0);
+    drawSubRectOutline(8, 180, 20, 188, border_col);
+    drawSubText("B", 11, 181, header_text_col, 0);
+    drawSubText("Cancel", 24, 181, header_text_col, 0);
 
     // [A] Save
-    drawSubRectOutline(204, 180, 216, 188, black);
-    drawSubText("A", 207, 181, black, 0);
-    drawSubText("Save", 220, 181, black, 0);
+    drawSubRectOutline(204, 180, 216, 188, border_col);
+    drawSubText("A", 207, 181, header_text_col, 0);
+    drawSubText("Save", 220, 181, header_text_col, 0);
 
     // 3. Left Panel (Connection 1 / Connection 2) - Shrunk height to 110
-    drawSubRect(6, 22, 86, 110, white);
-    drawSubRectOutline(6, 22, 86, 110, black);
+    drawSubRect(6, 22, 86, 110, panel_bg);
+    drawSubRectOutline(6, 22, 86, 110, border_col);
 
-    drawSubText("Conn. 1", 10, 26, black, 0);
+    drawSubText("Conn. 1", 10, 26, text_col, 0);
 
     // Connection 1 Box (HTTP selected)
-    drawSubRectOutline(8, 36, 84, 52, blue);
-    drawSubRectOutline(9, 37, 83, 51, blue);
-    drawBlueArrow(14, 41);
-    drawSubText("HTTP", 24, 40, blue, 0);
+    drawSubRectOutline(8, 36, 84, 52, active_col);
+    drawSubRectOutline(9, 37, 83, 51, active_col);
+    drawBlueArrow(14, 41); // We'll let it stay as drawBlueArrow, the sprite itself might be blue but that's fine for now
+    drawSubText("HTTP", 24, 40, active_col, 0);
 
     // Dotted separator
     for (int x = 8; x < 84; x += 2) {
-        drawSubPixel(x, 58, dark_grey);
+        drawSubPixel(x, 58, inactive_text);
     }
 
-    drawSubText("Conn. 2", 10, 64, black, 0);
-    drawSubText("Not Config", 10, 74, dark_grey, 0);
+    drawSubText("Conn. 2", 10, 64, text_col, 0);
+    drawSubText("Not Config", 10, 74, inactive_text, 0);
 
     // Center help description text on the grid background below the panels
-    drawSubText("Configure your HTTP server.", 47, 136, black, 0);
+    drawSubText("Configure your HTTP server.", 47, 136, text_col, 0);
 
     // 4. Right Panel (HTTP Configuration Fields) - Shrunk height to 110
-    drawSubRect(92, 22, 250, 110, white);
-    drawSubRectOutline(92, 22, 250, 110, black);
+    drawSubRect(92, 22, 250, 110, panel_bg);
+    drawSubRectOutline(92, 22, 250, 110, border_col);
 
     // Inner Header (HTTP Configuration)
-    drawSubRect(93, 23, 249, 36, light_grey);
-    drawSubLine(92, 37, 250, 37, black);
-    drawSubText("HTTP Configuration", 96, 26, black, 0);
+    drawSubRect(93, 23, 249, 36, blendRGB555_int(app_theme_color, RGB15(4, 4, 5), 8));
+    drawSubLine(92, 37, 250, 37, border_col);
+    drawSubText("HTTP Configuration", 96, 26, header_text_col, 0);
 
     // Field 0: IP (y = 44 to 58)
-    drawSubText("IP", 96, 48, black, 0);
-    drawSubRectOutline(136, 44, 244, 58, (step == 0) ? blue : black);
+    drawSubText("IP", 96, 48, text_col, 0);
+    drawSubRectOutline(136, 44, 244, 58, (step == 0) ? active_col : RGB15(15, 15, 15));
     if (step == 0) {
-        drawSubRectOutline(137, 45, 243, 57, blue);
-        drawSubText(input_text, 140, 47, black, 0);
+        drawSubRectOutline(137, 45, 243, 57, active_col);
+        drawSubText(input_text, 140, 47, text_col, 0);
     } else {
-        drawSubText(http_ip, 140, 47, black, 0);
+        drawSubText(http_ip, 140, 47, text_col, 0);
     }
 
     // Field 1: Port (y = 66 to 80)
-    drawSubText("Port", 96, 70, black, 0);
-    drawSubRectOutline(136, 66, 190, 80, (step == 1) ? blue : black);
+    drawSubText("Port", 96, 70, text_col, 0);
+    drawSubRectOutline(136, 66, 190, 80, (step == 1) ? active_col : RGB15(15, 15, 15));
     if (step == 1) {
-        drawSubRectOutline(137, 67, 189, 79, blue);
-        drawSubText(input_text, 140, 69, black, 0);
+        drawSubRectOutline(137, 67, 189, 79, active_col);
+        drawSubText(input_text, 140, 69, text_col, 0);
     } else {
-        drawSubText(http_port_str, 140, 69, black, 0);
+        drawSubText(http_port_str, 140, 69, text_col, 0);
     }
 
     // Field 2: SSID (y = 88 to 102)
-    drawSubText("SSID", 96, 92, black, 0);
-    drawSubRectOutline(136, 88, 244, 102, (step == 2) ? blue : black);
+    drawSubText("SSID", 96, 92, text_col, 0);
+    drawSubRectOutline(136, 88, 244, 102, (step == 2) ? active_col : RGB15(15, 15, 15));
     if (step == 2) {
-        drawSubRectOutline(137, 89, 243, 101, blue);
-        drawSubText(input_text, 140, 91, black, 0);
+        drawSubRectOutline(137, 89, 243, 101, active_col);
+        drawSubText(input_text, 140, 91, text_col, 0);
     } else {
-        drawSubText(wifi_ssid, 140, 91, black, 0);
+        drawSubText(wifi_ssid, 140, 91, text_col, 0);
     }
 }
 
@@ -1234,9 +1260,12 @@ static bool shift_active = false;
 static bool caps_active = false;
 
 static void drawKey(int x0, int y0, int x1, int y1, const char* label, bool highlighted) {
-    uint16_t bg_color = highlighted ? RGB15(15, 20, 31) : RGB15(31, 31, 31);
-    uint16_t border_color = RGB15(0, 0, 0);
-    uint16_t text_color = highlighted ? RGB15(31, 31, 31) : RGB15(0, 0, 0);
+    uint16_t bg_color = highlighted ? blendRGB555_int(app_theme_color, RGB15(4, 4, 5), 6) : RGB15(2, 2, 3);
+    uint16_t border_color = highlighted ? app_theme_color : blendRGB555_int(app_theme_color, RGB15(2, 2, 3), 8);
+    uint16_t text_color = RGB15(31, 31, 31);
+    if (highlighted && active_theme_idx == 0) {
+        text_color = RGB15(0, 0, 0);
+    }
     
     // Draw background
     for (int y = y0; y <= y1; y++) {
@@ -1305,44 +1334,32 @@ static void drawKeyboard(void) {
 }
 
 void uiDrawBottomForm(int step, const char* input_text) {
-    uint16_t cream = RGB15(28, 29, 28);
+    uint16_t bg_color = RGB15(4, 4, 5);
     for (int y = 0; y < 192; y++) {
         for (int x = 0; x < 256; x++) {
-            canvas_buffer[y * 256 + x] = cream;
+            canvas_buffer[y * 256 + x] = bg_color;
         }
     }
     
-    uint16_t grid_color = RGB15(26, 27, 26);
-    for (int y = 0; y < 192; y += 8) {
-        for (int x = 0; x < 256; x += 4) {
-            renderSetPixel(x, y, grid_color);
-        }
-    }
-    for (int x = 0; x < 256; x += 8) {
-        for (int y = 0; y < 192; y += 4) {
+    uint16_t grid_color = RGB15(6, 6, 8);
+    for (int y = 0; y < 192; y += 16) {
+        for (int x = 0; x < 256; x += 16) {
             renderSetPixel(x, y, grid_color);
         }
     }
     
-    for (int y = 8; y <= 34; y++) {
+    for (int y = 8; y <= 36; y++) {
         for (int x = 10; x <= 246; x++) {
-            canvas_buffer[y * 256 + x] = RGB15(31, 31, 31);
+            canvas_buffer[y * 256 + x] = RGB15(2, 2, 3);
         }
     }
-    for (int x = 10; x <= 246; x++) {
-        canvas_buffer[8 * 256 + x] = RGB15(0, 0, 0);
-        canvas_buffer[34 * 256 + x] = RGB15(0, 0, 0);
-    }
-    for (int y = 8; y <= 34; y++) {
-        canvas_buffer[y * 256 + 10] = RGB15(0, 0, 0);
-        canvas_buffer[y * 256 + 246] = RGB15(0, 0, 0);
-    }
+    drawRectOutline(10, 8, 246, 36, app_theme_color);
     
     char label[128];
     if (step == 0)      sprintf(label, "IP: %s_", input_text);
     else if (step == 1) sprintf(label, "PORT: %s_", input_text);
     else if (step == 2) sprintf(label, "SSID: %s_", input_text);
-    renderDrawText(label, 16, 17, RGB15(0, 0, 0), 0);
+    renderDrawText(label, 16, 17, RGB15(31, 31, 31), 0);
     
     drawKey(10, 42, 70, 62, "IP", (step == 0));
     drawKey(76, 42, 136, 62, "PORT", (step == 1));
@@ -1436,8 +1453,8 @@ char uiHandleKeyboardTouch(int tx, int ty, bool* shift_toggled, bool* caps_toggl
 }
 
 static void uiDrawLayersSidebar(void) {
-    uint16_t panel_bg = RGB15(22, 22, 25);
-    uint16_t border_col = RGB15(0, 0, 0);
+    uint16_t panel_bg = RGB15(4, 4, 5);
+    uint16_t border_col = app_theme_color;
     uint16_t text_col = RGB15(31, 31, 31);
     
     // Fill sidebar region: x = 144..255, y = 0..176
@@ -1452,19 +1469,20 @@ static void uiDrawLayersSidebar(void) {
     renderDrawText("CAPAS", 148, 2, text_col, 0);
     
     // Close button "X" (red on dark red) at x = 236..252, y = 1..11
-    drawRect(236, 1, 252, 11, RGB15(15, 3, 3));
+    drawRect(236, 1, 252, 11, RGB15(6, 2, 2));
     drawRectOutline(236, 1, 252, 11, border_col);
     renderDrawText("X", 241, 2, RGB15(31, 10, 10), 0);
     
     // "+ CAPA" button at x = 148..252, y = 14..24
     if (layers_count < MAX_LAYERS) {
-        drawRect(148, 14, 252, 24, RGB15(5, 18, 5));
+        uint16_t plus_capa_bg = blendRGB555_int(app_theme_color, panel_bg, 6);
+        drawRect(148, 14, 252, 24, plus_capa_bg);
         drawRectOutline(148, 14, 252, 24, border_col);
-        renderDrawText("+ CAPA", 182, 16, RGB15(20, 31, 20), 0);
+        renderDrawText("+ CAPA", 182, 16, text_col, 0);
     } else {
-        drawRect(148, 14, 252, 24, RGB15(12, 12, 12));
-        drawRectOutline(148, 14, 252, 24, border_col);
-        renderDrawText("LLENO", 188, 16, RGB15(18, 18, 18), 0);
+        drawRect(148, 14, 252, 24, RGB15(2, 2, 3));
+        drawRectOutline(148, 14, 252, 24, RGB15(6, 6, 8));
+        renderDrawText("LLENO", 188, 16, RGB15(10, 10, 10), 0);
     }
     
     // Draw layer items from layers_count-1 down to 0
@@ -1473,7 +1491,7 @@ static void uiDrawLayersSidebar(void) {
         int y_pos = 27 + idx_from_top * 14;
         
         // Drag handle: circle at cx = 151, cy = y_pos + 6
-        uint16_t circle_col = (dragging_layer_idx == i) ? RGB15(31, 31, 10) : RGB15(18, 18, 20);
+        uint16_t circle_col = (dragging_layer_idx == i) ? app_theme_color : RGB15(8, 8, 10);
         // Draw filled circle (radius 2)
         for (int dy = -2; dy <= 2; dy++) {
             for (int dx = -2; dx <= 2; dx++) {
@@ -1493,7 +1511,7 @@ static void uiDrawLayersSidebar(void) {
                     int px = 151 + dx;
                     int py = y_pos + 6 + dy;
                     if (px >= 144 && px < 256 && py >= 0 && py < 192) {
-                        canvas_buffer[py * 256 + px] = border_col;
+                        canvas_buffer[py * 256 + px] = RGB15(0, 0, 0);
                     }
                 }
             }
@@ -1501,9 +1519,9 @@ static void uiDrawLayersSidebar(void) {
         
         // Active indicator / selection button: x = 158..212, y = y_pos..y_pos+12
         bool is_active = (active_layer_idx == i);
-        uint16_t btn_bg = is_active ? RGB15(4, 10, 24) : RGB15(12, 12, 14);
-        uint16_t btn_border = is_active ? RGB15(10, 16, 31) : border_col;
-        uint16_t btn_txt = is_active ? RGB15(20, 25, 31) : text_col;
+        uint16_t btn_bg = is_active ? blendRGB555_int(app_theme_color, panel_bg, 8) : RGB15(2, 2, 3);
+        uint16_t btn_border = is_active ? app_theme_color : RGB15(6, 6, 8);
+        uint16_t btn_txt = is_active ? (active_theme_idx == 0 ? RGB15(0, 0, 0) : RGB15(31, 31, 31)) : RGB15(20, 20, 22);
         
         drawRect(158, y_pos, 212, y_pos + 12, btn_bg);
         drawRectOutline(158, y_pos, 212, y_pos + 12, btn_border);
@@ -1515,44 +1533,46 @@ static void uiDrawLayersSidebar(void) {
         
         // Visibility toggle button: x = 216..232, y = y_pos..y_pos+12
         bool is_visible = layers_visible[i];
-        uint16_t vis_bg = is_visible ? RGB15(20, 18, 5) : RGB15(8, 8, 8);
-        uint16_t vis_txt = is_visible ? RGB15(31, 28, 15) : RGB15(15, 15, 15);
+        uint16_t vis_bg = is_visible ? blendRGB555_int(app_theme_color, panel_bg, 6) : RGB15(2, 2, 3);
+        uint16_t vis_border = is_visible ? app_theme_color : RGB15(6, 6, 8);
+        uint16_t vis_txt = is_visible ? (is_active && active_theme_idx == 0 ? RGB15(0, 0, 0) : RGB15(31, 31, 31)) : RGB15(10, 10, 10);
         
         drawRect(216, y_pos, 232, y_pos + 12, vis_bg);
-        drawRectOutline(216, y_pos, 232, y_pos + 12, border_col);
+        drawRectOutline(216, y_pos, 232, y_pos + 12, vis_border);
         renderDrawText(is_visible ? "V" : "H", 220, y_pos + 2, vis_txt, 0);
         
         // Delete button: x = 236..252, y = y_pos..y_pos+12
         if (i > 0) {
-            drawRect(236, y_pos, 252, y_pos + 12, RGB15(20, 5, 5));
-            drawRectOutline(236, y_pos, 252, y_pos + 12, border_col);
-            renderDrawText("X", 241, y_pos + 2, RGB15(31, 15, 15), 0);
+            drawRect(236, y_pos, 252, y_pos + 12, RGB15(12, 3, 3));
+            drawRectOutline(236, y_pos, 252, y_pos + 12, RGB15(6, 2, 2));
+            renderDrawText("X", 241, y_pos + 2, RGB15(31, 10, 10), 0);
         } else {
-            drawRect(236, y_pos, 252, y_pos + 12, RGB15(8, 8, 8));
-            drawRectOutline(236, y_pos, 252, y_pos + 12, border_col);
-            renderDrawText("-", 241, y_pos + 2, RGB15(15, 15, 15), 0);
+            drawRect(236, y_pos, 252, y_pos + 12, RGB15(2, 2, 3));
+            drawRectOutline(236, y_pos, 252, y_pos + 12, RGB15(6, 6, 8));
+            renderDrawText("-", 241, y_pos + 2, RGB15(10, 10, 10), 0);
         }
     }
     
     // Draw "FONDO" item at bg_y = 27 + layers_count * 14
     int bg_y = 27 + layers_count * 14;
-    drawRect(148, bg_y, 212, bg_y + 12, RGB15(12, 12, 14));
-    drawRectOutline(148, bg_y, 212, bg_y + 12, border_col);
+    drawRect(148, bg_y, 212, bg_y + 12, RGB15(2, 2, 3));
+    drawRectOutline(148, bg_y, 212, bg_y + 12, RGB15(6, 6, 8));
     renderDrawText("FONDO", 158, bg_y + 2, text_col, 0);
     
     // Lock toggle: x = 216..252, y = bg_y..bg_y+12
-    drawRect(216, bg_y, 252, bg_y + 12, bg_modifiable ? RGB15(5, 18, 5) : RGB15(20, 5, 5));
-    drawRectOutline(216, bg_y, 252, bg_y + 12, border_col);
-    renderDrawText(bg_modifiable ? " MOD" : " LOK", 218, bg_y + 2, text_col, 0);
+    drawRect(216, bg_y, 252, bg_y + 12, bg_modifiable ? blendRGB555_int(app_theme_color, panel_bg, 6) : RGB15(12, 3, 3));
+    drawRectOutline(216, bg_y, 252, bg_y + 12, bg_modifiable ? border_col : RGB15(6, 2, 2));
+    renderDrawText(bg_modifiable ? " MOD" : " LOK", 218, bg_y + 2, bg_modifiable ? text_col : RGB15(31, 10, 10), 0);
     drawLockIcon(244, bg_y + 1, !bg_modifiable);
     
     // Draw "COMBINAR" button at y = 157..169
     bool can_merge = (active_layer_idx > 0);
-    uint16_t merge_bg = can_merge ? RGB15(22, 12, 3) : RGB15(8, 8, 8);
-    uint16_t merge_txt = can_merge ? RGB15(31, 20, 10) : RGB15(15, 15, 15);
+    uint16_t merge_bg = can_merge ? blendRGB555_int(app_theme_color, panel_bg, 8) : RGB15(2, 2, 3);
+    uint16_t merge_border = can_merge ? app_theme_color : RGB15(6, 6, 8);
+    uint16_t merge_txt = can_merge ? (active_theme_idx == 0 ? RGB15(0, 0, 0) : RGB15(31, 31, 31)) : RGB15(10, 10, 10);
     
     drawRect(148, 157, 252, 169, merge_bg);
-    drawRectOutline(148, 157, 252, 169, border_col);
+    drawRectOutline(148, 157, 252, 169, merge_border);
     renderDrawText("COMBINAR", 180, 160, merge_txt, 0);
 }
 
@@ -1561,14 +1581,14 @@ void uiDrawLayersOverlay(void) {
         uiDrawLayersSidebar();
     } else {
         // Draw a small floating tab button on the right edge: x = 244..255, y = 70..106
-        uint16_t tab_bg = RGB15(15, 15, 20);
-        uint16_t tab_border = RGB15(0, 0, 0);
+        uint16_t tab_bg = RGB15(2, 2, 3);
+        uint16_t tab_border = app_theme_color;
         
         drawRect(244, 70, 255, 106, tab_bg);
         drawRectOutline(244, 70, 255, 106, tab_border);
         
         // Stack of three sheets
-        uint16_t sheet_col = RGB15(25, 25, 28);
+        uint16_t sheet_col = blendRGB555_int(app_theme_color, RGB15(31, 31, 31), 16);
         drawRect(247, 76, 252, 78, sheet_col);
         drawRect(247, 82, 252, 84, sheet_col);
         drawRect(247, 88, 252, 90, sheet_col);
@@ -1578,40 +1598,37 @@ void uiDrawLayersOverlay(void) {
 }
 
 void uiDrawRenameKeyboard(const char* input_text, uint8_t opacity) {
-    uint16_t cream = RGB15(28, 29, 28);
+    uint16_t bg_color = RGB15(4, 4, 5);
     for (int y = 0; y < 192; y++) {
         for (int x = 0; x < 256; x++) {
-            canvas_buffer[y * 256 + x] = cream;
+            canvas_buffer[y * 256 + x] = bg_color;
         }
     }
     
-    uint16_t grid_color = RGB15(26, 27, 26);
-    for (int y = 0; y < 192; y += 8) {
-        for (int x = 0; x < 256; x += 4) {
-            renderSetPixel(x, y, grid_color);
-        }
-    }
-    for (int x = 0; x < 256; x += 8) {
-        for (int y = 0; y < 192; y += 4) {
+    uint16_t grid_color = RGB15(6, 6, 8);
+    for (int y = 0; y < 192; y += 16) {
+        for (int x = 0; x < 256; x += 16) {
             renderSetPixel(x, y, grid_color);
         }
     }
     
     // Header banner: "PROPIEDADES DE CAPA"
-    drawRect(0, 0, 255, 12, RGB15(12, 12, 12));
+    uint16_t header_bg = blendRGB555_int(app_theme_color, bg_color, 8);
+    drawRect(0, 0, 255, 12, header_bg);
+    drawRect(0, 12, 255, 12, app_theme_color);
     renderDrawText("PROPIEDADES DE CAPA", 8, 2, RGB15(31, 31, 31), 0);
     
     // Text input box outline and fill
-    for (int y = 16; y <= 38; y++) {
+    for (int y = 18; y <= 36; y++) {
         for (int x = 10; x <= 246; x++) {
-            canvas_buffer[y * 256 + x] = RGB15(31, 31, 31);
+            canvas_buffer[y * 256 + x] = RGB15(2, 2, 3);
         }
     }
-    drawRectOutline(10, 16, 246, 38, RGB15(0, 0, 0));
+    drawRectOutline(10, 18, 246, 36, app_theme_color);
     
     char label[128];
     sprintf(label, "%s_", input_text);
-    renderDrawText(label, 16, 23, RGB15(0, 0, 0), 0);
+    renderDrawText(label, 16, 23, RGB15(31, 31, 31), 0);
     
     // Cancel & Save Buttons:
     // Cancel (B) at x = 10..90, y = 44..62
@@ -1621,12 +1638,12 @@ void uiDrawRenameKeyboard(const char* input_text, uint8_t opacity) {
     drawKey(166, 44, 246, 62, "SAVE (A)", false);
     
     // Opacity Selector:
-    renderDrawText("OPACIDAD:", 10, 73, RGB15(0, 0, 0), 0);
+    renderDrawText("OPACIDAD:", 10, 73, RGB15(31, 31, 31), 0);
     drawKey(100, 68, 124, 86, "-", false);
     
     char op_val_str[16];
     sprintf(op_val_str, "%d%%", opacity);
-    renderDrawText(op_val_str, 138, 73, RGB15(0, 0, 0), 0);
+    renderDrawText(op_val_str, 138, 73, RGB15(31, 31, 31), 0);
     
     drawKey(176, 68, 200, 86, "+", false);
     
@@ -1634,19 +1651,19 @@ void uiDrawRenameKeyboard(const char* input_text, uint8_t opacity) {
 }
 
 void uiDrawUndoRedoButtons(void) {
-    uint16_t btn_bg = RGB15(12, 12, 14);
-    uint16_t border_col = RGB15(0, 0, 0);
+    uint16_t btn_bg = RGB15(4, 4, 5);
+    uint16_t border_col = app_theme_color;
     
     // Undo
     drawRect(4, 4, 20, 20, btn_bg);
     drawRectOutline(4, 4, 20, 20, border_col);
-    uint16_t undo_text_col = (undo_count > 0) ? RGB15(31, 31, 31) : RGB15(12, 12, 12);
+    uint16_t undo_text_col = (undo_count > 0) ? RGB15(31, 31, 31) : RGB15(8, 8, 9);
     renderDrawText("<", 9, 8, undo_text_col, 0);
     
     // Redo
     drawRect(24, 4, 40, 20, btn_bg);
     drawRectOutline(24, 4, 40, 20, border_col);
-    uint16_t redo_text_col = (redo_count > 0) ? RGB15(31, 31, 31) : RGB15(12, 12, 12);
+    uint16_t redo_text_col = (redo_count > 0) ? RGB15(31, 31, 31) : RGB15(8, 8, 9);
     renderDrawText(">", 29, 8, redo_text_col, 0);
 }
 

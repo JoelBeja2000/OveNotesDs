@@ -5,6 +5,7 @@
 #include "input.h"
 #include "log.h"
 #include "net.h"
+#include "ui.h"
 
 int main(void) {
     // Registrar el manejador de excepciones de hardware por defecto
@@ -22,6 +23,9 @@ int main(void) {
     } else {
         printf("[FATAL ERROR] No se pudo inicializar la SD (fatInitDefault fallo).\n");
     }
+    
+    // Limpiar cualquier corrupcion de VRAM dejada por los printf() de inicializacion
+    uiDrawStartMenu();
     
     // Bucle de interaccion principal coordinado por la maquina de estados
     while (1) {
