@@ -1,6 +1,7 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 
 const PORT = 3000;
 const NOTES_DIR = path.join(__dirname, 'Notas_Publicadas');
@@ -8,6 +9,52 @@ const NOTES_DIR = path.join(__dirname, 'Notas_Publicadas');
 if (!fs.existsSync(NOTES_DIR)) {
     fs.mkdirSync(NOTES_DIR);
 }
+
+// ─── Pairing Code System ───────────────────────────────────────────
+// Encodes the server's local IP + port into a short Base36 code
+// so the DS user doesn't have to type the IP and port manually.
+
+const BASE36_CHARS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+function getLocalIP() {
+    const interfaces = os.networkInterfaces();
+    for (const name of Object.keys(interfaces)) {
+        for (const iface of interfaces[name]) {
+            if (iface.family === 'IPv4' && !iface.internal) {
+                return iface.address;
+            }
+        }
+    }
+    return '127.0.0.1';
+}
+
+function encodePairingCode(ip, port) {
+    const parts = ip.split('.').map(Number);
+    // Pack IP (4 bytes) + port (2 bytes) into a single BigInt (48 bits)
+    let value = BigInt(0);
+    for (let i = 0; i < 4; i++) {
+        value = (value << BigInt(8)) | BigInt(parts[i]);
+    }
+    value = (value << BigInt(16)) | BigInt(port);
+
+    // Convert to Base36
+    let code = '';
+    while (value > BigInt(0)) {
+        code = BASE36_CHARS[Number(value % BigInt(36))] + code;
+        value = value / BigInt(36);
+    }
+
+    // Pad to 10 characters
+    while (code.length < 10) {
+        code = '0' + code;
+    }
+    return code;
+}
+
+const LOCAL_IP = getLocalIP();
+const PAIRING_CODE = encodePairingCode(LOCAL_IP, PORT);
+
+// ────────────────────────────────────────────────────────────────────
 
 const server = http.createServer((req, res) => {
     // Enable CORS
@@ -32,6 +79,13 @@ const server = http.createServer((req, res) => {
             res.writeHead(200, { 'Content-Type': 'text/html' });
             res.end(data);
         });
+        return;
+    }
+
+    // Pairing code endpoint
+    if (req.url === '/api/pairing-code' && req.method === 'GET') {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ code: PAIRING_CODE, ip: LOCAL_IP, port: PORT }));
         return;
     }
 
@@ -138,6 +192,8 @@ server.listen(PORT, '0.0.0.0', () => {
     console.log('===================================================');
     console.log('🚀 Servidor HTTP iniciado correctamente!');
     console.log(`📡 Escuchando en el Puerto: ${PORT}`);
+    console.log(`🌐 IP Local: ${LOCAL_IP}`);
+    console.log(`🔗 Código de emparejamiento: ${PAIRING_CODE}`);
     console.log(`📁 Las notas se guardarán en: ${NOTES_DIR}`);
     console.log(`🌐 Abre http://localhost:${PORT}/ en tu navegador`);
     console.log('===================================================');

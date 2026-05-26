@@ -116,7 +116,7 @@ static void enterWizardState(void) {
     wizard_buffer = (uint16_t*)bgGetGfxPtr(bg_sub_wizard);
     
     wizard_step = 0;
-    strcpy(current_input, http_ip);
+    strcpy(current_input, pairing_code);
     input_len = strlen(current_input);
     
     uiDrawFormUI(wizard_step, current_input);
@@ -125,9 +125,13 @@ static void enterWizardState(void) {
 
 static void exitWizardState(bool canceled) {
     if (!canceled) {
+        // Decode the pairing code to extract IP + Port before saving
+        if (pairing_code[0] != '\0') {
+            netDecodePairingCode(pairing_code);
+        }
         netSaveConfig();
     }
-    printf("[GAME] Saliendo de exitWizardState (cancelado: %d, IP: %s, Puerto: %s, SSID: %s)\n", canceled, http_ip, http_port_str, wifi_ssid);
+    printf("[GAME] Saliendo de exitWizardState (cancelado: %d, Code: %s, IP: %s, Puerto: %s, SSID: %s)\n", canceled, pairing_code, http_ip, http_port_str, wifi_ssid);
     
     // Deshabilitar el fondo bitmap de la pantalla superior
     videoBgDisableSub(3);
@@ -244,19 +248,17 @@ static void runUpload(void) {
 }
 
 static void changeWizardStep(int new_step) {
-    if (new_step < 0 || new_step > 2 || new_step == wizard_step) return;
+    if (new_step < 0 || new_step > 1 || new_step == wizard_step) return;
     
     // Save current step
-    if (wizard_step == 0)      strcpy(http_ip, current_input);
-    else if (wizard_step == 1) strcpy(http_port_str, current_input);
-    else if (wizard_step == 2) strcpy(wifi_ssid, current_input);
+    if (wizard_step == 0)      strcpy(pairing_code, current_input);
+    else if (wizard_step == 1) strcpy(wifi_ssid, current_input);
     
     wizard_step = new_step;
     
     // Load new step
-    if (wizard_step == 0)      strcpy(current_input, http_ip);
-    else if (wizard_step == 1) strcpy(current_input, http_port_str);
-    else if (wizard_step == 2) strcpy(current_input, wifi_ssid);
+    if (wizard_step == 0)      strcpy(current_input, pairing_code);
+    else if (wizard_step == 1) strcpy(current_input, wifi_ssid);
     
     input_len = strlen(current_input);
     uiDrawFormUI(wizard_step, current_input);
@@ -1393,12 +1395,10 @@ void gameUpdate(void) {
             if (was_touching) {
                 // 1. Check if they touched the tabs: y = 42 to 62
                 if (prev_y >= 42 && prev_y <= 62) {
-                    if (prev_x >= 10 && prev_x <= 70) {
+                    if (prev_x >= 10 && prev_x <= 120) {
                         changeWizardStep(0);
-                    } else if (prev_x >= 76 && prev_x <= 136) {
+                    } else if (prev_x >= 126 && prev_x <= 246) {
                         changeWizardStep(1);
-                    } else if (prev_x >= 142 && prev_x <= 202) {
-                        changeWizardStep(2);
                     }
                 }
                 // 2. Check if they touched the keyboard: y = 96 to 182
@@ -1413,9 +1413,10 @@ void gameUpdate(void) {
                     if (shift_toggled || caps_toggled) {
                         uiDrawBottomForm(wizard_step, current_input);
                     } else if (enter_pressed) {
-                        if (wizard_step < 2) {
+                        if (wizard_step < 1) {
                             changeWizardStep(wizard_step + 1);
                         } else {
+                            // Save current input to wifi_ssid
                             if (strcmp(wifi_ssid, current_input) != 0) {
                                 strcpy(wifi_ssid, current_input);
                                 netDisconnect();
@@ -1447,18 +1448,17 @@ void gameUpdate(void) {
         
         // Navegacion con cruceta (D-pad)
         if (keys_down & (KEY_UP | KEY_LEFT)) {
-            int prev = (wizard_step - 1 + 3) % 3;
+            int prev = (wizard_step - 1 + 2) % 2;
             changeWizardStep(prev);
         }
         if (keys_down & (KEY_DOWN | KEY_RIGHT)) {
-            int next = (wizard_step + 1) % 3;
+            int next = (wizard_step + 1) % 2;
             changeWizardStep(next);
         }
         
         if (keys_down & KEY_A) {
-            if (wizard_step == 0)      strcpy(http_ip, current_input);
-            else if (wizard_step == 1) strcpy(http_port_str, current_input);
-            else if (wizard_step == 2) {
+            if (wizard_step == 0) strcpy(pairing_code, current_input);
+            else if (wizard_step == 1) {
                 if (strcmp(wifi_ssid, current_input) != 0) {
                     strcpy(wifi_ssid, current_input);
                     netDisconnect();
@@ -1475,6 +1475,7 @@ void gameUpdate(void) {
             return;
         }
     } 
+
     else if (current_state == STATE_RENAME_LAYER) {
         touchPosition touch;
         if (inputGetTouch(&touch)) {

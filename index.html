@@ -7,7 +7,7 @@
     <!-- Modern Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Plus+Jakarta+Sans:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg-primary: #0b0d13;
@@ -44,7 +44,7 @@
             width: 100%;
             max-width: 1100px;
             text-align: center;
-            margin-bottom: 3rem;
+            margin-bottom: 2rem;
             animation: fadeInDown 0.8s ease;
         }
 
@@ -63,6 +63,95 @@
             color: var(--text-muted);
             font-size: 1.1rem;
             font-weight: 300;
+        }
+
+        /* Pairing Code Section */
+        .pairing-section {
+            width: 100%;
+            max-width: 1100px;
+            margin-bottom: 2rem;
+            animation: fadeInUp 0.8s ease;
+        }
+
+        .pairing-card {
+            background: var(--bg-secondary);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(0, 255, 170, 0.2);
+            border-radius: 20px;
+            padding: 2rem 2.5rem;
+            box-shadow: 0 0 40px rgba(0, 255, 170, 0.06), var(--card-shadow);
+            display: flex;
+            align-items: center;
+            gap: 2.5rem;
+        }
+
+        .pairing-info {
+            flex: 1;
+        }
+
+        .pairing-label {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--accent-primary);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 0.3rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .pairing-label .icon {
+            font-size: 1.2rem;
+        }
+
+        .pairing-description {
+            color: var(--text-muted);
+            font-size: 0.92rem;
+            font-weight: 300;
+            line-height: 1.5;
+        }
+
+        .pairing-code-box {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-shrink: 0;
+        }
+
+        .pairing-code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 2.4rem;
+            font-weight: 700;
+            letter-spacing: 6px;
+            color: var(--text-main);
+            background: linear-gradient(135deg, rgba(0, 255, 170, 0.12) 0%, rgba(0, 255, 170, 0.04) 100%);
+            border: 2px solid rgba(0, 255, 170, 0.3);
+            border-radius: 14px;
+            padding: 0.8rem 1.6rem;
+            text-shadow: 0 0 20px rgba(0, 255, 170, 0.3);
+            animation: codeGlow 3s ease-in-out infinite;
+            user-select: all;
+            cursor: pointer;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        .pairing-code:hover {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 24px rgba(0, 255, 170, 0.2);
+        }
+
+        .pairing-meta {
+            color: var(--text-muted);
+            font-size: 0.78rem;
+            margin-top: 0.5rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        @keyframes codeGlow {
+            0%, 100% { text-shadow: 0 0 20px rgba(0, 255, 170, 0.2); }
+            50% { text-shadow: 0 0 30px rgba(0, 255, 170, 0.45); }
         }
 
         main {
@@ -330,6 +419,16 @@
             .notes-grid {
                 grid-template-columns: 1fr;
             }
+            .pairing-card {
+                flex-direction: column;
+                text-align: center;
+                gap: 1.5rem;
+                padding: 1.5rem;
+            }
+            .pairing-code {
+                font-size: 1.8rem;
+                letter-spacing: 4px;
+            }
         }
     </style>
 </head>
@@ -339,6 +438,26 @@
         <h1>OveNotesDS board</h1>
         <p class="subtitle">Visualizador de notas en tiempo real enviadas desde la Nintendo DS</p>
     </header>
+
+    <!-- Pairing Code Section -->
+    <section class="pairing-section">
+        <div class="pairing-card">
+            <div class="pairing-info">
+                <div class="pairing-label">
+                    <span class="icon">🔗</span>
+                    <span>Código de emparejamiento</span>
+                </div>
+                <p class="pairing-description">
+                    Introduce este código en tu Nintendo DS para conectar automáticamente.<br>
+                    No necesitas escribir la IP ni el puerto.
+                </p>
+                <div class="pairing-meta" id="pairingMeta">Detectando IP...</div>
+            </div>
+            <div class="pairing-code-box">
+                <div class="pairing-code" id="pairingCode" title="Click para copiar">------</div>
+            </div>
+        </div>
+    </section>
 
     <main>
         <section class="board-container">
@@ -366,6 +485,34 @@
 
     <script>
         let cachedNotes = [];
+
+        // Fetch and display pairing code
+        async function fetchPairingCode() {
+            try {
+                const response = await fetch('/api/pairing-code');
+                if (!response.ok) return;
+                const data = await response.json();
+                document.getElementById('pairingCode').textContent = data.code;
+                document.getElementById('pairingMeta').textContent = `IP: ${data.ip} · Puerto: ${data.port}`;
+            } catch (err) {
+                console.error('Error fetching pairing code:', err);
+                document.getElementById('pairingCode').textContent = 'ERROR';
+            }
+        }
+
+        // Copy code on click
+        document.getElementById('pairingCode').addEventListener('click', function() {
+            const code = this.textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                const original = this.style.borderColor;
+                this.style.borderColor = '#00ffaa';
+                this.style.boxShadow = '0 0 30px rgba(0, 255, 170, 0.4)';
+                setTimeout(() => {
+                    this.style.borderColor = '';
+                    this.style.boxShadow = '';
+                }, 800);
+            });
+        });
 
         function formatTime(timestamp) {
             const diff = Date.now() - timestamp;
@@ -456,7 +603,8 @@
             if (e.target === this) closeModal();
         });
 
-        // Polling loop
+        // Initialize
+        fetchPairingCode();
         fetchNotes();
         setInterval(fetchNotes, 2000);
     </script>

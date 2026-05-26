@@ -1174,7 +1174,7 @@ void uiDrawFormUI(int step, const char* input_text) {
         header_text_col = RGB15(0, 0, 0);
     }
 
-    // 1. Header (Connection Settings)
+    // 1. Header
     drawSubRect(0, 0, 255, 15, header_bg);
     drawSubLine(0, 16, 255, 16, border_col);
     drawSubText("Connection Settings", 8, 4, header_text_col, 0);
@@ -1193,67 +1193,38 @@ void uiDrawFormUI(int step, const char* input_text) {
     drawSubText("A", 207, 181, header_text_col, 0);
     drawSubText("Save", 220, 181, header_text_col, 0);
 
-    // 3. Left Panel (Connection 1 / Connection 2) - Shrunk height to 110
-    drawSubRect(6, 22, 86, 110, panel_bg);
-    drawSubRectOutline(6, 22, 86, 110, border_col);
+    // 3. Main Panel (centered, full width)
+    drawSubRect(6, 22, 250, 110, panel_bg);
+    drawSubRectOutline(6, 22, 250, 110, border_col);
 
-    drawSubText("Conn. 1", 10, 26, text_col, 0);
+    // Inner Header
+    drawSubRect(7, 23, 249, 36, blendRGB555_int(app_theme_color, RGB15(4, 4, 5), 8));
+    drawSubLine(6, 37, 250, 37, border_col);
+    drawSubText("Pairing Configuration", 10, 26, header_text_col, 0);
 
-    // Connection 1 Box (HTTP selected)
-    drawSubRectOutline(8, 36, 84, 52, active_col);
-    drawSubRectOutline(9, 37, 83, 51, active_col);
-    drawBlueArrow(14, 41); // We'll let it stay as drawBlueArrow, the sprite itself might be blue but that's fine for now
-    drawSubText("HTTP", 24, 40, active_col, 0);
-
-    // Dotted separator
-    for (int x = 8; x < 84; x += 2) {
-        drawSubPixel(x, 58, inactive_text);
-    }
-
-    drawSubText("Conn. 2", 10, 64, text_col, 0);
-    drawSubText("Not Config", 10, 74, inactive_text, 0);
-
-    // Center help description text on the grid background below the panels
-    drawSubText("Configure your HTTP server.", 47, 136, text_col, 0);
-
-    // 4. Right Panel (HTTP Configuration Fields) - Shrunk height to 110
-    drawSubRect(92, 22, 250, 110, panel_bg);
-    drawSubRectOutline(92, 22, 250, 110, border_col);
-
-    // Inner Header (HTTP Configuration)
-    drawSubRect(93, 23, 249, 36, blendRGB555_int(app_theme_color, RGB15(4, 4, 5), 8));
-    drawSubLine(92, 37, 250, 37, border_col);
-    drawSubText("HTTP Configuration", 96, 26, header_text_col, 0);
-
-    // Field 0: IP (y = 44 to 58)
-    drawSubText("IP", 96, 48, text_col, 0);
-    drawSubRectOutline(136, 44, 244, 58, (step == 0) ? active_col : RGB15(15, 15, 15));
+    // Field 0: Code (y = 44 to 62)
+    drawSubText("Code", 12, 50, text_col, 0);
+    drawSubRectOutline(50, 44, 244, 62, (step == 0) ? active_col : RGB15(15, 15, 15));
     if (step == 0) {
-        drawSubRectOutline(137, 45, 243, 57, active_col);
-        drawSubText(input_text, 140, 47, text_col, 0);
+        drawSubRectOutline(51, 45, 243, 61, active_col);
+        drawSubText(input_text, 56, 49, text_col, 0);
     } else {
-        drawSubText(http_ip, 140, 47, text_col, 0);
+        drawSubText(pairing_code, 56, 49, text_col, 0);
     }
 
-    // Field 1: Port (y = 66 to 80)
-    drawSubText("Port", 96, 70, text_col, 0);
-    drawSubRectOutline(136, 66, 190, 80, (step == 1) ? active_col : RGB15(15, 15, 15));
+    // Field 1: SSID (y = 70 to 88)
+    drawSubText("SSID", 12, 76, text_col, 0);
+    drawSubRectOutline(50, 70, 244, 88, (step == 1) ? active_col : RGB15(15, 15, 15));
     if (step == 1) {
-        drawSubRectOutline(137, 67, 189, 79, active_col);
-        drawSubText(input_text, 140, 69, text_col, 0);
+        drawSubRectOutline(51, 71, 243, 87, active_col);
+        drawSubText(input_text, 56, 75, text_col, 0);
     } else {
-        drawSubText(http_port_str, 140, 69, text_col, 0);
+        drawSubText(wifi_ssid, 56, 75, text_col, 0);
     }
 
-    // Field 2: SSID (y = 88 to 102)
-    drawSubText("SSID", 96, 92, text_col, 0);
-    drawSubRectOutline(136, 88, 244, 102, (step == 2) ? active_col : RGB15(15, 15, 15));
-    if (step == 2) {
-        drawSubRectOutline(137, 89, 243, 101, active_col);
-        drawSubText(input_text, 140, 91, text_col, 0);
-    } else {
-        drawSubText(wifi_ssid, 140, 91, text_col, 0);
-    }
+    // Help text
+    drawSubText("Enter the code shown on", 50, 120, text_col, 0);
+    drawSubText("the PC web app to pair.", 54, 132, inactive_text, 0);
 }
 
 static bool shift_active = false;
@@ -1357,14 +1328,12 @@ void uiDrawBottomForm(int step, const char* input_text) {
     drawRectOutline(10, 8, 246, 36, app_theme_color);
     
     char label[128];
-    if (step == 0)      sprintf(label, "IP: %s_", input_text);
-    else if (step == 1) sprintf(label, "PORT: %s_", input_text);
-    else if (step == 2) sprintf(label, "SSID: %s_", input_text);
+    if (step == 0)      sprintf(label, "CODE: %s_", input_text);
+    else if (step == 1) sprintf(label, "SSID: %s_", input_text);
     renderDrawText(label, 16, 17, RGB15(31, 31, 31), 0);
     
-    drawKey(10, 42, 70, 62, "IP", (step == 0));
-    drawKey(76, 42, 136, 62, "PORT", (step == 1));
-    drawKey(142, 42, 202, 62, "SSID", (step == 2));
+    drawKey(10, 42, 120, 62, "CODE", (step == 0));
+    drawKey(126, 42, 246, 62, "SSID", (step == 1));
     
     drawKeyboard();
 }

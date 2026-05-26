@@ -18,6 +18,7 @@
 char http_ip[64] = "192.168.1.132";
 char http_port_str[16] = "3000";
 char wifi_ssid[33] = "Auto";
+char pairing_code[16] = "";
 
 static bool wifi_inicializado = false;
 
@@ -34,6 +35,32 @@ void netDisconnect(void) {
     }
 }
 
+void netDecodePairingCode(const char* code) {
+    // Decode Base36 string back to a 48-bit value: IP (32 bits) + Port (16 bits)
+    uint64_t value = 0;
+    for (int i = 0; code[i] != '\0'; i++) {
+        char c = code[i];
+        int digit = 0;
+        if (c >= '0' && c <= '9') digit = c - '0';
+        else if (c >= 'A' && c <= 'Z') digit = 10 + (c - 'A');
+        else if (c >= 'a' && c <= 'z') digit = 10 + (c - 'a');
+        else continue; // skip invalid chars
+        value = value * 36 + digit;
+    }
+    
+    uint16_t port = (uint16_t)(value & 0xFFFF);
+    value >>= 16;
+    uint8_t d = (uint8_t)(value & 0xFF); value >>= 8;
+    uint8_t c_oct = (uint8_t)(value & 0xFF); value >>= 8;
+    uint8_t b = (uint8_t)(value & 0xFF); value >>= 8;
+    uint8_t a = (uint8_t)(value & 0xFF);
+    
+    sprintf(http_ip, "%d.%d.%d.%d", a, b, c_oct, d);
+    sprintf(http_port_str, "%d", port);
+    
+    printf("[NET] Codigo decodificado: %s -> IP=%s, Port=%s\n", code, http_ip, http_port_str);
+}
+
 void netLoadConfig(void) {
     FILE* f = fopen("sd:/ovenotes_config.txt", "r");
     if (f == NULL) {
@@ -45,20 +72,13 @@ void netLoadConfig(void) {
     
     if (f != NULL) {
         char line[128];
-        // Read IP
+        // Read Pairing Code
         if (fgets(line, sizeof(line), f)) {
             line[strcspn(line, "\r\n")] = 0;
             if (line[0] != '\0') {
-                strncpy(http_ip, line, sizeof(http_ip) - 1);
-                http_ip[sizeof(http_ip) - 1] = '\0';
-            }
-        }
-        // Read Port
-        if (fgets(line, sizeof(line), f)) {
-            line[strcspn(line, "\r\n")] = 0;
-            if (line[0] != '\0') {
-                strncpy(http_port_str, line, sizeof(http_port_str) - 1);
-                http_port_str[sizeof(http_port_str) - 1] = '\0';
+                strncpy(pairing_code, line, sizeof(pairing_code) - 1);
+                pairing_code[sizeof(pairing_code) - 1] = '\0';
+                netDecodePairingCode(pairing_code);
             }
         }
         // Read SSID
@@ -70,7 +90,7 @@ void netLoadConfig(void) {
             }
         }
         fclose(f);
-        printf("[NET] Config cargada: IP=%s, Port=%s, SSID=%s\n", http_ip, http_port_str, wifi_ssid);
+        printf("[NET] Config cargada: Code=%s, IP=%s, Port=%s, SSID=%s\n", pairing_code, http_ip, http_port_str, wifi_ssid);
     } else {
         printf("[NET] No se encontro archivo de config. Usando valores por defecto.\n");
     }
@@ -86,11 +106,10 @@ void netSaveConfig(void) {
     }
     
     if (f != NULL) {
-        fprintf(f, "%s\n", http_ip);
-        fprintf(f, "%s\n", http_port_str);
+        fprintf(f, "%s\n", pairing_code);
         fprintf(f, "%s\n", wifi_ssid);
         fclose(f);
-        printf("[NET] Config guardada en SD.\n");
+        printf("[NET] Config guardada en SD (Code=%s, SSID=%s).\n", pairing_code, wifi_ssid);
     } else {
         printf("[NET] Error al guardar config en SD.\n");
     }
