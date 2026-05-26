@@ -19,8 +19,56 @@ char http_ip[64] = "192.168.1.132";
 char http_port_str[16] = "3000";
 char wifi_ssid[33] = "Auto";
 char pairing_code[16] = "";
+char net_wfc_ssids[6][33] = {0};
 
 static bool wifi_inicializado = false;
+
+void netLoadWfcSsids(void) {
+    uint16_t user_settings_sector = 0;
+    readFirmware(0x00020, &user_settings_sector, 2);
+    uint32_t base = user_settings_sector * 8;
+    
+    printf("[NET] Sector de usuario: 0x%04X, Base: 0x%08X\n", user_settings_sector, base);
+
+    uint32_t offsets[6] = {
+        base - 0x400 + 0x40, // Connection 1
+        base - 0x300 + 0x40, // Connection 2
+        base - 0x200 + 0x40, // Connection 3
+        base - 0xA00 + 0x40, // Connection 4 (DSi/WPA)
+        base - 0x800 + 0x40, // Connection 5 (DSi/WPA)
+        base - 0x600 + 0x40  // Connection 6 (DSi/WPA)
+    };
+
+    printf("[NET] Cargando SSIDs del firmware...\n");
+    for (int i = 0; i < 6; i++) {
+        char temp[33];
+        memset(temp, 0, sizeof(temp));
+        readFirmware(offsets[i], temp, 32);
+        temp[32] = '\0';
+
+        // Check if SSID has only valid printable ASCII characters and is not empty
+        bool valid = false;
+        for (int j = 0; j < 32; j++) {
+            if (temp[j] == '\0') {
+                if (j > 0) valid = true; // has at least one character before null terminator
+                break;
+            }
+            // Printable ASCII range: 32 to 126
+            if (temp[j] < 32 || temp[j] > 126) {
+                valid = false;
+                break;
+            }
+        }
+
+        if (valid) {
+            strcpy(net_wfc_ssids[i], temp);
+            printf("[NET] Conexion %d: %s\n", i + 1, temp);
+        } else {
+            strcpy(net_wfc_ssids[i], "");
+            printf("[NET] Conexion %d: [Vacia]\n", i + 1);
+        }
+    }
+}
 
 void netDisconnect(void) {
     if (!wifi_inicializado) {
@@ -62,6 +110,7 @@ void netDecodePairingCode(const char* code) {
 }
 
 void netLoadConfig(void) {
+    netLoadWfcSsids();
     FILE* f = fopen("sd:/ovenotes_config.txt", "r");
     if (f == NULL) {
         f = fopen("fat:/ovenotes_config.txt", "r");

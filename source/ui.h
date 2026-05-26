@@ -43,6 +43,7 @@ void uiUpdatePickerPosFromActiveColor(void);
 void uiUpdateColorPickerSelection(void);
 void uiUpdateAngleWheelVisuals(void);
 void uiDrawLayersOverlay(void);
+extern bool ssid_manual_input;
 void uiDrawFormUI(int step, const char* input_text);
 void uiDrawBottomForm(int step, const char* input_text);
 char uiHandleKeyboardTouch(int tx, int ty, bool* shift_toggled, bool* caps_toggled, bool* enter_pressed, bool* backspace_pressed);

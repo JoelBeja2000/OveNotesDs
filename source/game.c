@@ -258,7 +258,10 @@ static void changeWizardStep(int new_step) {
     
     // Load new step
     if (wizard_step == 0)      strcpy(current_input, pairing_code);
-    else if (wizard_step == 1) strcpy(current_input, wifi_ssid);
+    else if (wizard_step == 1) {
+        strcpy(current_input, wifi_ssid);
+        ssid_manual_input = false;
+    }
     
     input_len = strlen(current_input);
     uiDrawFormUI(wizard_step, current_input);
@@ -1401,45 +1404,115 @@ void gameUpdate(void) {
                         changeWizardStep(1);
                     }
                 }
-                // 2. Check if they touched the keyboard: y = 96 to 182
-                else if (prev_y >= 96 && prev_y <= 182) {
-                    bool shift_toggled = false;
-                    bool caps_toggled = false;
-                    bool enter_pressed = false;
-                    bool backspace_pressed = false;
-                    
-                    char key = uiHandleKeyboardTouch(prev_x, prev_y, &shift_toggled, &caps_toggled, &enter_pressed, &backspace_pressed);
-                    
-                    if (shift_toggled || caps_toggled) {
-                        uiDrawBottomForm(wizard_step, current_input);
-                    } else if (enter_pressed) {
-                        if (wizard_step < 1) {
-                            changeWizardStep(wizard_step + 1);
-                        } else {
-                            // Save current input to wifi_ssid
-                            if (strcmp(wifi_ssid, current_input) != 0) {
-                                strcpy(wifi_ssid, current_input);
-                                netDisconnect();
+                // 2. Check if they touched the keyboard/menu area: y >= 66
+                else if (prev_y >= 66) {
+                    if (wizard_step == 1 && !ssid_manual_input) {
+                        // Left Column (Auto + Conn 1-3)
+                        if (prev_x >= 10 && prev_x <= 124) {
+                            if (prev_y >= 68 && prev_y <= 92) {
+                                strcpy(current_input, "Auto");
+                                input_len = strlen(current_input);
+                                uiDrawFormUI(wizard_step, current_input);
+                                uiDrawBottomForm(wizard_step, current_input);
                             }
-                            exitWizardState(false);
-                            was_touching = false;
-                            return;
+                            else if (prev_y >= 98 && prev_y <= 122) {
+                                if (net_wfc_ssids[0][0] != '\0') {
+                                    strcpy(current_input, net_wfc_ssids[0]);
+                                    input_len = strlen(current_input);
+                                    uiDrawFormUI(wizard_step, current_input);
+                                    uiDrawBottomForm(wizard_step, current_input);
+                                }
+                            }
+                            else if (prev_y >= 128 && prev_y <= 152) {
+                                if (net_wfc_ssids[1][0] != '\0') {
+                                    strcpy(current_input, net_wfc_ssids[1]);
+                                    input_len = strlen(current_input);
+                                    uiDrawFormUI(wizard_step, current_input);
+                                    uiDrawBottomForm(wizard_step, current_input);
+                                }
+                            }
+                            else if (prev_y >= 158 && prev_y <= 182) {
+                                if (net_wfc_ssids[2][0] != '\0') {
+                                    strcpy(current_input, net_wfc_ssids[2]);
+                                    input_len = strlen(current_input);
+                                    uiDrawFormUI(wizard_step, current_input);
+                                    uiDrawBottomForm(wizard_step, current_input);
+                                }
+                            }
                         }
-                    } else if (backspace_pressed) {
-                        if (input_len > 0) {
-                            input_len--;
-                            current_input[input_len] = '\0';
+                        // Right Column (Manual + Conn 4-6)
+                        else if (prev_x >= 132 && prev_x <= 246) {
+                            if (prev_y >= 68 && prev_y <= 92) {
+                                ssid_manual_input = true;
+                                uiDrawBottomForm(wizard_step, current_input);
+                            }
+                            else if (prev_y >= 98 && prev_y <= 122) {
+                                if (net_wfc_ssids[3][0] != '\0') {
+                                    strcpy(current_input, net_wfc_ssids[3]);
+                                    input_len = strlen(current_input);
+                                    uiDrawFormUI(wizard_step, current_input);
+                                    uiDrawBottomForm(wizard_step, current_input);
+                                }
+                            }
+                            else if (prev_y >= 128 && prev_y <= 152) {
+                                if (net_wfc_ssids[4][0] != '\0') {
+                                    strcpy(current_input, net_wfc_ssids[4]);
+                                    input_len = strlen(current_input);
+                                    uiDrawFormUI(wizard_step, current_input);
+                                    uiDrawBottomForm(wizard_step, current_input);
+                                }
+                            }
+                            else if (prev_y >= 158 && prev_y <= 182) {
+                                if (net_wfc_ssids[5][0] != '\0') {
+                                    strcpy(current_input, net_wfc_ssids[5]);
+                                    input_len = strlen(current_input);
+                                    uiDrawFormUI(wizard_step, current_input);
+                                    uiDrawBottomForm(wizard_step, current_input);
+                                }
+                            }
                         }
-                        uiDrawFormUI(wizard_step, current_input);
-                        uiDrawBottomForm(wizard_step, current_input);
-                    } else if (key > 0) {
-                        if (input_len < 63) {
-                            current_input[input_len] = key;
-                            input_len++;
-                            current_input[input_len] = '\0';
+                    } else {
+                        // Standard keyboard touch: y = 96 to 182
+                        if (prev_y >= 96 && prev_y <= 182) {
+                            bool shift_toggled = false;
+                            bool caps_toggled = false;
+                            bool enter_pressed = false;
+                            bool backspace_pressed = false;
+                            
+                            char key = uiHandleKeyboardTouch(prev_x, prev_y, &shift_toggled, &caps_toggled, &enter_pressed, &backspace_pressed);
+                            
+                            if (shift_toggled || caps_toggled) {
+                                uiDrawBottomForm(wizard_step, current_input);
+                            } else if (enter_pressed) {
+                                if (wizard_step < 1) {
+                                    changeWizardStep(wizard_step + 1);
+                                } else {
+                                    // Save current input to wifi_ssid
+                                    if (strcmp(wifi_ssid, current_input) != 0) {
+                                        strcpy(wifi_ssid, current_input);
+                                        netDisconnect();
+                                    }
+                                    exitWizardState(false);
+                                    was_touching = false;
+                                    return;
+                                }
+                            } else if (backspace_pressed) {
+                                if (input_len > 0) {
+                                    input_len--;
+                                    current_input[input_len] = '\0';
+                                }
+                                uiDrawFormUI(wizard_step, current_input);
+                                uiDrawBottomForm(wizard_step, current_input);
+                            } else if (key > 0) {
+                                if (input_len < 63) {
+                                    current_input[input_len] = key;
+                                    input_len++;
+                                    current_input[input_len] = '\0';
+                                }
+                                uiDrawFormUI(wizard_step, current_input);
+                                uiDrawBottomForm(wizard_step, current_input);
+                            }
                         }
-                        uiDrawFormUI(wizard_step, current_input);
-                        uiDrawBottomForm(wizard_step, current_input);
                     }
                 }
                 was_touching = false;

@@ -1157,6 +1157,8 @@ static void drawSubGridBackground(void) {
     }
 }
 
+bool ssid_manual_input = false;
+
 void uiDrawFormUI(int step, const char* input_text) {
     if (wizard_buffer == NULL) return;
 
@@ -1335,7 +1337,58 @@ void uiDrawBottomForm(int step, const char* input_text) {
     drawKey(10, 42, 120, 62, "CODE", (step == 0));
     drawKey(126, 42, 246, 62, "SSID", (step == 1));
     
-    drawKeyboard();
+    if (step == 0) {
+        drawKeyboard();
+    } else {
+        if (ssid_manual_input) {
+            drawKeyboard();
+        } else {
+            // Draw 2-column SSID selection menu
+            // Column 1: Auto, Conn 1, Conn 2, Conn 3
+            // Column 2: Manual, Conn 4, Conn 5, Conn 6
+            
+            // 1. Auto
+            bool auto_high = (strcmp(input_text, "Auto") == 0);
+            drawKey(10, 68, 124, 92, "Auto", auto_high);
+            
+            // 2. Connections 1, 2, 3
+            for (int i = 0; i < 3; i++) {
+                char label[32];
+                bool high = false;
+                if (net_wfc_ssids[i][0] != '\0') {
+                    high = (strcmp(input_text, net_wfc_ssids[i]) == 0);
+                    if (strlen(net_wfc_ssids[i]) > 13) {
+                        sprintf(label, "%d: %.10s...", i + 1, net_wfc_ssids[i]);
+                    } else {
+                        sprintf(label, "%d: %s", i + 1, net_wfc_ssids[i]);
+                    }
+                } else {
+                    sprintf(label, "%d: [Vacia]", i + 1);
+                }
+                drawKey(10, 98 + i * 30, 124, 122 + i * 30, label, high);
+            }
+            
+            // 3. Manual
+            drawKey(132, 68, 246, 92, "Manual (Teclado)", false);
+            
+            // 4. Connections 4, 5, 6
+            for (int i = 3; i < 6; i++) {
+                char label[32];
+                bool high = false;
+                if (net_wfc_ssids[i][0] != '\0') {
+                    high = (strcmp(input_text, net_wfc_ssids[i]) == 0);
+                    if (strlen(net_wfc_ssids[i]) > 13) {
+                        sprintf(label, "%d: %.10s...", i + 1, net_wfc_ssids[i]);
+                    } else {
+                        sprintf(label, "%d: %s", i + 1, net_wfc_ssids[i]);
+                    }
+                } else {
+                    sprintf(label, "%d: [Vacia]", i + 1);
+                }
+                drawKey(132, 98 + (i - 3) * 30, 246, 122 + (i - 3) * 30, label, high);
+            }
+        }
+    }
 }
 
 char uiHandleKeyboardTouch(int tx, int ty, bool* shift_toggled, bool* caps_toggled, bool* enter_pressed, bool* backspace_pressed) {
