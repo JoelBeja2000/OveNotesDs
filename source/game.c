@@ -1407,15 +1407,14 @@ void gameUpdate(void) {
                 // 2. Check if they touched the keyboard/menu area: y >= 66
                 else if (prev_y >= 66) {
                     if (wizard_step == 1 && !ssid_manual_input) {
-                        // Left Column (Auto + Conn 1-3)
-                        if (prev_x >= 10 && prev_x <= 124) {
+                        // Check Manual (Teclado) at the bottom row (y = 158 to 182, full width)
+                        if (prev_y >= 158 && prev_y <= 182 && prev_x >= 10 && prev_x <= 246) {
+                            ssid_manual_input = true;
+                            uiDrawBottomForm(wizard_step, current_input);
+                        }
+                        // Left Column (Conn 1-3)
+                        else if (prev_x >= 10 && prev_x <= 124) {
                             if (prev_y >= 68 && prev_y <= 92) {
-                                strcpy(current_input, "Auto");
-                                input_len = strlen(current_input);
-                                uiDrawFormUI(wizard_step, current_input);
-                                uiDrawBottomForm(wizard_step, current_input);
-                            }
-                            else if (prev_y >= 98 && prev_y <= 122) {
                                 if (net_wfc_ssids[0][0] != '\0') {
                                     strcpy(current_input, net_wfc_ssids[0]);
                                     input_len = strlen(current_input);
@@ -1423,7 +1422,7 @@ void gameUpdate(void) {
                                     uiDrawBottomForm(wizard_step, current_input);
                                 }
                             }
-                            else if (prev_y >= 128 && prev_y <= 152) {
+                            else if (prev_y >= 98 && prev_y <= 122) {
                                 if (net_wfc_ssids[1][0] != '\0') {
                                     strcpy(current_input, net_wfc_ssids[1]);
                                     input_len = strlen(current_input);
@@ -1431,7 +1430,7 @@ void gameUpdate(void) {
                                     uiDrawBottomForm(wizard_step, current_input);
                                 }
                             }
-                            else if (prev_y >= 158 && prev_y <= 182) {
+                            else if (prev_y >= 128 && prev_y <= 152) {
                                 if (net_wfc_ssids[2][0] != '\0') {
                                     strcpy(current_input, net_wfc_ssids[2]);
                                     input_len = strlen(current_input);
@@ -1440,13 +1439,9 @@ void gameUpdate(void) {
                                 }
                             }
                         }
-                        // Right Column (Manual + Conn 4-6)
+                        // Right Column (Conn 4-6)
                         else if (prev_x >= 132 && prev_x <= 246) {
                             if (prev_y >= 68 && prev_y <= 92) {
-                                ssid_manual_input = true;
-                                uiDrawBottomForm(wizard_step, current_input);
-                            }
-                            else if (prev_y >= 98 && prev_y <= 122) {
                                 if (net_wfc_ssids[3][0] != '\0') {
                                     strcpy(current_input, net_wfc_ssids[3]);
                                     input_len = strlen(current_input);
@@ -1454,7 +1449,7 @@ void gameUpdate(void) {
                                     uiDrawBottomForm(wizard_step, current_input);
                                 }
                             }
-                            else if (prev_y >= 128 && prev_y <= 152) {
+                            else if (prev_y >= 98 && prev_y <= 122) {
                                 if (net_wfc_ssids[4][0] != '\0') {
                                     strcpy(current_input, net_wfc_ssids[4]);
                                     input_len = strlen(current_input);
@@ -1462,7 +1457,7 @@ void gameUpdate(void) {
                                     uiDrawBottomForm(wizard_step, current_input);
                                 }
                             }
-                            else if (prev_y >= 158 && prev_y <= 182) {
+                            else if (prev_y >= 128 && prev_y <= 152) {
                                 if (net_wfc_ssids[5][0] != '\0') {
                                     strcpy(current_input, net_wfc_ssids[5]);
                                     input_len = strlen(current_input);

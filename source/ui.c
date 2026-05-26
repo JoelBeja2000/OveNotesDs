@@ -1214,8 +1214,8 @@ void uiDrawFormUI(int step, const char* input_text) {
         drawSubText(pairing_code, 56, 49, text_col, 0);
     }
 
-    // Field 1: SSID (y = 70 to 88)
-    drawSubText("SSID", 12, 76, text_col, 0);
+    // Field 1: WiFi (y = 70 to 88)
+    drawSubText("WiFi", 12, 76, text_col, 0);
     drawSubRectOutline(50, 70, 244, 88, (step == 1) ? active_col : RGB15(15, 15, 15));
     if (step == 1) {
         drawSubRectOutline(51, 71, 243, 87, active_col);
@@ -1225,8 +1225,8 @@ void uiDrawFormUI(int step, const char* input_text) {
     }
 
     // Help text
-    drawSubText("Enter the code shown on", 50, 120, text_col, 0);
-    drawSubText("the PC web app to pair.", 54, 132, inactive_text, 0);
+    drawSubText("Enter the PC code and select", 44, 120, text_col, 0);
+    drawSubText("your WiFi network below.", 56, 132, inactive_text, 0);
 }
 
 static bool shift_active = false;
@@ -1331,11 +1331,11 @@ void uiDrawBottomForm(int step, const char* input_text) {
     
     char label[128];
     if (step == 0)      sprintf(label, "CODE: %s_", input_text);
-    else if (step == 1) sprintf(label, "SSID: %s_", input_text);
+    else if (step == 1) sprintf(label, "WIFI: %s_", input_text);
     renderDrawText(label, 16, 17, RGB15(31, 31, 31), 0);
     
     drawKey(10, 42, 120, 62, "CODE", (step == 0));
-    drawKey(126, 42, 246, 62, "SSID", (step == 1));
+    drawKey(126, 42, 246, 62, "WIFI", (step == 1));
     
     if (step == 0) {
         drawKeyboard();
@@ -1343,15 +1343,12 @@ void uiDrawBottomForm(int step, const char* input_text) {
         if (ssid_manual_input) {
             drawKeyboard();
         } else {
-            // Draw 2-column SSID selection menu
-            // Column 1: Auto, Conn 1, Conn 2, Conn 3
-            // Column 2: Manual, Conn 4, Conn 5, Conn 6
+            // Draw 2-column WiFi profile selection menu
+            // Column 1 (x: 10..124): Connection 1, 2, 3
+            // Column 2 (x: 132..246): Connection 4, 5, 6
+            // Bottom Row (x: 10..246): Manual (Teclado)
             
-            // 1. Auto
-            bool auto_high = (strcmp(input_text, "Auto") == 0);
-            drawKey(10, 68, 124, 92, "Auto", auto_high);
-            
-            // 2. Connections 1, 2, 3
+            // 1. Column 1 (Connections 1, 2, 3)
             for (int i = 0; i < 3; i++) {
                 char label[32];
                 bool high = false;
@@ -1365,13 +1362,10 @@ void uiDrawBottomForm(int step, const char* input_text) {
                 } else {
                     sprintf(label, "%d: [Vacia]", i + 1);
                 }
-                drawKey(10, 98 + i * 30, 124, 122 + i * 30, label, high);
+                drawKey(10, 68 + i * 30, 124, 92 + i * 30, label, high);
             }
             
-            // 3. Manual
-            drawKey(132, 68, 246, 92, "Manual (Teclado)", false);
-            
-            // 4. Connections 4, 5, 6
+            // 2. Column 2 (Connections 4, 5, 6)
             for (int i = 3; i < 6; i++) {
                 char label[32];
                 bool high = false;
@@ -1385,8 +1379,11 @@ void uiDrawBottomForm(int step, const char* input_text) {
                 } else {
                     sprintf(label, "%d: [Vacia]", i + 1);
                 }
-                drawKey(132, 98 + (i - 3) * 30, 246, 122 + (i - 3) * 30, label, high);
+                drawKey(132, 68 + (i - 3) * 30, 246, 92 + (i - 3) * 30, label, high);
             }
+            
+            // 3. Manual (Teclado) spanning both columns at the bottom
+            drawKey(10, 158, 246, 182, "Manual (Teclado)", false);
         }
     }
 }

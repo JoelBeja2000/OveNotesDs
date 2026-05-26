@@ -17,7 +17,7 @@
 
 char http_ip[64] = "192.168.1.132";
 char http_port_str[16] = "3000";
-char wifi_ssid[33] = "Auto";
+char wifi_ssid[33] = "";
 char pairing_code[16] = "";
 char net_wfc_ssids[6][33] = {0};
 
