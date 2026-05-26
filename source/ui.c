@@ -1297,10 +1297,11 @@ static void drawKeyboard(void) {
     bool upper = shift_active || caps_active;
     
     // Row 1: 1 to = and Bksp
-    const char* r1_labels[] = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-", "="};
+    const char* r1_labels_low[] = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-", "="};
+    const char* r1_labels_up[]  = {"!", "@", "#", "$", "%", "^", "&", "*", "(", ")", "_", "+"};
     for (int i = 0; i < 12; i++) {
         int x0 = 4 + i * 18;
-        drawKey(x0, 96, x0 + 16, 116, r1_labels[i], false);
+        drawKey(x0, 96, x0 + 16, 116, upper ? r1_labels_up[i] : r1_labels_low[i], false);
     }
     drawKey(220, 96, 252, 116, "<-", false);
     
@@ -1380,8 +1381,9 @@ char uiHandleKeyboardTouch(int tx, int ty, bool* shift_toggled, bool* caps_toggl
         for (int i = 0; i < 12; i++) {
             int x0 = 4 + i * 18;
             if (tx >= x0 && tx <= x0 + 16) {
-                const char* r1_labels[] = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-", "="};
-                return r1_labels[i][0];
+                const char* r1_labels_low[] = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-", "="};
+                const char* r1_labels_up[]  = {"!", "@", "#", "$", "%", "^", "&", "*", "(", ")", "_", "+"};
+                return upper ? r1_labels_up[i][0] : r1_labels_low[i][0];
             }
         }
         if (tx >= 220 && tx <= 252) {
