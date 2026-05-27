@@ -70,7 +70,7 @@ const server = http.createServer((req, res) => {
 
     // Serve manifest.json
     if (req.url === '/manifest.json' && req.method === 'GET') {
-        fs.readFile(path.join(__dirname, 'manifest.json'), (err, data) => {
+        fs.readFile(path.join(__dirname, 'dist', 'manifest.json'), (err, data) => {
             if (err) {
                 res.writeHead(404);
                 res.end();
@@ -84,7 +84,7 @@ const server = http.createServer((req, res) => {
 
     // Serve logo_pwa.png
     if (req.url === '/logo_pwa.png' && req.method === 'GET') {
-        fs.readFile(path.join(__dirname, 'logo_pwa.png'), (err, data) => {
+        fs.readFile(path.join(__dirname, 'dist', 'logo_pwa.png'), (err, data) => {
             if (err) {
                 res.writeHead(404);
                 res.end();
@@ -98,7 +98,7 @@ const server = http.createServer((req, res) => {
 
     // Serve sw.js
     if (req.url === '/sw.js' && req.method === 'GET') {
-        fs.readFile(path.join(__dirname, 'sw.js'), (err, data) => {
+        fs.readFile(path.join(__dirname, 'dist', 'sw.js'), (err, data) => {
             if (err) {
                 res.writeHead(404);
                 res.end();
@@ -112,7 +112,7 @@ const server = http.createServer((req, res) => {
 
     // Serve HTML Client
     if (req.url === '/' && req.method === 'GET') {
-        fs.readFile(path.join(__dirname, 'index.html'), 'utf8', (err, data) => {
+        fs.readFile(path.join(__dirname, 'dist', 'index.html'), 'utf8', (err, data) => {
             if (err) {
                 res.writeHead(500, { 'Content-Type': 'text/plain' });
                 res.end('Internal Server Error');

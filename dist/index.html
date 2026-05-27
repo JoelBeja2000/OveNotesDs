@@ -75,6 +75,13 @@
     let pairingCodeData = { code: '------', ip: '...', port: '...' };
     let cachedNotes = [];
 
+    function getApiUrl(path) {
+      if (window.__TAURI_INTERNALS__ || window.__tauri_ipc__) {
+        return 'http://localhost:3000' + path;
+      }
+      return path;
+    }
+
     function formatTime(ts){ try{ return new Date(ts).toLocaleString() }catch(e){return ''} }
 
     function render(){
@@ -92,7 +99,7 @@
 
       notesEl.innerHTML = cachedNotes.map(n=>{
         const time = n.time ? formatTime(n.time) : '';
-        const url = '/notas/' + encodeURIComponent(n.name);
+        const url = getApiUrl('/notas/' + encodeURIComponent(n.name));
         return `\
           <div class="note-card">\
             <img class="note-thumb" src="${url}" alt="${n.name}" onclick="openNote('${encodeURIComponent(n.name)}')" />\
@@ -105,7 +112,7 @@
       }).join('');
     }
 
-    function openNote(name){ try{ const decoded=decodeURIComponent(name); window.open('/notas/'+decoded, '_blank'); }catch(e){ window.open('/notas/'+name,'_blank') } }
+    function openNote(name){ try{ const decoded=decodeURIComponent(name); window.open(getApiUrl('/notas/'+decoded), '_blank'); }catch(e){ window.open(getApiUrl('/notas/'+name),'_blank') } }
 
     async function deleteNote(name, event){
       if(event && event.stopPropagation) event.stopPropagation();
@@ -114,7 +121,7 @@
       const ok = confirm('¿Eliminar esta nota? Esta acción no se puede deshacer.');
       if(!ok) return;
       try{
-        const r = await fetch('/api/notas/' + encodeURIComponent(decoded), { method: 'DELETE' });
+        const r = await fetch(getApiUrl('/api/notas/' + encodeURIComponent(decoded)), { method: 'DELETE' });
         if(r.ok){
           // remove from cachedNotes and re-render
           cachedNotes = cachedNotes.filter(n => n.name !== decoded && n.name !== name);
@@ -127,13 +134,13 @@
 
     async function fetchNotes(){
       try{
-        const r = await fetch('/api/notas'); if(!r.ok) throw new Error('bad');
+        const r = await fetch(getApiUrl('/api/notas')); if(!r.ok) throw new Error('bad');
         const notes = await r.json();
         if(JSON.stringify(notes)!==JSON.stringify(cachedNotes)){ cachedNotes = notes; render(); }
       }catch(e){ console.warn('fetchNotes failed', e); }
     }
     async function fetchPairing(){
-      try{ const r = await fetch('/api/pairing-code'); if(!r.ok) throw new Error('bad'); pairingCodeData = await r.json(); render(); }
+      try{ const r = await fetch(getApiUrl('/api/pairing-code')); if(!r.ok) throw new Error('bad'); pairingCodeData = await r.json(); render(); }
       catch(e){ console.warn('fetchPairing failed', e); }
     }
 

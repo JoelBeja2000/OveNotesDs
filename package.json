@@ -1,7 +1,15 @@
 {
+  "name": "ovenotesds",
+  "version": "1.0.0",
+  "scripts": {
+    "tauri": "tauri"
+  },
   "dependencies": {
     "ftp-srv": "^4.6.3",
     "jpeg-js": "^0.4.4",
     "pngjs": "^7.0.0"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.11.2"
   }
 }
