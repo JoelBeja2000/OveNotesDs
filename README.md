@@ -4,9 +4,9 @@
 > ### 🚀 ENLACES DE DESCARGA DIRECTA (ÚLTIMA VERSIÓN)
 > Descarga la versión compilada y lista para usar en tus dispositivos:
 > 
-> * **🎮 Nintendo DS / DSi (ROM Homebrew):** [Ir a página de descarga (OveNotesDs.nds)](https://github.com/JoelBeja2000/OveNotesDs/blob/master/OveNotesDs.nds)
-> * **📱 Android (Aplicación Móvil):** [Ir a página de descarga (OveNotesDS.apk)](https://github.com/JoelBeja2000/OveNotesDs/blob/master/OveNotesDS.apk)
-> * **💻 Windows (Ejecutable de Escritorio):** [Ir a página de descarga (OveNotesDS.exe)](https://github.com/JoelBeja2000/OveNotesDs/blob/master/OveNotesDS.exe)
+> * **🎮 Nintendo DS / DSi (ROM Homebrew):** [Descargar OveNotesDs.nds](https://github.com/JoelBeja2000/OveNotesDs/releases/latest/download/OveNotesDs.nds)
+> * **📱 Android (Aplicación Móvil):** [Descargar OveNotesDS.apk](https://github.com/JoelBeja2000/OveNotesDs/releases/latest/download/OveNotesDS.apk)
+> * **💻 Windows (Ejecutable de Escritorio):** [Descargar OveNotesDS.exe](https://github.com/JoelBeja2000/OveNotesDs/releases/latest/download/OveNotesDS.exe)
 
 ---
 
