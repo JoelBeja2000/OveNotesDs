@@ -48,35 +48,14 @@ void gameInit(void) {
     // Map Video RAM:
     // Bank A: Main background memory (0x06000000) for drawing canvas
     vramSetBankA(VRAM_A_MAIN_BG);
-    // Bank C & H: Sub background memory (0x06200000) for console and preview (160KB total)
+    // Bank C: Sub background memory (0x06200000) for bitmap backgrounds (128KB)
     vramSetBankC(VRAM_C_SUB_BG);
-    vramSetBankH(VRAM_H_SUB_BG);
+    // VRAM H is not mapped to Sub BG to avoid memory overlap and corruption issues.
 
     // Configure bottom screen (Main Engine): Mode 5, enable Background 2 (Extended Rotation Bitmap)
     videoSetMode(MODE_5_2D | DISPLAY_BG2_ACTIVE);
     int bg_canvas = bgInit(2, BgType_Bmp16, BgSize_B16_256x256, 0, 0);
     canvas_buffer = (uint16_t*)bgGetGfxPtr(bg_canvas);
-
-    // Configure top screen (Sub Engine): Mode 5, enable Background 0 (Console) and Background 2 (Bitmap preview)
-    videoSetModeSub(MODE_5_2D | DISPLAY_BG0_ACTIVE | DISPLAY_BG2_ACTIVE);
-
-    // Initialize sub text console on BG0 (top screen)
-    consoleInit(&subConsole, 
-                0,                  // layer 0
-                BgType_Text4bpp,     // text mode
-                BgSize_T_256x256,    // map size 256x256
-                64,                 // map base 64 (128KB offset)
-                8,                  // tile base 8 (128KB offset)
-                false,              // false = Sub Engine
-                true);              // load default graphics
-
-    // Initialize 256x256 16-bit bitmap on BG2 (top screen, map base 0, offset 0KB)
-    int bg_sub_preview = bgInitSub(2, BgType_Bmp16, BgSize_B16_256x256, 0, 0);
-    preview_buffer = (uint16_t*)bgGetGfxPtr(bg_sub_preview);
-
-    // No scaling/offset needed for full-screen preview
-    bgSet(bg_sub_preview, 0, 1 << 8, 1 << 8, 0, 0, 0, 0);
-    bgUpdate();
 
     // layers and drawing_buffer are dynamically initialized inside renderInitCanvas()
 
@@ -84,10 +63,16 @@ void gameInit(void) {
     renderInitCanvas();
     renderInitPreview();
 
-    // Set top screen to 16-bit bitmap for the start menu logo
+    // Configure top screen (Sub Engine): ONLY BG3 active for start menu logo bitmap.
+    // Do NOT initialize the console (BG0) here — its font tile data would corrupt
+    // the BG3 bitmap VRAM used for the logo. The console will be initialized later
+    // when entering STATE_DRAW or STATE_WIZARD.
     videoSetModeSub(MODE_5_2D | DISPLAY_BG3_ACTIVE);
     bg_sub_wizard = bgInitSub(3, BgType_Bmp16, BgSize_B16_256x256, 0, 0);
     wizard_buffer = (uint16_t*)bgGetGfxPtr(bg_sub_wizard);
+    // Set affine matrix to identity (1:1 scale, no rotation, no offset)
+    bgSet(bg_sub_wizard, 0, 1 << 8, 1 << 8, 0, 0, 0, 0);
+    bgUpdate();
     
     current_state = STATE_START_MENU;
     uiDrawStartMenu();
@@ -115,6 +100,8 @@ static void enterWizardState(void) {
     videoSetModeSub(MODE_5_2D | DISPLAY_BG3_ACTIVE);
     bg_sub_wizard = bgInitSub(3, BgType_Bmp16, BgSize_B16_256x256, 0, 0);
     wizard_buffer = (uint16_t*)bgGetGfxPtr(bg_sub_wizard);
+    bgSet(bg_sub_wizard, 0, 1 << 8, 1 << 8, 0, 0, 0, 0);
+    bgUpdate();
     
     wizard_step = 0;
     strcpy(current_input, pairing_code);
@@ -137,21 +124,6 @@ static void exitWizardState(bool canceled) {
     // Deshabilitar el fondo bitmap de la pantalla superior
     videoBgDisableSub(3);
     
-    // Re-inicializar el subConsole en la pantalla superior para limpiar la corrupcion de VRAM
-    consoleInit(&subConsole, 
-                0,                  // layer 0
-                BgType_Text4bpp,     // text mode
-                BgSize_T_256x256,    // map size 256x256
-                64,                 // map base 64 (128KB offset)
-                8,                  // tile base 8 (128KB offset)
-                false,              // false = Sub Engine
-                true);              // load default graphics
-    consoleSelect(&subConsole);
-    
-    // Restaurar la paleta de colores del fondo de la consola
-    BG_PALETTE[0] = RGB15(31, 31, 31);
-    BG_PALETTE[255] = RGB15(31, 31, 31);
-    
     wizard_buffer = NULL;
     bg_sub_wizard = -1;
     
@@ -167,16 +139,21 @@ static void exitWizardState(bool canceled) {
     
     // Deshabilitar la visualizacion del subConsole para dejar solo el dibujo a pantalla completa
     videoSetModeSub(MODE_5_2D | DISPLAY_BG2_ACTIVE);
-    printf("\x1b[2J");
-    if (canceled) {
-        printf(uiTxt("Configuracion cancelada.\n", "Configuration canceled.\n"));
-    } else {
-        printf(uiTxt("Configuracion guardada.\n", "Configuration saved.\n"));
-    }
     current_state = STATE_DRAW;
 }
 
 static void runUpload(void) {
+    // Initialize the sub console for showing upload progress dynamically
+    consoleInit(&subConsole, 
+                0,                  // layer 0
+                BgType_Text4bpp,     // text mode
+                BgSize_T_256x256,    // map size 256x256
+                24,                 // map base 24 (48KB offset)
+                6,                  // tile base 6 (96KB offset)
+                false,              // false = Sub Engine
+                true);              // load default graphics
+    consoleSelect(&subConsole);
+
     // 1. Enable sub console layer display
     videoSetModeSub(MODE_5_2D | DISPLAY_BG0_ACTIVE | DISPLAY_BG2_ACTIVE);
     
@@ -189,23 +166,27 @@ static void runUpload(void) {
         printf(uiTxt("Error: fallo al iniciar Wi-Fi!\n", "Error: failed to start Wi-Fi!\n"));
         for(int i=0; i<120; i++) swiWaitForVBlank();
         videoSetModeSub(MODE_5_2D | DISPLAY_BG2_ACTIVE);
+        renderComposeCanvas();
+        renderUpdatePreview();
         current_state = STATE_DRAW;
         return;
     }
     
     printf(uiTxt("Codificando PNG...\n", "Encoding PNG...\n"));
     
-    unsigned char* rgb_buf = malloc(256 * 176 * 3);
+    unsigned char* rgb_buf = malloc(256 * 192 * 3);
     if (!rgb_buf) {
         printf("Error: no hay memoria RAM\n");
         for(int i=0; i<120; i++) swiWaitForVBlank();
         videoSetModeSub(MODE_5_2D | DISPLAY_BG2_ACTIVE);
+        renderComposeCanvas();
+        renderUpdatePreview();
         current_state = STATE_DRAW;
         return;
     }
     
     int i = 0;
-    for (int y = 0; y < 176; y++) {
+    for (int y = 0; y < 192; y++) {
         for (int x = 0; x < 256; x++) {
             uint16_t color = renderGetComposedPixel(x, y);
             rgb_buf[i++] = (color & 0x1F) << 3;
@@ -216,13 +197,15 @@ static void runUpload(void) {
     
     unsigned char* png_data = NULL;
     size_t png_size = 0;
-    unsigned png_err = lodepng_encode_memory(&png_data, &png_size, rgb_buf, 256, 176, LCT_RGB, 8);
+    unsigned png_err = lodepng_encode_memory(&png_data, &png_size, rgb_buf, 256, 192, LCT_RGB, 8);
     free(rgb_buf);
     
     if (png_err) {
         printf("Error PNG: %d\n", png_err);
         for(int j=0; j<120; j++) swiWaitForVBlank();
         videoSetModeSub(MODE_5_2D | DISPLAY_BG2_ACTIVE);
+        renderComposeCanvas();
+        renderUpdatePreview();
         current_state = STATE_DRAW;
         return;
     }
@@ -240,6 +223,8 @@ static void runUpload(void) {
     
     // Hide sub console layer and return to full-screen drawing
     videoSetModeSub(MODE_5_2D | DISPLAY_BG2_ACTIVE);
+    renderComposeCanvas();
+    renderUpdatePreview();
     current_state = STATE_DRAW;
 }
 
@@ -305,15 +290,13 @@ void gameUpdate(void) {
                     // Button 1: Crear Nueva Nota (y = 56..80, x = 32..224)
                     else if (prev_x >= 32 && prev_x <= 224 && prev_y >= 56 && prev_y <= 80) {
                         videoBgDisableSub(3);
-                        consoleInit(&subConsole, 
-                                    0,                  // layer 0
-                                    BgType_Text4bpp,     // text mode
-                                    BgSize_T_256x256,    // map size 256x256
-                                    64,                 // map base 64 (128KB offset)
-                                    8,                  // tile base 8 (128KB offset)
-                                    false,              // false = Sub Engine
-                                    true);              // load default graphics
-                        consoleSelect(&subConsole);
+                        
+                        // Initialize BG2 bitmap for preview on the top screen
+                        int bg_sub_preview = bgInitSub(2, BgType_Bmp16, BgSize_B16_256x256, 0, 0);
+                        preview_buffer = (uint16_t*)bgGetGfxPtr(bg_sub_preview);
+                        bgSet(bg_sub_preview, 0, 1 << 8, 1 << 8, 0, 0, 0, 0);
+                        bgUpdate();
+                        
                         videoSetModeSub(MODE_5_2D | DISPLAY_BG2_ACTIVE);
                         
                         renderInitCanvas();
@@ -398,15 +381,13 @@ void gameUpdate(void) {
                             ioLoadNote(gallery_filenames[gallery_selected_idx], layers[0]);
                             
                             videoBgDisableSub(3);
-                            consoleInit(&subConsole, 
-                                        0,                  // layer 0
-                                        BgType_Text4bpp,     // text mode
-                                        BgSize_T_256x256,    // map size 256x256
-                                        64,                 // map base 64 (128KB offset)
-                                        8,                  // tile base 8 (128KB offset)
-                                        false,              // false = Sub Engine
-                                        true);              // load default graphics
-                            consoleSelect(&subConsole);
+                            
+                            // Initialize BG2 bitmap for preview on the top screen
+                            int bg_sub_preview = bgInitSub(2, BgType_Bmp16, BgSize_B16_256x256, 0, 0);
+                            preview_buffer = (uint16_t*)bgGetGfxPtr(bg_sub_preview);
+                            bgSet(bg_sub_preview, 0, 1 << 8, 1 << 8, 0, 0, 0, 0);
+                            bgUpdate();
+                            
                             videoSetModeSub(MODE_5_2D | DISPLAY_BG2_ACTIVE);
                             
                             active_layer_idx = 0;
@@ -453,15 +434,13 @@ void gameUpdate(void) {
                 ioLoadNote(gallery_filenames[gallery_selected_idx], layers[0]);
                 
                 videoBgDisableSub(3);
-                consoleInit(&subConsole, 
-                            0,                  // layer 0
-                            BgType_Text4bpp,     // text mode
-                            BgSize_T_256x256,    // map size 256x256
-                            64,                 // map base 64 (128KB offset)
-                            8,                  // tile base 8 (128KB offset)
-                            false,              // false = Sub Engine
-                            true);              // load default graphics
-                consoleSelect(&subConsole);
+                
+                // Initialize BG2 bitmap for preview on the top screen
+                int bg_sub_preview2 = bgInitSub(2, BgType_Bmp16, BgSize_B16_256x256, 0, 0);
+                preview_buffer = (uint16_t*)bgGetGfxPtr(bg_sub_preview2);
+                bgSet(bg_sub_preview2, 0, 1 << 8, 1 << 8, 0, 0, 0, 0);
+                bgUpdate();
+                
                 videoSetModeSub(MODE_5_2D | DISPLAY_BG2_ACTIVE);
                 
                 active_layer_idx = 0;
@@ -1084,6 +1063,8 @@ void gameUpdate(void) {
                                     videoSetModeSub(MODE_5_2D | DISPLAY_BG3_ACTIVE);
                                     bg_sub_wizard = bgInitSub(3, BgType_Bmp16, BgSize_B16_256x256, 0, 0);
                                     wizard_buffer = (uint16_t*)bgGetGfxPtr(bg_sub_wizard);
+                                    bgSet(bg_sub_wizard, 0, 1 << 8, 1 << 8, 0, 0, 0, 0);
+                                    bgUpdate();
                                     uiDrawStartMenu();
                                     option_selected = false;
                                 } else if (prev_y >= 104 && prev_y <= 126) {
@@ -1093,6 +1074,8 @@ void gameUpdate(void) {
                                     videoSetModeSub(MODE_5_2D | DISPLAY_BG3_ACTIVE);
                                     bg_sub_wizard = bgInitSub(3, BgType_Bmp16, BgSize_B16_256x256, 0, 0);
                                     wizard_buffer = (uint16_t*)bgGetGfxPtr(bg_sub_wizard);
+                                    bgSet(bg_sub_wizard, 0, 1 << 8, 1 << 8, 0, 0, 0, 0);
+                                    bgUpdate();
                                     uiDrawStartMenu();
                                     option_selected = false;
                                 } else if (prev_y >= 132 && prev_y <= 154) {
@@ -1173,6 +1156,7 @@ void gameUpdate(void) {
                 }
                 // Track opacity slider start: x = 148..252, y = 142..154
                 else if (layers_panel_open && !touch_started_in_toolbar && touch.px >= 148 && touch.px <= 252 && touch.py >= 142 && touch.py <= 154) {
+                    renderSaveUndoStructureState();
                     dragging_opacity = true;
                 }
             }
@@ -1293,6 +1277,9 @@ void gameUpdate(void) {
                     renderComposeCanvas();
                     renderUpdatePreview();
                 }
+                if (dragging_opacity) {
+                    dragging_opacity = false;
+                }
                 
                 bool sidebar_action_taken = false;
                 int limit_y = toolbar_hidden ? 192 : 176;
@@ -1333,8 +1320,8 @@ void gameUpdate(void) {
                         }
                         // FONDO or Layer items
                         else {
-                            int bg_y = 27 + layers_count * 14;
-                            if (prev_y >= bg_y && prev_y <= bg_y + 12) {
+                            int bg_y = 27 + layers_count * 13;
+                            if (prev_y >= bg_y && prev_y <= bg_y + 11) {
                                 // Lock toggle: x = 216..252
                                 if (prev_x >= 216 && prev_x <= 252) {
                                     bg_modifiable = !bg_modifiable;
@@ -1344,8 +1331,8 @@ void gameUpdate(void) {
                             } else {
                                 for (int i = layers_count - 1; i >= 0; i--) {
                                     int idx_from_top = layers_count - 1 - i;
-                                    int y_pos = 27 + idx_from_top * 14;
-                                    if (prev_y >= y_pos && prev_y <= y_pos + 12) {
+                                    int y_pos = 27 + idx_from_top * 13;
+                                    if (prev_y >= y_pos && prev_y <= y_pos + 11) {
                                         // Select layer / rename: x = 158..212
                                         if (prev_x >= 158 && prev_x <= 212) {
                                             if (active_layer_idx == i) {

@@ -1254,7 +1254,7 @@ void uiDrawFormUI(int step, const char* input_text) {
     // Help text with pointer sheep pointing at it
     drawSubPointerSheep(6, 118);
     drawSubText(uiTxt("Pon el codigo que te aparece", "Enter the code shown in the"), 56, 124, text_col, 0);
-    drawSubText(uiTxt("en la app en otro dispositivo.", "app on another device."), 56, 136, inactive_text, 0);
+    drawSubText(uiTxt("en la app en del otro dispositivo.", "app on another device."), 56, 136, inactive_text, 0);
 }
 
 static bool shift_active = false;

@@ -841,6 +841,7 @@ void renderMergeActiveLayerUp(void) {
 }
 
 void renderInitPreview(void) {
+    if (preview_buffer == NULL) return;
     uint16_t border_color = RGB15(31, 31, 31);
     for (int i = 0; i < 256 * 192; i++) {
         preview_buffer[i] = border_color;
