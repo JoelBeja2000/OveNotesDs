@@ -46,11 +46,85 @@
     .note-meta{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);gap:8px}
     .empty{padding:28px;text-align:center;color:var(--muted)}
 
-    .note-actions{display:flex;justify-content:center;margin-top:6px}
-    .btn-download{background:var(--accent);color:#000;padding:6px 10px;border-radius:6px;text-decoration:none;font-weight:800;font-size:12px}
+    .note-actions{display:flex;justify-content:center;gap:6px;margin-top:6px;flex-wrap:wrap}
+    .btn-download{background:var(--accent);color:#000;padding:6px 10px;border-radius:6px;text-decoration:none;font-weight:800;font-size:12px;border:none;cursor:pointer}
     .btn-download:hover{filter:brightness(0.95)}
-    .btn-delete{background:transparent;color:#ff4d4d;border:1px solid rgba(255,77,77,0.12);padding:6px 10px;border-radius:6px;margin-left:8px;font-weight:800;cursor:pointer}
+    .btn-view{background:#00bcd4;color:#000;padding:6px 10px;border-radius:6px;border:none;font-weight:800;font-size:12px;cursor:pointer}
+    .btn-view:hover{filter:brightness(0.95)}
+    .btn-delete{background:transparent;color:#ff4d4d;border:1px solid rgba(255,77,77,0.12);padding:6px 10px;border-radius:6px;font-weight:800;cursor:pointer}
     .btn-delete:hover{background:rgba(255,77,77,0.04)}
+
+    /* Modal styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(11, 13, 19, 0.85);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .modal.show {
+      display: flex;
+    }
+    .modal-content {
+      background: var(--panel);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 16px;
+      max-width: 95%;
+      max-height: 95%;
+      width: 480px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+      position: relative;
+    }
+    .modal-image {
+      width: 100%;
+      max-height: 60vh;
+      object-fit: contain;
+      background: #000;
+      border-radius: 8px;
+    }
+    .modal-title {
+      font-weight: 800;
+      color: var(--accent);
+      font-size: 14px;
+      text-align: center;
+    }
+    .modal-tip {
+      font-size: 11px;
+      color: var(--muted);
+      text-align: center;
+      margin-top: -4px;
+    }
+    .modal-actions {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 8px;
+    }
+    .btn-close {
+      background: #fff;
+      color: #000;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-weight: 800;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .btn-close:hover {
+      filter: brightness(0.9);
+    }
 
     @media (max-width:720px){.wrap{margin:8px;padding:12px}.pairing-code{font-size:28px;letter-spacing:6px}.note-thumb{height:100px}}
   </style>
@@ -66,6 +140,16 @@
 
       <div>
         <div id="notesContainer" class="notes-grid"></div>
+      </div>
+    </div>
+  <div id="noteModal" class="modal" onclick="closeModal()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <div id="modalTitle" class="modal-title"></div>
+      <img id="modalImage" class="modal-image" src="" alt="Preview" />
+      <div class="modal-tip">Tip: Mantén pulsada la imagen para guardarla en la galería del móvil</div>
+      <div class="modal-actions">
+        <button id="modalDownload" class="btn-download">Descargar</button>
+        <button class="btn-close" onclick="closeModal()">Cerrar</button>
       </div>
     </div>
   </div>
@@ -102,17 +186,69 @@
         const url = getApiUrl('/notas/' + encodeURIComponent(n.name));
         return `\
           <div class="note-card">\
-            <img class="note-thumb" src="${url}" alt="${n.name}" onclick="openNote('${encodeURIComponent(n.name)}')" />\
+            <img class="note-thumb" src="${url}" alt="${n.name}" onclick="openNote('${encodeURIComponent(n.name)}')" style="cursor:pointer" />\
             <div class="note-meta"><span>${time}</span><span>${n.name}</span></div>\
             <div class="note-actions">\
-              <a class="btn-download" href="${url}" download="${n.name}">Descargar</a>\
+              <button class="btn-view" onclick="openNote('${encodeURIComponent(n.name)}')">Ver</button>\
+              <button class="btn-download" onclick="downloadNote('${url}', '${n.name}')">Descargar</button>\
               <button class="btn-delete" onclick="deleteNote('${encodeURIComponent(n.name)}', event)">Eliminar</button>\
             </div>\
           </div>`;
       }).join('');
     }
 
-    function openNote(name){ try{ const decoded=decodeURIComponent(name); window.open(getApiUrl('/notas/'+decoded), '_blank'); }catch(e){ window.open(getApiUrl('/notas/'+name),'_blank') } }
+    function openNote(name){
+      let decoded = name;
+      try{ decoded = decodeURIComponent(name); }catch(e){}
+      const url = getApiUrl('/notas/' + encodeURIComponent(decoded));
+      
+      document.getElementById('modalTitle').textContent = decoded;
+      const img = document.getElementById('modalImage');
+      img.src = url;
+      
+      const downloadBtn = document.getElementById('modalDownload');
+      downloadBtn.onclick = () => downloadNote(url, decoded);
+      
+      document.getElementById('noteModal').classList.add('show');
+    }
+
+    function closeModal(){
+      document.getElementById('noteModal').classList.remove('show');
+    }
+
+    async function downloadNote(url, filename){
+      try {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        const reader = new FileReader();
+        reader.onloadend = function() {
+          const base64data = reader.result;
+          const a = document.createElement('a');
+          a.href = base64data;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+        };
+        reader.readAsDataURL(blob);
+      } catch (e) {
+        console.error('Base64 download failed, trying Object URL fallback', e);
+        try {
+          const r = await fetch(url);
+          const b = await r.blob();
+          const blobUrl = URL.createObjectURL(b);
+          const a = document.createElement('a');
+          a.href = blobUrl;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(blobUrl);
+        } catch (err) {
+          window.open(url, '_blank');
+        }
+      }
+    }
 
     async function deleteNote(name, event){
       if(event && event.stopPropagation) event.stopPropagation();
