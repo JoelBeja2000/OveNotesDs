@@ -1,0 +1,16 @@
+{
+  "short_name": "OveNotesDS",
+  "name": "OveNotesDS Web Console",
+  "icons": [
+    {
+      "src": "/logo_pwa.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#0b0d13",
+  "theme_color": "#ffd100",
+  "display": "standalone",
+  "orientation": "portrait"
+}

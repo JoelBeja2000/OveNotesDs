@@ -68,6 +68,48 @@ const server = http.createServer((req, res) => {
         return;
     }
 
+    // Serve manifest.json
+    if (req.url === '/manifest.json' && req.method === 'GET') {
+        fs.readFile(path.join(__dirname, 'manifest.json'), (err, data) => {
+            if (err) {
+                res.writeHead(404);
+                res.end();
+                return;
+            }
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(data);
+        });
+        return;
+    }
+
+    // Serve logo_pwa.png
+    if (req.url === '/logo_pwa.png' && req.method === 'GET') {
+        fs.readFile(path.join(__dirname, 'logo_pwa.png'), (err, data) => {
+            if (err) {
+                res.writeHead(404);
+                res.end();
+                return;
+            }
+            res.writeHead(200, { 'Content-Type': 'image/png' });
+            res.end(data);
+        });
+        return;
+    }
+
+    // Serve sw.js
+    if (req.url === '/sw.js' && req.method === 'GET') {
+        fs.readFile(path.join(__dirname, 'sw.js'), (err, data) => {
+            if (err) {
+                res.writeHead(404);
+                res.end();
+                return;
+            }
+            res.writeHead(200, { 'Content-Type': 'application/javascript' });
+            res.end(data);
+        });
+        return;
+    }
+
     // Serve HTML Client
     if (req.url === '/' && req.method === 'GET') {
         fs.readFile(path.join(__dirname, 'index.html'), 'utf8', (err, data) => {

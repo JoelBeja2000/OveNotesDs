@@ -2,8 +2,13 @@
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no" />
+  <meta name="theme-color" content="#ffd100" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>OveNotesDS - Emparejamiento</title>
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="apple-touch-icon" href="/logo_pwa.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
@@ -138,6 +143,13 @@
       render();
       fetchNotes(); fetchPairing();
       setInterval(()=>{ fetchNotes(); fetchPairing(); },2000);
+
+      // Registrar Service Worker para soporte PWA (Instalar como App)
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js')
+          .then(() => console.log('Service Worker registrado con éxito.'))
+          .catch(err => console.warn('Error al registrar Service Worker:', err));
+      }
     });
   </script>
 </body>
