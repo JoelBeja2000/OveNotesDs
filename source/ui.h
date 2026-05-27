@@ -47,13 +47,17 @@ extern bool ssid_manual_input;
 void uiDrawFormUI(int step, const char* input_text);
 void uiDrawBottomForm(int step, const char* input_text);
 char uiHandleKeyboardTouch(int tx, int ty, bool* shift_toggled, bool* caps_toggled, bool* enter_pressed, bool* backspace_pressed);
-void uiDrawRenameKeyboard(const char* input_text, uint8_t opacity);
+void uiDrawRenameKeyboard(const char* input_text);
 void uiDrawUndoRedoButtons(void);
+void uiDrawTopConsoleBox(const char* title);
 
 extern uint16_t app_theme_color;
 extern int active_theme_idx;
 extern uint16_t theme_colors[5];
 extern const char* theme_names[5];
+extern int current_lang; // 0 = Spanish, 1 = English
+extern bool show_lang_modal;
+const char* uiTxt(const char* es, const char* en);
 void uiDrawStartMenu(void);
 void uiDrawNotesGallery(int selected_idx, int total_count, const char filenames[][32]);
 

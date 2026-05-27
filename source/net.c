@@ -1,4 +1,5 @@
 #include "net.h"
+#include "ui.h"
 #include <nds.h>
 #include <dswifi9.h>
 #include <sys/socket.h>
@@ -138,8 +139,15 @@ void netLoadConfig(void) {
                 wifi_ssid[sizeof(wifi_ssid) - 1] = '\0';
             }
         }
+        // Read Language
+        if (fgets(line, sizeof(line), f)) {
+            line[strcspn(line, "\r\n")] = 0;
+            if (line[0] != '\0') {
+                current_lang = atoi(line);
+            }
+        }
         fclose(f);
-        printf("[NET] Config cargada: Code=%s, IP=%s, Port=%s, SSID=%s\n", pairing_code, http_ip, http_port_str, wifi_ssid);
+        printf("[NET] Config cargada: Code=%s, IP=%s, Port=%s, SSID=%s, Lang=%d\n", pairing_code, http_ip, http_port_str, wifi_ssid, current_lang);
     } else {
         printf("[NET] No se encontro archivo de config. Usando valores por defecto.\n");
     }
@@ -157,8 +165,9 @@ void netSaveConfig(void) {
     if (f != NULL) {
         fprintf(f, "%s\n", pairing_code);
         fprintf(f, "%s\n", wifi_ssid);
+        fprintf(f, "%d\n", current_lang);
         fclose(f);
-        printf("[NET] Config guardada en SD (Code=%s, SSID=%s).\n", pairing_code, wifi_ssid);
+        printf("[NET] Config guardada en SD (Code=%s, SSID=%s, Lang=%d).\n", pairing_code, wifi_ssid, current_lang);
     } else {
         printf("[NET] Error al guardar config en SD.\n");
     }

@@ -14,6 +14,7 @@ extern uint16_t* canvas_buffer;
 extern uint16_t* preview_buffer;
 extern uint16_t* wizard_buffer;
 extern uint16_t* drawing_buffer;
+extern uint16_t* composite_buffer;
 #define MAX_LAYERS 8
 extern uint16_t* layers[MAX_LAYERS];
 extern int layers_count;
@@ -24,8 +25,34 @@ extern int dragging_layer_idx;
 extern char layer_names[MAX_LAYERS][16];
 extern uint8_t layers_opacity[MAX_LAYERS];
 
+typedef enum {
+    UNDO_STROKE,
+    UNDO_STRUCTURE
+} UndoType;
+
+typedef struct {
+    UndoType type;
+    
+    // For UNDO_STROKE:
+    int stroke_layer_idx;
+    uint16_t* stroke_pixels;
+    
+    // For UNDO_STRUCTURE:
+    int struct_layers_count;
+    int struct_active_layer_idx;
+    bool struct_layers_visible[MAX_LAYERS];
+    char struct_layer_names[MAX_LAYERS][16];
+    uint8_t struct_layers_opacity[MAX_LAYERS];
+    uint16_t* struct_layer_pixels[MAX_LAYERS];
+} UndoStep;
+
+#define MAX_UNDO_STEPS 5
+extern UndoStep undo_stack[MAX_UNDO_STEPS];
+extern UndoStep redo_stack[MAX_UNDO_STEPS];
+
 void renderInitUndoStack(void);
 void renderSaveUndoState(void);
+void renderSaveUndoStructureState(void);
 void renderUndo(void);
 void renderRedo(void);
 extern int undo_count;
@@ -34,6 +61,7 @@ extern int redo_count;
 void renderAddLayer(void);
 void renderDeleteLayer(int idx);
 void renderMergeActiveLayerDown(void);
+void renderMergeActiveLayerUp(void);
 extern bool toolbar_hidden;
 
 extern bool bg_modifiable;
@@ -53,6 +81,7 @@ void renderInitCanvas(void);
 void renderInitPreview(void);
 void renderUpdatePreview(void);
 void renderComposeCanvas(void);
+uint16_t renderGetComposedPixel(int x, int y);
 
 void renderSetPixel(int x, int y, uint16_t color);
 void renderSetCanvasPixel(int x, int y, uint16_t color);

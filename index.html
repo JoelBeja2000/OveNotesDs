@@ -1,612 +1,144 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OveNotesDS Board</title>
-    <!-- Modern Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Plus+Jakarta+Sans:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg-primary: #0b0d13;
-            --bg-secondary: rgba(18, 22, 33, 0.7);
-            --border-color: rgba(255, 255, 255, 0.08);
-            --accent-primary: #00ffaa;
-            --accent-glow: rgba(0, 255, 170, 0.25);
-            --text-main: #f3f4f6;
-            --text-muted: #9ca3af;
-            --card-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-        }
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>OveNotesDS - Emparejamiento</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#0b0d13; --panel:#0f1118; --accent:#ffd100; --muted:#8e9297; --text:#ffffff;
+    }
+    @font-face {
+      font-family: 'NDS BIOS';
+      src: url('https://files.catbox.moe/ipi8ww.woff') format('woff');
+      font-weight: normal;
+      font-style: normal;
+      font-display: swap;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0}
+    body{font-family:'NDS BIOS', Outfit, system-ui, 'Segoe UI', Arial, sans-serif; color:var(--text); -webkit-font-smoothing:antialiased; min-height:100vh; margin:0; display:block;
+      /* Dark background with subtle dot-grid similar to original */
+      background-color: var(--bg);
+      background-image: radial-gradient(rgba(255,255,255,0.06) 1px, transparent 1px);
+      background-size: 16px 16px;
+      background-repeat: repeat;
+    }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+    .wrap{max-width:1100px;margin:18px auto;padding:16px;background:rgba(255,255,255,0.02);border-radius:8px}
+    .header{font-weight:800;color:var(--accent);padding:8px 12px;border-bottom:1px solid rgba(255,255,255,0.03)}
+    .main{padding:18px;display:flex;flex-direction:column;gap:12px}
+    .pairing-title{text-align:center;color:var(--accent);font-weight:800;letter-spacing:1px;font-family:'NDS BIOS', Outfit, sans-serif}
+    .pairing-code{display:block;margin:6px auto;font-size:44px;font-weight:900;letter-spacing:10px;background:rgba(255,255,255,0.02);padding:12px 22px;border-radius:8px;border:1px dashed rgba(255,209,0,0.45);max-width:420px;text-align:center;font-family:'NDS BIOS', monospace}
+    .meta{text-align:center;color:var(--muted);font-size:13px}
 
-        body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: var(--bg-primary);
-            background-image: 
-                radial-gradient(at 0% 0%, rgba(0, 255, 170, 0.08) 0px, transparent 50%),
-                radial-gradient(at 100% 100%, rgba(118, 75, 162, 0.08) 0px, transparent 50%);
-            color: var(--text-main);
-            min-height: 100vh;
-            padding: 2rem 1.5rem;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
+    .notes-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-top:6px}
+    .note-card{background:var(--panel);border-radius:8px;padding:8px;display:flex;flex-direction:column;gap:8px;align-items:stretch}
+    .note-thumb{width:100%;height:140px;object-fit:contain;border-radius:6px;background:#000}
+    .note-meta{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);gap:8px}
+    .empty{padding:28px;text-align:center;color:var(--muted)}
 
-        header {
-            width: 100%;
-            max-width: 1100px;
-            text-align: center;
-            margin-bottom: 2rem;
-            animation: fadeInDown 0.8s ease;
-        }
+    .note-actions{display:flex;justify-content:center;margin-top:6px}
+    .btn-download{background:var(--accent);color:#000;padding:6px 10px;border-radius:6px;text-decoration:none;font-weight:800;font-size:12px}
+    .btn-download:hover{filter:brightness(0.95)}
+    .btn-delete{background:transparent;color:#ff4d4d;border:1px solid rgba(255,77,77,0.12);padding:6px 10px;border-radius:6px;margin-left:8px;font-weight:800;cursor:pointer}
+    .btn-delete:hover{background:rgba(255,77,77,0.04)}
 
-        h1 {
-            font-family: 'Outfit', sans-serif;
-            font-size: 2.8rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, #ffffff 30%, var(--accent-primary) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            letter-spacing: -1px;
-            margin-bottom: 0.5rem;
-        }
-
-        .subtitle {
-            color: var(--text-muted);
-            font-size: 1.1rem;
-            font-weight: 300;
-        }
-
-        /* Pairing Code Section */
-        .pairing-section {
-            width: 100%;
-            max-width: 1100px;
-            margin-bottom: 2rem;
-            animation: fadeInUp 0.8s ease;
-        }
-
-        .pairing-card {
-            background: var(--bg-secondary);
-            backdrop-filter: blur(16px);
-            border: 1px solid rgba(0, 255, 170, 0.2);
-            border-radius: 20px;
-            padding: 2rem 2.5rem;
-            box-shadow: 0 0 40px rgba(0, 255, 170, 0.06), var(--card-shadow);
-            display: flex;
-            align-items: center;
-            gap: 2.5rem;
-        }
-
-        .pairing-info {
-            flex: 1;
-        }
-
-        .pairing-label {
-            font-family: 'Outfit', sans-serif;
-            font-size: 1rem;
-            font-weight: 600;
-            color: var(--accent-primary);
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 0.3rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .pairing-label .icon {
-            font-size: 1.2rem;
-        }
-
-        .pairing-description {
-            color: var(--text-muted);
-            font-size: 0.92rem;
-            font-weight: 300;
-            line-height: 1.5;
-        }
-
-        .pairing-code-box {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            flex-shrink: 0;
-        }
-
-        .pairing-code {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 2.4rem;
-            font-weight: 700;
-            letter-spacing: 6px;
-            color: var(--text-main);
-            background: linear-gradient(135deg, rgba(0, 255, 170, 0.12) 0%, rgba(0, 255, 170, 0.04) 100%);
-            border: 2px solid rgba(0, 255, 170, 0.3);
-            border-radius: 14px;
-            padding: 0.8rem 1.6rem;
-            text-shadow: 0 0 20px rgba(0, 255, 170, 0.3);
-            animation: codeGlow 3s ease-in-out infinite;
-            user-select: all;
-            cursor: pointer;
-            transition: border-color 0.3s, box-shadow 0.3s;
-        }
-
-        .pairing-code:hover {
-            border-color: var(--accent-primary);
-            box-shadow: 0 0 24px rgba(0, 255, 170, 0.2);
-        }
-
-        .pairing-meta {
-            color: var(--text-muted);
-            font-size: 0.78rem;
-            margin-top: 0.5rem;
-            font-family: 'JetBrains Mono', monospace;
-        }
-
-        @keyframes codeGlow {
-            0%, 100% { text-shadow: 0 0 20px rgba(0, 255, 170, 0.2); }
-            50% { text-shadow: 0 0 30px rgba(0, 255, 170, 0.45); }
-        }
-
-        main {
-            width: 100%;
-            max-width: 1100px;
-            flex-grow: 1;
-        }
-
-        .board-container {
-            background: var(--bg-secondary);
-            backdrop-filter: blur(16px);
-            border: 1px solid var(--border-color);
-            border-radius: 24px;
-            padding: 2.5rem;
-            box-shadow: var(--card-shadow);
-            animation: fadeInUp 0.8s ease;
-        }
-
-        .board-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 1rem;
-        }
-
-        .board-title {
-            font-family: 'Outfit', sans-serif;
-            font-size: 1.4rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
-        }
-
-        .pulse-dot {
-            width: 10px;
-            height: 10px;
-            background-color: var(--accent-primary);
-            border-radius: 50%;
-            box-shadow: 0 0 10px var(--accent-primary);
-            animation: pulse 1.8s infinite;
-        }
-
-        .notes-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-            gap: 1.8rem;
-            transition: all 0.3s ease;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 5rem 0;
-            color: var(--text-muted);
-            font-weight: 300;
-            font-size: 1.1rem;
-            width: 100%;
-            grid-column: 1 / -1;
-        }
-
-        /* Note Cards */
-        .note-card {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid var(--border-color);
-            border-radius: 18px;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s, box-shadow 0.3s;
-            position: relative;
-            animation: noteEntrance 0.5s ease forwards;
-        }
-
-        .note-card:hover {
-            transform: translateY(-6px);
-            border-color: rgba(0, 255, 170, 0.3);
-            box-shadow: 0 10px 20px rgba(0, 255, 170, 0.05);
-        }
-
-        .img-container {
-            width: 100%;
-            aspect-ratio: 256/176;
-            background: #181d28;
-            overflow: hidden;
-            cursor: zoom-in;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .img-container img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            image-rendering: pixelated;
-            transition: transform 0.5s;
-        }
-
-        .note-card:hover .img-container img {
-            transform: scale(1.05);
-        }
-
-        .card-details {
-            padding: 1.2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: rgba(10, 12, 18, 0.5);
-        }
-
-        .timestamp {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-        }
-
-        .delete-btn {
-            background: rgba(239, 68, 68, 0.1);
-            color: #ef4444;
-            border: none;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background 0.2s, transform 0.2s;
-        }
-
-        .delete-btn:hover {
-            background: #ef4444;
-            color: #fff;
-            transform: scale(1.1);
-        }
-
-        /* Fullscreen Modal */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(5, 7, 10, 0.95);
-            backdrop-filter: blur(8px);
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .modal.active {
-            display: flex;
-            opacity: 1;
-        }
-
-        .modal-content {
-            max-width: 90%;
-            max-height: 80%;
-            box-shadow: 0 20px 50px rgba(0, 255, 170, 0.1);
-            border-radius: 12px;
-            overflow: hidden;
-            border: 1px solid var(--border-color);
-            background: #000;
-            transform: scale(0.9);
-            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .modal.active .modal-content {
-            transform: scale(1);
-        }
-
-        .modal-content img {
-            display: block;
-            max-width: 100%;
-            max-height: 75vh;
-            width: 768px; /* 3x NDS width */
-            image-rendering: pixelated;
-            object-fit: contain;
-        }
-
-        .modal-close {
-            position: absolute;
-            top: 2rem;
-            right: 2rem;
-            background: none;
-            border: none;
-            color: var(--text-main);
-            font-size: 2rem;
-            cursor: pointer;
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.05);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background 0.2s;
-        }
-
-        .modal-close:hover {
-            background: rgba(255, 255, 255, 0.15);
-        }
-
-        /* Animations */
-        @keyframes fadeInDown {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @keyframes noteEntrance {
-            from {
-                opacity: 0;
-                transform: scale(0.95);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
-
-        @keyframes pulse {
-            0% {
-                transform: scale(0.95);
-                box-shadow: 0 0 0 0 rgba(0, 255, 170, 0.5);
-            }
-            70% {
-                transform: scale(1);
-                box-shadow: 0 0 0 8px rgba(0, 255, 170, 0);
-            }
-            100% {
-                transform: scale(0.95);
-                box-shadow: 0 0 0 0 rgba(0, 255, 170, 0);
-            }
-        }
-
-        @media (max-width: 640px) {
-            h1 {
-                font-size: 2rem;
-            }
-            .board-container {
-                padding: 1.5rem;
-            }
-            .notes-grid {
-                grid-template-columns: 1fr;
-            }
-            .pairing-card {
-                flex-direction: column;
-                text-align: center;
-                gap: 1.5rem;
-                padding: 1.5rem;
-            }
-            .pairing-code {
-                font-size: 1.8rem;
-                letter-spacing: 4px;
-            }
-        }
-    </style>
+    @media (max-width:720px){.wrap{margin:8px;padding:12px}.pairing-code{font-size:28px;letter-spacing:6px}.note-thumb{height:100px}}
+  </style>
 </head>
 <body>
+  <div class="wrap">
+    <div class="main">
+      <div>
+        <div class="pairing-title">CÓDIGO DE CONEXIÓN</div>
+        <div id="pairingCode" class="pairing-code">------</div>
+        <div id="pairingMeta" class="meta">IP: ... &nbsp;&nbsp; PORT: ...</div>
+      </div>
 
-    <header>
-        <h1>OveNotesDS board</h1>
-        <p class="subtitle">Visualizador de notas en tiempo real enviadas desde la Nintendo DS</p>
-    </header>
-
-    <!-- Pairing Code Section -->
-    <section class="pairing-section">
-        <div class="pairing-card">
-            <div class="pairing-info">
-                <div class="pairing-label">
-                    <span class="icon">🔗</span>
-                    <span>Código de emparejamiento</span>
-                </div>
-                <p class="pairing-description">
-                    Introduce este código en tu Nintendo DS para conectar automáticamente.<br>
-                    No necesitas escribir la IP ni el puerto.
-                </p>
-                <div class="pairing-meta" id="pairingMeta">Detectando IP...</div>
-            </div>
-            <div class="pairing-code-box">
-                <div class="pairing-code" id="pairingCode" title="Click para copiar">------</div>
-            </div>
-        </div>
-    </section>
-
-    <main>
-        <section class="board-container">
-            <div class="board-header">
-                <div class="board-title">
-                    <span class="pulse-dot"></span>
-                    <span>Notas recibidas</span>
-                </div>
-            </div>
-
-            <div class="notes-grid" id="notesGrid">
-                <!-- Notes will populate here -->
-                <div class="empty-state">No se han recibido notas todavía. ¡Envía una nota desde tu Nintendo DS!</div>
-            </div>
-        </section>
-    </main>
-
-    <!-- Fullscreen Lightbox Modal -->
-    <div class="modal" id="imageModal">
-        <button class="modal-close" onclick="closeModal()">&times;</button>
-        <div class="modal-content">
-            <img id="modalImg" src="" alt="Ampliado">
-        </div>
+      <div>
+        <div id="notesContainer" class="notes-grid"></div>
+      </div>
     </div>
+  </div>
 
-    <script>
-        let cachedNotes = [];
+  <script>
+    // Server can replace these tokens or set window.initialPairing / window.initialNotes
+    let pairingCodeData = { code: '------', ip: '...', port: '...' };
+    let cachedNotes = [];
 
-        // Fetch and display pairing code
-        async function fetchPairingCode() {
-            try {
-                const response = await fetch('/api/pairing-code');
-                if (!response.ok) return;
-                const data = await response.json();
-                document.getElementById('pairingCode').textContent = data.code;
-                document.getElementById('pairingMeta').textContent = `IP: ${data.ip} · Puerto: ${data.port}`;
-            } catch (err) {
-                console.error('Error fetching pairing code:', err);
-                document.getElementById('pairingCode').textContent = 'ERROR';
-            }
+    function formatTime(ts){ try{ return new Date(ts).toLocaleString() }catch(e){return ''} }
+
+    function render(){
+      const codeEl = document.getElementById('pairingCode');
+      const metaEl = document.getElementById('pairingMeta');
+      const notesEl = document.getElementById('notesContainer');
+
+      codeEl.textContent = pairingCodeData.code || '----';
+      metaEl.textContent = `IP: ${pairingCodeData.ip||'...'}   PORT: ${pairingCodeData.port||'...'}`;
+
+      if(!Array.isArray(cachedNotes) || cachedNotes.length===0){
+        notesEl.innerHTML = '<div class="empty">No se encontraron notas. Envía una nota desde tu DSi.</div>';
+        return;
+      }
+
+      notesEl.innerHTML = cachedNotes.map(n=>{
+        const time = n.time ? formatTime(n.time) : '';
+        const url = '/notas/' + encodeURIComponent(n.name);
+        return `\
+          <div class="note-card">\
+            <img class="note-thumb" src="${url}" alt="${n.name}" onclick="openNote('${encodeURIComponent(n.name)}')" />\
+            <div class="note-meta"><span>${time}</span><span>${n.name}</span></div>\
+            <div class="note-actions">\
+              <a class="btn-download" href="${url}" download="${n.name}">Descargar</a>\
+              <button class="btn-delete" onclick="deleteNote('${encodeURIComponent(n.name)}', event)">Eliminar</button>\
+            </div>\
+          </div>`;
+      }).join('');
+    }
+
+    function openNote(name){ try{ const decoded=decodeURIComponent(name); window.open('/notas/'+decoded, '_blank'); }catch(e){ window.open('/notas/'+name,'_blank') } }
+
+    async function deleteNote(name, event){
+      if(event && event.stopPropagation) event.stopPropagation();
+      let decoded = name;
+      try{ decoded = decodeURIComponent(name); }catch(e){}
+      const ok = confirm('¿Eliminar esta nota? Esta acción no se puede deshacer.');
+      if(!ok) return;
+      try{
+        const r = await fetch('/api/notas/' + encodeURIComponent(decoded), { method: 'DELETE' });
+        if(r.ok){
+          // remove from cachedNotes and re-render
+          cachedNotes = cachedNotes.filter(n => n.name !== decoded && n.name !== name);
+          render();
+        } else {
+          alert('No se pudo eliminar la nota.');
         }
+      }catch(e){ console.error('delete failed', e); alert('Error al eliminar'); }
+    }
 
-        // Copy code on click
-        document.getElementById('pairingCode').addEventListener('click', function() {
-            const code = this.textContent;
-            navigator.clipboard.writeText(code).then(() => {
-                const original = this.style.borderColor;
-                this.style.borderColor = '#00ffaa';
-                this.style.boxShadow = '0 0 30px rgba(0, 255, 170, 0.4)';
-                setTimeout(() => {
-                    this.style.borderColor = '';
-                    this.style.boxShadow = '';
-                }, 800);
-            });
-        });
+    async function fetchNotes(){
+      try{
+        const r = await fetch('/api/notas'); if(!r.ok) throw new Error('bad');
+        const notes = await r.json();
+        if(JSON.stringify(notes)!==JSON.stringify(cachedNotes)){ cachedNotes = notes; render(); }
+      }catch(e){ console.warn('fetchNotes failed', e); }
+    }
+    async function fetchPairing(){
+      try{ const r = await fetch('/api/pairing-code'); if(!r.ok) throw new Error('bad'); pairingCodeData = await r.json(); render(); }
+      catch(e){ console.warn('fetchPairing failed', e); }
+    }
 
-        function formatTime(timestamp) {
-            const diff = Date.now() - timestamp;
-            const secs = Math.floor(diff / 1000);
-            if (secs < 60) return 'Hace unos segundos';
-            const mins = Math.floor(secs / 60);
-            if (mins < 60) return `Hace ${mins} min${mins > 1 ? 's' : ''}`;
-            const hours = Math.floor(mins / 60);
-            if (hours < 24) return `Hace ${hours} hora${hours > 1 ? 's' : ''}`;
-            const date = new Date(timestamp);
-            return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        }
-
-        async function fetchNotes() {
-            try {
-                const response = await fetch('/api/notas');
-                if (!response.ok) return;
-                const notes = await response.json();
-                
-                // Compare and update only if changes occurred
-                const isChanged = JSON.stringify(notes) !== JSON.stringify(cachedNotes);
-                if (isChanged) {
-                    cachedNotes = notes;
-                    renderNotes(notes);
-                }
-            } catch (err) {
-                console.error('Error fetching notes:', err);
-            }
-        }
-
-        function renderNotes(notes) {
-            const grid = document.getElementById('notesGrid');
-            if (notes.length === 0) {
-                grid.innerHTML = '<div class="empty-state">No se han recibido notas todavía. ¡Envía una nota desde tu Nintendo DS!</div>';
-                return;
-            }
-
-            grid.innerHTML = '';
-            notes.forEach(note => {
-                const card = document.createElement('div');
-                card.className = 'note-card';
-                card.innerHTML = `
-                    <div class="img-container" onclick="openModal('/notas/${note.name}')">
-                        <img src="/notas/${note.name}" alt="Nota">
-                    </div>
-                    <div class="card-details">
-                        <span class="timestamp">${formatTime(note.time)}</span>
-                        <button class="delete-btn" onclick="deleteNote('${note.name}', event)">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="3 6 5 6 21 6"></polyline>
-                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                            </svg>
-                        </button>
-                    </div>
-                `;
-                grid.appendChild(card);
-            });
-        }
-
-        async function deleteNote(filename, event) {
-            event.stopPropagation();
-            if (!confirm('¿Seguro que deseas eliminar esta nota?')) return;
-            
-            try {
-                const response = await fetch(`/api/notas/${filename}`, { method: 'DELETE' });
-                if (response.ok) {
-                    fetchNotes();
-                }
-            } catch (err) {
-                console.error('Error deleting note:', err);
-            }
-        }
-
-        function openModal(src) {
-            const modal = document.getElementById('imageModal');
-            const img = document.getElementById('modalImg');
-            img.src = src;
-            modal.classList.add('active');
-        }
-
-        function closeModal() {
-            const modal = document.getElementById('imageModal');
-            modal.classList.remove('active');
-        }
-
-        // Close modal on click outside content
-        document.getElementById('imageModal').addEventListener('click', function(e) {
-            if (e.target === this) closeModal();
-        });
-
-        // Initialize
-        fetchPairingCode();
-        fetchNotes();
-        setInterval(fetchNotes, 2000);
-    </script>
+    window.addEventListener('DOMContentLoaded', ()=>{
+      if(window.initialPairing) pairingCodeData = window.initialPairing;
+      if(window.initialNotes) cachedNotes = window.initialNotes;
+      render();
+      fetchNotes(); fetchPairing();
+      setInterval(()=>{ fetchNotes(); fetchPairing(); },2000);
+    });
+  </script>
 </body>
 </html>

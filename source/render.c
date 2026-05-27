@@ -11,6 +11,7 @@ uint16_t* canvas_buffer = NULL;
 uint16_t* preview_buffer = NULL;
 uint16_t* wizard_buffer = NULL;
 uint16_t* drawing_buffer = NULL;
+uint16_t* composite_buffer = NULL;
 uint16_t* layers[MAX_LAYERS] = {NULL};
 int layers_count = 1;
 int active_layer_idx = 0;
@@ -22,11 +23,8 @@ char layer_names[MAX_LAYERS][16] = {
 };
 uint8_t layers_opacity[MAX_LAYERS] = {100, 100, 100, 100, 100, 100, 100, 100};
 
-#define MAX_UNDO_STEPS 5
-uint16_t* undo_stack[MAX_UNDO_STEPS] = {NULL};
-uint16_t* redo_stack[MAX_UNDO_STEPS] = {NULL};
-int undo_layer_idx[MAX_UNDO_STEPS];
-int redo_layer_idx[MAX_UNDO_STEPS];
+UndoStep undo_stack[MAX_UNDO_STEPS];
+UndoStep redo_stack[MAX_UNDO_STEPS];
 int undo_count = 0;
 int redo_count = 0;
 
@@ -167,11 +165,16 @@ uint16_t renderGetComposedPixel(int x, int y) {
 }
 
 static void renderComposePixel(int x, int y) {
+    if (x < 0 || x >= 256 || y < 0 || y >= 192) return;
+    uint16_t composed = renderGetComposedPixel(x, y);
+    if (composite_buffer != NULL) {
+        composite_buffer[y * 256 + x] = composed;
+    }
     if (canvas_buffer == NULL) return;
     int limit_y = toolbar_hidden ? 192 : 176;
-    if (x < 0 || x >= 256 || y < 0 || y >= limit_y) return;
-
-    canvas_buffer[y * 256 + x] = renderGetComposedPixel(x, y);
+    if (y < limit_y) {
+        canvas_buffer[y * 256 + x] = composed;
+    }
 }
 
 void renderSetCanvasPixel(int x, int y, uint16_t color) {
@@ -311,6 +314,15 @@ static void drawPerspectiveCrosshair(int cx, int cy, uint16_t color) {
 }
 
 void renderComposeCanvas(void) {
+    if (composite_buffer == NULL) return;
+    
+    // 1. Recompose the entire clean composite_buffer from the layers
+    for (int y = 0; y < 192; y++) {
+        for (int x = 0; x < 256; x++) {
+            composite_buffer[y * 256 + x] = renderGetComposedPixel(x, y);
+        }
+    }
+    
     if (canvas_buffer == NULL) return;
     
     swiWaitForVBlank();
@@ -318,6 +330,7 @@ void renderComposeCanvas(void) {
     int limit_y = toolbar_hidden ? 192 : 176;
     int max_x = layers_panel_open ? 144 : 256;
     
+    // 2. Copy the composite_buffer to the canvas_buffer, taking care of modal_backup if active
     for (int y = 0; y < limit_y; y++) {
         uint16_t* dest_row = NULL;
         if (open_modal == 4 && y >= 90) {
@@ -329,9 +342,7 @@ void renderComposeCanvas(void) {
         }
         
         if (dest_row != NULL) {
-            for (int x = 0; x < max_x; x++) {
-                dest_row[x] = renderGetComposedPixel(x, y);
-            }
+            memcpy(dest_row, &composite_buffer[y * 256], max_x * sizeof(uint16_t));
         }
     }
 
@@ -698,6 +709,17 @@ void renderInitCanvas(void) {
         layers_opacity[i] = 100;
     }
     
+    if (composite_buffer != NULL) {
+        free(composite_buffer);
+        composite_buffer = NULL;
+    }
+    composite_buffer = (uint16_t*)malloc(256 * 192 * sizeof(uint16_t));
+    if (composite_buffer != NULL) {
+        for (int i = 0; i < 256 * 192; i++) {
+            composite_buffer[i] = RGB15(31, 31, 31);
+        }
+    }
+
     layers[0] = (uint16_t*)malloc(256 * 192 * sizeof(uint16_t));
     if (layers[0] != NULL) {
         for (int i = 0; i < 256 * 192; i++) {
@@ -719,6 +741,8 @@ void renderInitCanvas(void) {
 void renderAddLayer(void) {
     if (layers_count >= MAX_LAYERS) return;
     
+    renderSaveUndoStructureState();
+    
     uint16_t* new_layer = (uint16_t*)malloc(256 * 192 * sizeof(uint16_t));
     if (new_layer == NULL) return;
     
@@ -737,10 +761,7 @@ void renderAddLayer(void) {
     renderComposeCanvas();
 }
 
-void renderDeleteLayer(int idx) {
-    if (idx < 0 || idx >= layers_count) return;
-    if (layers_count <= 1) return;
-    
+static void renderDeleteLayerInternal(int idx) {
     if (layers[idx] != NULL) {
         free(layers[idx]);
         layers[idx] = NULL;
@@ -762,12 +783,22 @@ void renderDeleteLayer(int idx) {
         active_layer_idx = layers_count - 1;
     }
     drawing_buffer = layers[active_layer_idx];
+}
+
+void renderDeleteLayer(int idx) {
+    if (idx < 0 || idx >= layers_count) return;
+    if (layers_count <= 1) return;
+    
+    renderSaveUndoStructureState();
+    renderDeleteLayerInternal(idx);
     
     renderComposeCanvas();
 }
 
 void renderMergeActiveLayerDown(void) {
     if (active_layer_idx <= 0 || active_layer_idx >= layers_count) return;
+    
+    renderSaveUndoStructureState();
     
     int dst_idx = active_layer_idx - 1;
     int src_idx = active_layer_idx;
@@ -782,32 +813,74 @@ void renderMergeActiveLayerDown(void) {
     }
     
     active_layer_idx = dst_idx;
-    renderDeleteLayer(src_idx);
+    renderDeleteLayerInternal(src_idx);
+    
+    renderComposeCanvas();
+}
+
+void renderMergeActiveLayerUp(void) {
+    if (active_layer_idx < 0 || active_layer_idx >= layers_count - 1) return;
+    
+    renderSaveUndoStructureState();
+    
+    int dst_idx = active_layer_idx + 1;
+    int src_idx = active_layer_idx;
+    
+    if (layers[dst_idx] != NULL && layers[src_idx] != NULL) {
+        for (int i = 0; i < 256 * 192; i++) {
+            uint16_t src_pixel = layers[src_idx][i];
+            if (src_pixel != RGB15(31, 31, 31)) {
+                layers[dst_idx][i] = src_pixel;
+            }
+        }
+    }
+    
+    renderDeleteLayerInternal(src_idx);
+    
+    renderComposeCanvas();
 }
 
 void renderInitPreview(void) {
-    uint16_t border_color = RGB15(10, 10, 10);
-    for (int i = 0; i < 128 * 128; i++) {
+    uint16_t border_color = RGB15(31, 31, 31);
+    for (int i = 0; i < 256 * 192; i++) {
         preview_buffer[i] = border_color;
     }
 }
 
 void renderUpdatePreview(void) {
-    for (int y = 0; y < 88; y++) {
-        for (int x = 0; x < 128; x++) {
-            uint16_t p = canvas_buffer[(y * 2) * 256 + (x * 2)];
-            preview_buffer[(y + 20) * 128 + x] = p;
+    if (preview_buffer == NULL || composite_buffer == NULL) return;
+    memcpy(preview_buffer, composite_buffer, 256 * 192 * sizeof(uint16_t));
+}
+
+static void clearUndoStep(UndoStep* step) {
+    if (step->type == UNDO_STRUCTURE) {
+        for (int l = 0; l < MAX_LAYERS; l++) {
+            if (step->struct_layer_pixels[l] != NULL) {
+                free(step->struct_layer_pixels[l]);
+                step->struct_layer_pixels[l] = NULL;
+            }
         }
     }
+    step->type = UNDO_STROKE;
 }
 
 void renderInitUndoStack(void) {
     for (int i = 0; i < MAX_UNDO_STEPS; i++) {
-        if (undo_stack[i] == NULL) {
-            undo_stack[i] = malloc(256 * 192 * sizeof(uint16_t));
+        clearUndoStep(&undo_stack[i]);
+        clearUndoStep(&redo_stack[i]);
+        
+        if (undo_stack[i].stroke_pixels == NULL) {
+            undo_stack[i].stroke_pixels = malloc(256 * 192 * sizeof(uint16_t));
         }
-        if (redo_stack[i] == NULL) {
-            redo_stack[i] = malloc(256 * 192 * sizeof(uint16_t));
+        for (int l = 0; l < MAX_LAYERS; l++) {
+            undo_stack[i].struct_layer_pixels[l] = NULL;
+        }
+
+        if (redo_stack[i].stroke_pixels == NULL) {
+            redo_stack[i].stroke_pixels = malloc(256 * 192 * sizeof(uint16_t));
+        }
+        for (int l = 0; l < MAX_LAYERS; l++) {
+            redo_stack[i].struct_layer_pixels[l] = NULL;
         }
     }
     undo_count = 0;
@@ -817,23 +890,86 @@ void renderInitUndoStack(void) {
 void renderSaveUndoState(void) {
     if (drawing_buffer == NULL) return;
     
+    // Clear redo stack on new action
+    for (int i = 0; i < redo_count; i++) {
+        clearUndoStep(&redo_stack[i]);
+    }
+    redo_count = 0;
+    
     // Push current to undo stack
     if (undo_count == MAX_UNDO_STEPS) {
-        uint16_t* oldest = undo_stack[0];
+        clearUndoStep(&undo_stack[0]);
+        uint16_t* oldest_stroke_pixels = undo_stack[0].stroke_pixels;
+        
         for (int i = 0; i < MAX_UNDO_STEPS - 1; i++) {
             undo_stack[i] = undo_stack[i + 1];
-            undo_layer_idx[i] = undo_layer_idx[i + 1];
         }
-        undo_stack[MAX_UNDO_STEPS - 1] = oldest;
+        
+        undo_stack[MAX_UNDO_STEPS - 1].type = UNDO_STROKE;
+        undo_stack[MAX_UNDO_STEPS - 1].stroke_pixels = oldest_stroke_pixels;
+        for (int l = 0; l < MAX_LAYERS; l++) {
+            undo_stack[MAX_UNDO_STEPS - 1].struct_layer_pixels[l] = NULL;
+        }
+        
         undo_count = MAX_UNDO_STEPS - 1;
     }
     
-    memcpy(undo_stack[undo_count], drawing_buffer, 256 * 192 * 2);
-    undo_layer_idx[undo_count] = active_layer_idx;
-    undo_count++;
+    UndoStep* step = &undo_stack[undo_count];
+    clearUndoStep(step);
+    step->type = UNDO_STROKE;
+    step->stroke_layer_idx = active_layer_idx;
+    memcpy(step->stroke_pixels, drawing_buffer, 256 * 192 * sizeof(uint16_t));
     
+    undo_count++;
+}
+
+void renderSaveUndoStructureState(void) {
     // Clear redo stack on new action
+    for (int i = 0; i < redo_count; i++) {
+        clearUndoStep(&redo_stack[i]);
+    }
     redo_count = 0;
+    
+    // Push current to undo stack
+    if (undo_count == MAX_UNDO_STEPS) {
+        clearUndoStep(&undo_stack[0]);
+        uint16_t* oldest_stroke_pixels = undo_stack[0].stroke_pixels;
+        
+        for (int i = 0; i < MAX_UNDO_STEPS - 1; i++) {
+            undo_stack[i] = undo_stack[i + 1];
+        }
+        
+        undo_stack[MAX_UNDO_STEPS - 1].type = UNDO_STROKE;
+        undo_stack[MAX_UNDO_STEPS - 1].stroke_pixels = oldest_stroke_pixels;
+        for (int l = 0; l < MAX_LAYERS; l++) {
+            undo_stack[MAX_UNDO_STEPS - 1].struct_layer_pixels[l] = NULL;
+        }
+        
+        undo_count = MAX_UNDO_STEPS - 1;
+    }
+    
+    UndoStep* step = &undo_stack[undo_count];
+    clearUndoStep(step);
+    
+    step->type = UNDO_STRUCTURE;
+    step->struct_layers_count = layers_count;
+    step->struct_active_layer_idx = active_layer_idx;
+    for (int l = 0; l < MAX_LAYERS; l++) {
+        step->struct_layers_visible[l] = layers_visible[l];
+        strcpy(step->struct_layer_names[l], layer_names[l]);
+        step->struct_layers_opacity[l] = layers_opacity[l];
+        
+        if (layers[l] != NULL) {
+            step->struct_layer_pixels[l] = malloc(256 * 192 * sizeof(uint16_t));
+            if (step->struct_layer_pixels[l] != NULL) {
+                memcpy(step->struct_layer_pixels[l], layers[l], 256 * 192 * sizeof(uint16_t));
+            }
+        } else {
+            step->struct_layer_pixels[l] = NULL;
+        }
+    }
+    
+    undo_count++;
 }
 
 void renderUndo(void) {
@@ -841,31 +977,91 @@ void renderUndo(void) {
     
     // Push current to redo stack
     if (redo_count == MAX_UNDO_STEPS) {
-        uint16_t* oldest = redo_stack[0];
+        clearUndoStep(&redo_stack[0]);
+        uint16_t* oldest_stroke_pixels = redo_stack[0].stroke_pixels;
+        
         for (int i = 0; i < MAX_UNDO_STEPS - 1; i++) {
             redo_stack[i] = redo_stack[i + 1];
-            redo_layer_idx[i] = redo_layer_idx[i + 1];
         }
-        redo_stack[MAX_UNDO_STEPS - 1] = oldest;
+        
+        redo_stack[MAX_UNDO_STEPS - 1].type = UNDO_STROKE;
+        redo_stack[MAX_UNDO_STEPS - 1].stroke_pixels = oldest_stroke_pixels;
+        for (int l = 0; l < MAX_LAYERS; l++) {
+            redo_stack[MAX_UNDO_STEPS - 1].struct_layer_pixels[l] = NULL;
+        }
+        
         redo_count = MAX_UNDO_STEPS - 1;
     }
     
-    int target_layer = undo_layer_idx[undo_count - 1];
-    if (target_layer >= layers_count || layers[target_layer] == NULL) {
-        undo_count--;
-        return;
+    UndoStep* u_step = &undo_stack[undo_count - 1];
+    UndoStep* r_step = &redo_stack[redo_count];
+    clearUndoStep(r_step);
+    
+    if (u_step->type == UNDO_STROKE) {
+        r_step->type = UNDO_STROKE;
+        r_step->stroke_layer_idx = u_step->stroke_layer_idx;
+        int target_layer = u_step->stroke_layer_idx;
+        if (target_layer < layers_count && layers[target_layer] != NULL) {
+            memcpy(r_step->stroke_pixels, layers[target_layer], 256 * 192 * sizeof(uint16_t));
+        }
+        
+        // Restore stroke from undo
+        if (target_layer < layers_count && layers[target_layer] != NULL) {
+            memcpy(layers[target_layer], u_step->stroke_pixels, 256 * 192 * sizeof(uint16_t));
+        }
+        active_layer_idx = target_layer;
+        drawing_buffer = layers[active_layer_idx];
+    } else {
+        // Restore structure: Save current to redo first
+        r_step->type = UNDO_STRUCTURE;
+        r_step->struct_layers_count = layers_count;
+        r_step->struct_active_layer_idx = active_layer_idx;
+        for (int l = 0; l < MAX_LAYERS; l++) {
+            r_step->struct_layers_visible[l] = layers_visible[l];
+            strcpy(r_step->struct_layer_names[l], layer_names[l]);
+            r_step->struct_layers_opacity[l] = layers_opacity[l];
+            
+            if (layers[l] != NULL) {
+                r_step->struct_layer_pixels[l] = malloc(256 * 192 * sizeof(uint16_t));
+                if (r_step->struct_layer_pixels[l] != NULL) {
+                    memcpy(r_step->struct_layer_pixels[l], layers[l], 256 * 192 * sizeof(uint16_t));
+                }
+            } else {
+                r_step->struct_layer_pixels[l] = NULL;
+            }
+        }
+        
+        // Restore structure from undo
+        for (int l = 0; l < MAX_LAYERS; l++) {
+            if (layers[l] != NULL) {
+                free(layers[l]);
+                layers[l] = NULL;
+            }
+        }
+        
+        layers_count = u_step->struct_layers_count;
+        active_layer_idx = u_step->struct_active_layer_idx;
+        for (int l = 0; l < MAX_LAYERS; l++) {
+            layers_visible[l] = u_step->struct_layers_visible[l];
+            strcpy(layer_names[l], u_step->struct_layer_names[l]);
+            layers_opacity[l] = u_step->struct_layers_opacity[l];
+            
+            if (u_step->struct_layer_pixels[l] != NULL) {
+                layers[l] = malloc(256 * 192 * sizeof(uint16_t));
+                if (layers[l] != NULL) {
+                    memcpy(layers[l], u_step->struct_layer_pixels[l], 256 * 192 * sizeof(uint16_t));
+                }
+            } else {
+                layers[l] = NULL;
+            }
+        }
+        drawing_buffer = layers[active_layer_idx];
     }
     
-    memcpy(redo_stack[redo_count], layers[target_layer], 256 * 192 * 2);
-    redo_layer_idx[redo_count] = target_layer;
     redo_count++;
     
-    // Restore from undo stack
-    memcpy(layers[target_layer], undo_stack[undo_count - 1], 256 * 192 * 2);
+    clearUndoStep(u_step);
     undo_count--;
-    
-    active_layer_idx = target_layer;
-    drawing_buffer = layers[active_layer_idx];
     
     renderComposeCanvas();
     renderUpdatePreview();
@@ -874,33 +1070,93 @@ void renderUndo(void) {
 void renderRedo(void) {
     if (redo_count <= 0) return;
     
-    int target_layer = redo_layer_idx[redo_count - 1];
-    if (target_layer >= layers_count || layers[target_layer] == NULL) {
-        redo_count--;
-        return;
-    }
-    
     // Push current to undo stack
     if (undo_count == MAX_UNDO_STEPS) {
-        uint16_t* oldest = undo_stack[0];
+        clearUndoStep(&undo_stack[0]);
+        uint16_t* oldest_stroke_pixels = undo_stack[0].stroke_pixels;
+        
         for (int i = 0; i < MAX_UNDO_STEPS - 1; i++) {
             undo_stack[i] = undo_stack[i + 1];
-            undo_layer_idx[i] = undo_layer_idx[i + 1];
         }
-        undo_stack[MAX_UNDO_STEPS - 1] = oldest;
+        
+        undo_stack[MAX_UNDO_STEPS - 1].type = UNDO_STROKE;
+        undo_stack[MAX_UNDO_STEPS - 1].stroke_pixels = oldest_stroke_pixels;
+        for (int l = 0; l < MAX_LAYERS; l++) {
+            undo_stack[MAX_UNDO_STEPS - 1].struct_layer_pixels[l] = NULL;
+        }
+        
         undo_count = MAX_UNDO_STEPS - 1;
     }
     
-    memcpy(undo_stack[undo_count], layers[target_layer], 256 * 192 * 2);
-    undo_layer_idx[undo_count] = target_layer;
+    UndoStep* r_step = &redo_stack[redo_count - 1];
+    UndoStep* u_step = &undo_stack[undo_count];
+    clearUndoStep(u_step);
+    
+    if (r_step->type == UNDO_STROKE) {
+        u_step->type = UNDO_STROKE;
+        u_step->stroke_layer_idx = r_step->stroke_layer_idx;
+        int target_layer = r_step->stroke_layer_idx;
+        if (target_layer < layers_count && layers[target_layer] != NULL) {
+            memcpy(u_step->stroke_pixels, layers[target_layer], 256 * 192 * sizeof(uint16_t));
+        }
+        
+        // Restore stroke from redo
+        if (target_layer < layers_count && layers[target_layer] != NULL) {
+            memcpy(layers[target_layer], r_step->stroke_pixels, 256 * 192 * sizeof(uint16_t));
+        }
+        active_layer_idx = target_layer;
+        drawing_buffer = layers[active_layer_idx];
+    } else {
+        // Redoing structure: save current structure to undo first
+        u_step->type = UNDO_STRUCTURE;
+        u_step->struct_layers_count = layers_count;
+        u_step->struct_active_layer_idx = active_layer_idx;
+        for (int l = 0; l < MAX_LAYERS; l++) {
+            u_step->struct_layers_visible[l] = layers_visible[l];
+            strcpy(u_step->struct_layer_names[l], layer_names[l]);
+            u_step->struct_layers_opacity[l] = layers_opacity[l];
+            
+            if (layers[l] != NULL) {
+                u_step->struct_layer_pixels[l] = malloc(256 * 192 * sizeof(uint16_t));
+                if (u_step->struct_layer_pixels[l] != NULL) {
+                    memcpy(u_step->struct_layer_pixels[l], layers[l], 256 * 192 * sizeof(uint16_t));
+                }
+            } else {
+                u_step->struct_layer_pixels[l] = NULL;
+            }
+        }
+        
+        // Restore structure from redo
+        for (int l = 0; l < MAX_LAYERS; l++) {
+            if (layers[l] != NULL) {
+                free(layers[l]);
+                layers[l] = NULL;
+            }
+        }
+        
+        layers_count = r_step->struct_layers_count;
+        active_layer_idx = r_step->struct_active_layer_idx;
+        for (int l = 0; l < MAX_LAYERS; l++) {
+            layers_visible[l] = r_step->struct_layers_visible[l];
+            strcpy(layer_names[l], r_step->struct_layer_names[l]);
+            layers_opacity[l] = r_step->struct_layers_opacity[l];
+            
+            if (r_step->struct_layer_pixels[l] != NULL) {
+                layers[l] = malloc(256 * 192 * sizeof(uint16_t));
+                if (layers[l] != NULL) {
+                    memcpy(layers[l], r_step->struct_layer_pixels[l], 256 * 192 * sizeof(uint16_t));
+                }
+            } else {
+                layers[l] = NULL;
+            }
+        }
+        drawing_buffer = layers[active_layer_idx];
+    }
+    
     undo_count++;
     
-    // Restore from redo stack
-    memcpy(layers[target_layer], redo_stack[redo_count - 1], 256 * 192 * 2);
+    clearUndoStep(r_step);
     redo_count--;
-    
-    active_layer_idx = target_layer;
-    drawing_buffer = layers[active_layer_idx];
     
     renderComposeCanvas();
     renderUpdatePreview();

@@ -22,8 +22,8 @@ static uint16_t* backup_preview = NULL;
 static int rename_layer_idx = 0;
 static char rename_input[16] = "";
 static int rename_input_len = 0;
-static uint8_t rename_opacity = 100;
 static bool was_touching = false;
+static bool dragging_opacity = false;
 static bool touch_started_in_toolbar = false;
 static int prev_x = 0;
 static int prev_y = 0;
@@ -48,8 +48,9 @@ void gameInit(void) {
     // Map Video RAM:
     // Bank A: Main background memory (0x06000000) for drawing canvas
     vramSetBankA(VRAM_A_MAIN_BG);
-    // Bank C: Sub background memory (0x06200000) for console and preview (offset 0KB)
+    // Bank C & H: Sub background memory (0x06200000) for console and preview (160KB total)
     vramSetBankC(VRAM_C_SUB_BG);
+    vramSetBankH(VRAM_H_SUB_BG);
 
     // Configure bottom screen (Main Engine): Mode 5, enable Background 2 (Extended Rotation Bitmap)
     videoSetMode(MODE_5_2D | DISPLAY_BG2_ACTIVE);
@@ -64,17 +65,17 @@ void gameInit(void) {
                 0,                  // layer 0
                 BgType_Text4bpp,     // text mode
                 BgSize_T_256x256,    // map size 256x256
-                28,                 // map base 28 (56KB offset)
-                4,                  // tile base 4 (64KB offset)
+                64,                 // map base 64 (128KB offset)
+                8,                  // tile base 8 (128KB offset)
                 false,              // false = Sub Engine
                 true);              // load default graphics
 
-    // Initialize 128x128 16-bit bitmap on BG2 (top screen, map base 0, offset 0KB)
-    int bg_sub_preview = bgInitSub(2, BgType_Bmp16, BgSize_B16_128x128, 0, 0);
+    // Initialize 256x256 16-bit bitmap on BG2 (top screen, map base 0, offset 0KB)
+    int bg_sub_preview = bgInitSub(2, BgType_Bmp16, BgSize_B16_256x256, 0, 0);
     preview_buffer = (uint16_t*)bgGetGfxPtr(bg_sub_preview);
 
-    // Center the 128x128 preview on the 256x192 top screen
-    bgSet(bg_sub_preview, 0, 1 << 8, 1 << 8, -64 << 8, -32 << 8, 0, 0);
+    // No scaling/offset needed for full-screen preview
+    bgSet(bg_sub_preview, 0, 1 << 8, 1 << 8, 0, 0, 0, 0);
     bgUpdate();
 
     // layers and drawing_buffer are dynamically initialized inside renderInitCanvas()
@@ -99,10 +100,10 @@ static void enterWizardState(void) {
     // Backup canvas and preview
     printf("[GAME] Creando backups en RAM del canvas y preview...\n");
     backup_canvas = malloc(256 * 192 * 2);
-    backup_preview = malloc(128 * 128 * 2);
+    backup_preview = malloc(256 * 192 * 2);
     if (backup_canvas && backup_preview) {
         memcpy(backup_canvas, canvas_buffer, 256 * 192 * 2);
-        memcpy(backup_preview, preview_buffer, 128 * 128 * 2);
+        memcpy(backup_preview, preview_buffer, 256 * 192 * 2);
         printf("[GAME] Backups creados con exito\n");
     } else {
         printf("[GAME] Advertencia: fallo al asignar backups de memoria\n");
@@ -141,8 +142,8 @@ static void exitWizardState(bool canceled) {
                 0,                  // layer 0
                 BgType_Text4bpp,     // text mode
                 BgSize_T_256x256,    // map size 256x256
-                28,                 // map base 28 (56KB offset)
-                4,                  // tile base 4 (64KB offset)
+                64,                 // map base 64 (128KB offset)
+                8,                  // tile base 8 (128KB offset)
                 false,              // false = Sub Engine
                 true);              // load default graphics
     consoleSelect(&subConsole);
@@ -156,7 +157,7 @@ static void exitWizardState(bool canceled) {
     
     if (backup_canvas && backup_preview) {
         memcpy(canvas_buffer, backup_canvas, 256 * 192 * 2);
-        memcpy(preview_buffer, backup_preview, 128 * 128 * 2);
+        memcpy(preview_buffer, backup_preview, 256 * 192 * 2);
         free(backup_canvas);
         free(backup_preview);
         backup_canvas = NULL;
@@ -164,38 +165,41 @@ static void exitWizardState(bool canceled) {
         printf("[GAME] Backups restaurados y liberados\n");
     }
     
+    // Deshabilitar la visualizacion del subConsole para dejar solo el dibujo a pantalla completa
+    videoSetModeSub(MODE_5_2D | DISPLAY_BG2_ACTIVE);
     printf("\x1b[2J");
     if (canceled) {
-        printf("Configuracion cancelada.\n");
+        printf(uiTxt("Configuracion cancelada.\n", "Configuration canceled.\n"));
     } else {
-        printf("Configuracion guardada.\n");
+        printf(uiTxt("Configuracion guardada.\n", "Configuration saved.\n"));
     }
     current_state = STATE_DRAW;
 }
 
 static void runUpload(void) {
-    printf("[GAME] Iniciando proceso de subida runUpload()...\n");
-    consoleSelect(&subConsole);
-    printf("\x1b[2J");
-    printf("Iniciando Wi-Fi (BlocksDS)...\n");
-    BG_PALETTE_SUB[0] = RGB15(31, 31, 0); // YELLOW: Initializing WiFi
+    // 1. Enable sub console layer display
+    videoSetModeSub(MODE_5_2D | DISPLAY_BG0_ACTIVE | DISPLAY_BG2_ACTIVE);
+    
+    // 2. Draw our premium console text box window
+    uiDrawTopConsoleBox(uiTxt("ENVIANDO DIBUJO...", "UPLOADING DRAWING..."));
+    
+    printf(uiTxt("Iniciando Wi-Fi...\n", "Starting Wi-Fi...\n"));
     
     if (!netInitWifi()) {
-        printf("[GAME] Error: fallo al iniciar Wi-Fi!\n");
-        BG_PALETTE_SUB[0] = RGB15(31, 0, 0);
-        for(int i=0; i<60; i++) swiWaitForVBlank();
-        BG_PALETTE_SUB[0] = RGB15(31, 31, 31);
+        printf(uiTxt("Error: fallo al iniciar Wi-Fi!\n", "Error: failed to start Wi-Fi!\n"));
+        for(int i=0; i<120; i++) swiWaitForVBlank();
+        videoSetModeSub(MODE_5_2D | DISPLAY_BG2_ACTIVE);
         current_state = STATE_DRAW;
         return;
     }
     
-    printf("Codificando PNG...\n");
-    printf("[GAME] Convirtiendo canvas a buffer RGB888...\n");
-    BG_PALETTE_SUB[0] = RGB15(0, 0, 31); // BLUE: Encoding PNG
+    printf(uiTxt("Codificando PNG...\n", "Encoding PNG...\n"));
     
     unsigned char* rgb_buf = malloc(256 * 176 * 3);
     if (!rgb_buf) {
-        printf("[GAME] Error: no hay memoria RAM para rgb_buf\n");
+        printf("Error: no hay memoria RAM\n");
+        for(int i=0; i<120; i++) swiWaitForVBlank();
+        videoSetModeSub(MODE_5_2D | DISPLAY_BG2_ACTIVE);
         current_state = STATE_DRAW;
         return;
     }
@@ -203,47 +207,39 @@ static void runUpload(void) {
     int i = 0;
     for (int y = 0; y < 176; y++) {
         for (int x = 0; x < 256; x++) {
-            uint16_t color = canvas_buffer[y * 256 + x];
+            uint16_t color = renderGetComposedPixel(x, y);
             rgb_buf[i++] = (color & 0x1F) << 3;
             rgb_buf[i++] = ((color >> 5) & 0x1F) << 3;
             rgb_buf[i++] = ((color >> 10) & 0x1F) << 3;
         }
     }
     
-    printf("[GAME] Iniciando codificacion lodepng...\n");
     unsigned char* png_data = NULL;
     size_t png_size = 0;
     unsigned png_err = lodepng_encode_memory(&png_data, &png_size, rgb_buf, 256, 176, LCT_RGB, 8);
     free(rgb_buf);
     
     if (png_err) {
-        printf("[GAME] Error al codificar PNG: %d\n", png_err);
-        BG_PALETTE_SUB[0] = RGB15(31, 0, 0);
-        for(int j=0; j<60; j++) swiWaitForVBlank();
-        BG_PALETTE_SUB[0] = RGB15(31, 31, 31);
+        printf("Error PNG: %d\n", png_err);
+        for(int j=0; j<120; j++) swiWaitForVBlank();
+        videoSetModeSub(MODE_5_2D | DISPLAY_BG2_ACTIVE);
         current_state = STATE_DRAW;
         return;
     }
-    printf("[GAME] PNG codificado con exito (%u bytes)\n", (unsigned int)png_size);
     
-    printf("Conectando al servidor HTTP %s:%s...\n", http_ip, http_port_str);
-    BG_PALETTE_SUB[0] = RGB15(31, 15, 0); // ORANGE: Sending via Socket
+    printf(uiTxt("Conectando al servidor %s:%s...\n", "Connecting to server %s:%s...\n"), http_ip, http_port_str);
     
-    printf("[GAME] Llamando a enviarNotaHTTP...\n");
     if (enviarNotaHTTP(http_ip, atoi(http_port_str), png_data, png_size)) {
-        printf("[GAME] Nota publicada con exito!\n");
-        BG_PALETTE_SUB[0] = RGB15(0, 31, 0); // GREEN: Success!
+        printf(uiTxt("Enviado con exito!\n", "Uploaded successfully!\n"));
     } else {
-        printf("[GAME] Error: fallo al enviar nota HTTP\n");
-        BG_PALETTE_SUB[0] = RGB15(31, 0, 0); // RED: Fail
+        printf(uiTxt("Error al enviar dibujo.\n", "Error sending drawing.\n"));
     }
     
     free(png_data);
-    printf("[GAME] Liberando png_data\n");
-    for(int j=0; j<60; j++) swiWaitForVBlank();
-    BG_PALETTE_SUB[0] = RGB15(31, 31, 31);
-    printf("Listo para dibujar.\n");
+    for(int j=0; j<120; j++) swiWaitForVBlank();
     
+    // Hide sub console layer and return to full-screen drawing
+    videoSetModeSub(MODE_5_2D | DISPLAY_BG2_ACTIVE);
     current_state = STATE_DRAW;
 }
 
@@ -282,59 +278,84 @@ void gameUpdate(void) {
             was_touching = true;
         } else {
             if (was_touching) {
-                // Button 1: Crear Nueva Nota (y = 56..80, x = 32..224)
-                if (prev_x >= 32 && prev_x <= 224 && prev_y >= 56 && prev_y <= 80) {
-                    videoBgDisableSub(3);
-                    consoleInit(&subConsole, 
-                                0,                  // layer 0
-                                BgType_Text4bpp,     // text mode
-                                BgSize_T_256x256,    // map size 256x256
-                                28,                 // map base 28 (56KB offset)
-                                4,                  // tile base 4 (64KB offset)
-                                false,              // false = Sub Engine
-                                true);              // load default graphics
-                    consoleSelect(&subConsole);
-                    videoSetModeSub(MODE_5_2D | DISPLAY_BG0_ACTIVE | DISPLAY_BG2_ACTIVE);
-                    
-                    renderInitCanvas();
-                    renderInitPreview();
-                    renderComposeCanvas();
-                    renderUpdatePreview();
-                    if (!toolbar_hidden) {
-                        uiDrawToolbar();
+                if (show_lang_modal) {
+                    // Spanish option button
+                    if (prev_x >= 48 && prev_x <= 208 && prev_y >= 62 && prev_y <= 86) {
+                        current_lang = 0;
+                        netSaveConfig();
+                        uiDrawStartMenu();
                     }
-                    
-                    current_state = STATE_DRAW;
-                }
-                // Button 2: Ver Notas Creadas (y = 92..116, x = 32..224)
-                else if (prev_x >= 32 && prev_x <= 224 && prev_y >= 92 && prev_y <= 116) {
-                    char filenames[100][32];
-                    int count = ioGetNoteList(filenames, 100);
-                    
-                    gallery_count = count;
-                    for (int i = 0; i < count; i++) {
-                        strcpy(gallery_filenames[i], filenames[i]);
+                    // English option button
+                    else if (prev_x >= 48 && prev_x <= 208 && prev_y >= 94 && prev_y <= 118) {
+                        current_lang = 1;
+                        netSaveConfig();
+                        uiDrawStartMenu();
                     }
-                    gallery_selected_idx = 0;
-                    current_state = STATE_NOTES_GALLERY;
-                    
-                    if (wizard_buffer != NULL) {
-                        for (int i = 0; i < 256 * 256; i++) {
-                            wizard_buffer[i] = RGB15(0, 0, 0);
+                    // Close button
+                    else if (prev_x >= 48 && prev_x <= 208 && prev_y >= 128 && prev_y <= 150) {
+                        show_lang_modal = false;
+                        uiDrawStartMenu();
+                    }
+                } else {
+                    // Hamburger button at top-right
+                    if (prev_x >= 226 && prev_x <= 246 && prev_y >= 8 && prev_y <= 28) {
+                        show_lang_modal = true;
+                        uiDrawStartMenu();
+                    }
+                    // Button 1: Crear Nueva Nota (y = 56..80, x = 32..224)
+                    else if (prev_x >= 32 && prev_x <= 224 && prev_y >= 56 && prev_y <= 80) {
+                        videoBgDisableSub(3);
+                        consoleInit(&subConsole, 
+                                    0,                  // layer 0
+                                    BgType_Text4bpp,     // text mode
+                                    BgSize_T_256x256,    // map size 256x256
+                                    64,                 // map base 64 (128KB offset)
+                                    8,                  // tile base 8 (128KB offset)
+                                    false,              // false = Sub Engine
+                                    true);              // load default graphics
+                        consoleSelect(&subConsole);
+                        videoSetModeSub(MODE_5_2D | DISPLAY_BG2_ACTIVE);
+                        
+                        renderInitCanvas();
+                        renderInitPreview();
+                        renderComposeCanvas();
+                        renderUpdatePreview();
+                        if (!toolbar_hidden) {
+                            uiDrawToolbar();
                         }
+                        
+                        current_state = STATE_DRAW;
                     }
-                    
-                    if (gallery_count > 0) {
-                        ioLoadNote(gallery_filenames[0], wizard_buffer);
+                    // Button 2: Ver Notas Creadas (y = 92..116, x = 32..224)
+                    else if (prev_x >= 32 && prev_x <= 224 && prev_y >= 92 && prev_y <= 116) {
+                        char filenames[100][32];
+                        int count = ioGetNoteList(filenames, 100);
+                        
+                        gallery_count = count;
+                        for (int i = 0; i < count; i++) {
+                            strcpy(gallery_filenames[i], filenames[i]);
+                        }
+                        gallery_selected_idx = 0;
+                        current_state = STATE_NOTES_GALLERY;
+                        
+                        if (wizard_buffer != NULL) {
+                            for (int i = 0; i < 256 * 256; i++) {
+                                wizard_buffer[i] = RGB15(0, 0, 0);
+                            }
+                        }
+                        
+                        if (gallery_count > 0) {
+                            ioLoadNote(gallery_filenames[0], wizard_buffer);
+                        }
+                        
+                        uiDrawNotesGallery(gallery_selected_idx, gallery_count, gallery_filenames);
                     }
-                    
-                    uiDrawNotesGallery(gallery_selected_idx, gallery_count, gallery_filenames);
-                }
-                // Button 3: Cambiar Tema (y = 128..152, x = 32..224)
-                else if (prev_x >= 32 && prev_x <= 224 && prev_y >= 128 && prev_y <= 152) {
-                    active_theme_idx = (active_theme_idx + 1) % 5;
-                    app_theme_color = theme_colors[active_theme_idx];
-                    uiDrawStartMenu();
+                    // Button 3: Cambiar Tema (y = 128..152, x = 32..224)
+                    else if (prev_x >= 32 && prev_x <= 224 && prev_y >= 128 && prev_y <= 152) {
+                        active_theme_idx = (active_theme_idx + 1) % 5;
+                        app_theme_color = theme_colors[active_theme_idx];
+                        uiDrawStartMenu();
+                    }
                 }
                 was_touching = false;
             }
@@ -381,12 +402,12 @@ void gameUpdate(void) {
                                         0,                  // layer 0
                                         BgType_Text4bpp,     // text mode
                                         BgSize_T_256x256,    // map size 256x256
-                                        28,                 // map base 28 (56KB offset)
-                                        4,                  // tile base 4 (64KB offset)
+                                        64,                 // map base 64 (128KB offset)
+                                        8,                  // tile base 8 (128KB offset)
                                         false,              // false = Sub Engine
                                         true);              // load default graphics
                             consoleSelect(&subConsole);
-                            videoSetModeSub(MODE_5_2D | DISPLAY_BG0_ACTIVE | DISPLAY_BG2_ACTIVE);
+                            videoSetModeSub(MODE_5_2D | DISPLAY_BG2_ACTIVE);
                             
                             active_layer_idx = 0;
                             drawing_buffer = layers[0];
@@ -436,12 +457,12 @@ void gameUpdate(void) {
                             0,                  // layer 0
                             BgType_Text4bpp,     // text mode
                             BgSize_T_256x256,    // map size 256x256
-                            28,                 // map base 28 (56KB offset)
-                            4,                  // tile base 4 (64KB offset)
+                            64,                 // map base 64 (128KB offset)
+                            8,                  // tile base 8 (128KB offset)
                             false,              // false = Sub Engine
                             true);              // load default graphics
                 consoleSelect(&subConsole);
-                videoSetModeSub(MODE_5_2D | DISPLAY_BG0_ACTIVE | DISPLAY_BG2_ACTIVE);
+                videoSetModeSub(MODE_5_2D | DISPLAY_BG2_ACTIVE);
                 
                 active_layer_idx = 0;
                 drawing_buffer = layers[0];
@@ -1140,8 +1161,9 @@ void gameUpdate(void) {
                 if (layers_panel_open && !touch_started_in_toolbar && touch.px >= 146 && touch.px <= 156) {
                     for (int i = 0; i < layers_count; i++) {
                         int idx_from_top = layers_count - 1 - i;
-                        int y_pos = 27 + idx_from_top * 14;
-                        if (touch.py >= y_pos && touch.py <= y_pos + 12) {
+                        int y_pos = 27 + idx_from_top * 13;
+                        if (touch.py >= y_pos && touch.py <= y_pos + 11) {
+                            renderSaveUndoStructureState();
                             dragging_layer_idx = i;
                             renderComposeCanvas();
                             renderUpdatePreview();
@@ -1149,14 +1171,36 @@ void gameUpdate(void) {
                         }
                     }
                 }
+                // Track opacity slider start: x = 148..252, y = 142..154
+                else if (layers_panel_open && !touch_started_in_toolbar && touch.px >= 148 && touch.px <= 252 && touch.py >= 142 && touch.py <= 154) {
+                    dragging_opacity = true;
+                }
+            }
+            
+            // Handle opacity slider adjustments while dragging
+            if (dragging_opacity) {
+                int tx = touch.px;
+                if (tx < 178) tx = 178;
+                if (tx > 222) tx = 222;
+                
+                int new_op = ((tx - 178) * 100) / 44;
+                new_op = ((new_op + 5) / 10) * 10;
+                if (new_op < 0) new_op = 0;
+                if (new_op > 100) new_op = 100;
+                
+                if (layers_opacity[active_layer_idx] != new_op) {
+                    layers_opacity[active_layer_idx] = new_op;
+                    renderComposeCanvas();
+                    renderUpdatePreview();
+                }
             }
             
             // Handle dynamic layer reordering swaps while dragging
             if (dragging_layer_idx != -1) {
                 for (int j = 0; j < layers_count; j++) {
                     int idx_from_top_j = layers_count - 1 - j;
-                    int y_pos_j = 27 + idx_from_top_j * 14;
-                    if (touch.py >= y_pos_j && touch.py <= y_pos_j + 12) {
+                    int y_pos_j = 27 + idx_from_top_j * 13;
+                    if (touch.py >= y_pos_j && touch.py <= y_pos_j + 11) {
                         if (j != dragging_layer_idx) {
                             // Swap layer pointer
                             uint16_t* tmp_buf = layers[dragging_layer_idx];
@@ -1274,10 +1318,18 @@ void gameUpdate(void) {
                             renderAddLayer();
                             sidebar_action_taken = true;
                         }
-                        // COMBINAR button at x = 148..252, y = 157..169
-                        else if (prev_x >= 148 && prev_x <= 252 && prev_y >= 157 && prev_y <= 169) {
-                            renderMergeActiveLayerDown();
-                            sidebar_action_taken = true;
+                        // COMBINAR buttons at y = 157..169
+                        else if (prev_y >= 157 && prev_y <= 169) {
+                            // Merge Down: x = 148..198
+                            if (prev_x >= 148 && prev_x <= 198) {
+                                renderMergeActiveLayerDown();
+                                sidebar_action_taken = true;
+                            }
+                            // Merge Up: x = 202..252
+                            else if (prev_x >= 202 && prev_x <= 252) {
+                                renderMergeActiveLayerUp();
+                                sidebar_action_taken = true;
+                            }
                         }
                         // FONDO or Layer items
                         else {
@@ -1299,11 +1351,10 @@ void gameUpdate(void) {
                                             if (active_layer_idx == i) {
                                                 current_state = STATE_RENAME_LAYER;
                                                 rename_layer_idx = i;
-                                                memcpy(rename_input, layer_names[i], 16);
-                                                rename_input[15] = '\0';
-                                                rename_input_len = strlen(rename_input);
-                                                rename_opacity = layers_opacity[i];
-                                                uiDrawRenameKeyboard(rename_input, rename_opacity);
+                                                 memcpy(rename_input, layer_names[i], 15);
+                                                 rename_input[15] = '\0';
+                                                 rename_input_len = strlen(rename_input);
+                                                uiDrawRenameKeyboard(rename_input);
                                                 sidebar_action_taken = true;
                                             } else {
                                                 active_layer_idx = i;
@@ -1568,7 +1619,6 @@ void gameUpdate(void) {
                 else if (prev_x >= 166 && prev_x <= 246 && prev_y >= 44 && prev_y <= 62) {
                     memcpy(layer_names[rename_layer_idx], rename_input, 16);
                     layer_names[rename_layer_idx][15] = '\0';
-                    layers_opacity[rename_layer_idx] = rename_opacity;
                     current_state = STATE_DRAW;
                     renderComposeCanvas();
                     if (!toolbar_hidden) {
@@ -1576,20 +1626,6 @@ void gameUpdate(void) {
                     }
                     was_touching = false;
                     return;
-                }
-                // Opacity [-] button: x = 100..124, y = 68..86
-                else if (prev_x >= 100 && prev_x <= 124 && prev_y >= 68 && prev_y <= 86) {
-                    if (rename_opacity >= 10) {
-                        rename_opacity -= 10;
-                    }
-                    uiDrawRenameKeyboard(rename_input, rename_opacity);
-                }
-                // Opacity [+] button: x = 176..200, y = 68..86
-                else if (prev_x >= 176 && prev_x <= 200 && prev_y >= 68 && prev_y <= 86) {
-                    if (rename_opacity <= 90) {
-                        rename_opacity += 10;
-                    }
-                    uiDrawRenameKeyboard(rename_input, rename_opacity);
                 }
                 // Keyboard area: y = 96..182
                 else if (prev_y >= 96 && prev_y <= 182) {
@@ -1601,11 +1637,10 @@ void gameUpdate(void) {
                     char key = uiHandleKeyboardTouch(prev_x, prev_y, &shift_toggled, &caps_toggled, &enter_pressed, &backspace_pressed);
                     
                     if (shift_toggled || caps_toggled) {
-                        uiDrawRenameKeyboard(rename_input, rename_opacity);
+                        uiDrawRenameKeyboard(rename_input);
                     } else if (enter_pressed) {
                         memcpy(layer_names[rename_layer_idx], rename_input, 16);
                         layer_names[rename_layer_idx][15] = '\0';
-                        layers_opacity[rename_layer_idx] = rename_opacity;
                         current_state = STATE_DRAW;
                         renderComposeCanvas();
                         if (!toolbar_hidden) {
@@ -1618,14 +1653,14 @@ void gameUpdate(void) {
                             rename_input_len--;
                             rename_input[rename_input_len] = '\0';
                         }
-                        uiDrawRenameKeyboard(rename_input, rename_opacity);
+                        uiDrawRenameKeyboard(rename_input);
                     } else if (key > 0) {
                         if (rename_input_len < 15) {
                             rename_input[rename_input_len] = key;
                             rename_input_len++;
                             rename_input[rename_input_len] = '\0';
                         }
-                        uiDrawRenameKeyboard(rename_input, rename_opacity);
+                        uiDrawRenameKeyboard(rename_input);
                     }
                 }
                 was_touching = false;
@@ -1635,7 +1670,6 @@ void gameUpdate(void) {
         if (keys_down & KEY_A) {
             memcpy(layer_names[rename_layer_idx], rename_input, 16);
             layer_names[rename_layer_idx][15] = '\0';
-            layers_opacity[rename_layer_idx] = rename_opacity;
             current_state = STATE_DRAW;
             renderComposeCanvas();
             if (!toolbar_hidden) {

@@ -2,6 +2,7 @@
 #include "render.h"
 #include "net.h"
 #include "logo_data.h"
+#include "pointer_sheep_data.h"
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
@@ -42,6 +43,13 @@ const char* theme_names[5] = {
 };
 int active_theme_idx = 0;
 uint16_t app_theme_color = RGB15(31, 31, 0);
+int current_lang = 0; // 0 = Spanish, 1 = English
+bool show_lang_modal = false;
+
+const char* uiTxt(const char* es, const char* en) {
+    if (current_lang == 1) return en;
+    return es;
+}
 
 int preset_page = 0;
 int custom_page = 0;
@@ -612,21 +620,21 @@ void uiOpenModal(int modal_idx) {
     drawRectOutline(8, y0, 247, y1, app_theme_color);
     
     if (open_modal == 0) {
-        renderDrawText("UTENSILIO", 16, y0 + 2, RGB15(31, 31, 31), 0);
-        drawToolButtonWithIconAt(16, 86, 32, 52, "PINCEL", 0, (!is_eraser && !is_bucket));
-        drawToolButtonWithIconAt(92, 162, 32, 52, "BORRADOR", 1, is_eraser);
-        drawToolButtonWithIconAt(168, 238, 32, 52, "RELLENO", 2, is_bucket);
+        renderDrawText(uiTxt("UTENSILIO", "TOOL"), 16, y0 + 2, RGB15(31, 31, 31), 0);
+        drawToolButtonWithIconAt(16, 86, 32, 52, uiTxt("PINCEL", "BRUSH"), 0, (!is_eraser && !is_bucket));
+        drawToolButtonWithIconAt(92, 162, 32, 52, uiTxt("BORRADOR", "ERASER"), 1, is_eraser);
+        drawToolButtonWithIconAt(168, 238, 32, 52, uiTxt("RELLENO", "BUCKET"), 2, is_bucket);
         
-        renderDrawText("TRAZO", 16, y0 + 36, RGB15(31, 31, 31), 0);
-        drawToolButtonWithIconAt(16, 86, 66, 86, "NORMAL", 3, (drawing_mode == 0));
-        drawToolButtonWithIconAt(92, 162, 66, 86, "ROTUL.", 4, (drawing_mode == 1));
+        renderDrawText(uiTxt("TRAZO", "STROKE"), 16, y0 + 36, RGB15(31, 31, 31), 0);
+        drawToolButtonWithIconAt(16, 86, 66, 86, uiTxt("NORMAL", "NORMAL"), 3, (drawing_mode == 0));
+        drawToolButtonWithIconAt(92, 162, 66, 86, uiTxt("ROTUL.", "MARKER"), 4, (drawing_mode == 1));
         
-        renderDrawText("PATRON BRUSH", 16, y0 + 70, RGB15(31, 31, 31), 0);
+        renderDrawText(uiTxt("PATRON BRUSH", "PATTERN BRUSH"), 16, y0 + 70, RGB15(31, 31, 31), 0);
         for (int i = 0; i < 5; i++) {
             drawPatternBrushButtonAt(16 + i * 46, 16 + i * 46 + 40, 100, 120, 2 + i, (drawing_mode == 2 + i));
         }
         
-        renderDrawText("PLUMAS", 16, y0 + 104, RGB15(31, 31, 31), 0);
+        renderDrawText(uiTxt("PLUMAS", "NIB FEATHERS"), 16, y0 + 104, RGB15(31, 31, 31), 0);
         drawPlumaButtonAt(16, 56, 134, 154, "PL1", 7, (drawing_mode == 7));
         drawPlumaButtonAt(62, 102, 134, 154, "PL2", 8, (drawing_mode == 8));
         drawPlumaButtonAt(108, 148, 134, 154, "PL3", 9, (drawing_mode == 9));
@@ -638,9 +646,9 @@ void uiOpenModal(int modal_idx) {
     else if (open_modal == 1) {
         char label[32];
         if (is_eraser) {
-            sprintf(label, "GROSOR BORRADOR: %d px", eraser_size);
+            sprintf(label, uiTxt("GROSOR BORRADOR: %d px", "ERASER SIZE: %d px"), eraser_size);
         } else {
-            sprintf(label, "GROSOR PINCEL: %d px", active_brush_size);
+            sprintf(label, uiTxt("GROSOR PINCEL: %d px", "BRUSH SIZE: %d px"), active_brush_size);
         }
         renderDrawText(label, 16, 126, RGB15(31, 31, 31), 0);
         
@@ -670,8 +678,8 @@ void uiOpenModal(int modal_idx) {
         drawRectOutline(8, 20, 127, 32, (color_modal_tab == 0) ? tab_border : blendRGB555_int(app_theme_color, RGB15(2,2,3), 8));
         drawRectOutline(128, 20, 247, 32, (color_modal_tab == 1) ? tab_border : blendRGB555_int(app_theme_color, RGB15(2,2,3), 8));
         
-        renderDrawText("PRESETS", 44, 23, (color_modal_tab == 0) ? RGB15(31, 31, 31) : RGB15(15, 15, 15), 0);
-        renderDrawText("MIS PALETAS", 152, 23, (color_modal_tab == 1) ? RGB15(31, 31, 31) : RGB15(15, 15, 15), 0);
+        renderDrawText(uiTxt("PRESETS", "PRESETS"), 44, 23, (color_modal_tab == 0) ? RGB15(31, 31, 31) : RGB15(15, 15, 15), 0);
+        renderDrawText(uiTxt("MIS PALETAS", "MY PALETTES"), 152, 23, (color_modal_tab == 1) ? RGB15(31, 31, 31) : RGB15(15, 15, 15), 0);
         
         for (int i = 0; i < 5; i++) {
             drawModalColorButtonAt(16 + i * 46, 16 + i * 46 + 40, 36, 48, palette_colors[i], (active_color_idx == i));
@@ -791,8 +799,8 @@ void uiOpenModal(int modal_idx) {
         drawRectOutline(8, 20, 127, 32, (bg_modal_tab == 0) ? tab_border : blendRGB555_int(app_theme_color, RGB15(2,2,3), 8));
         drawRectOutline(128, 20, 247, 32, (bg_modal_tab == 1) ? tab_border : blendRGB555_int(app_theme_color, RGB15(2,2,3), 8));
         
-        renderDrawText("PATRONES", 44, 23, (bg_modal_tab == 0) ? RGB15(31, 31, 31) : RGB15(15, 15, 15), 0);
-        renderDrawText("PERSPECTIVA", 152, 23, (bg_modal_tab == 1) ? RGB15(31, 31, 31) : RGB15(15, 15, 15), 0);
+        renderDrawText(uiTxt("PATRONES", "PATTERNS"), 44, 23, (bg_modal_tab == 0) ? RGB15(31, 31, 31) : RGB15(15, 15, 15), 0);
+        renderDrawText(uiTxt("PERSPECTIVA", "PERSPECTIVE"), 152, 23, (bg_modal_tab == 1) ? RGB15(31, 31, 31) : RGB15(15, 15, 15), 0);
         
         if (bg_modal_tab == 0) {
             for (int i = 0; i < 4; i++) {
@@ -810,13 +818,13 @@ void uiOpenModal(int modal_idx) {
             sprintf(color_s_lbl, "COL S:%d", bg_color_s_idx);
             drawModalButtonAt(74, 132, 132, 150, color_s_lbl, false);
             
-            drawModalButtonAt(136, 194, 132, 150, bg_modifiable ? "MOD:SI" : "MOD:NO", bg_modifiable);
+            drawModalButtonAt(136, 194, 132, 150, bg_modifiable ? uiTxt("MOD:SI", "EDIT:YES") : uiTxt("MOD:NO", "EDIT:NO"), bg_modifiable);
             
             char rot_lbl[16];
             sprintf(rot_lbl, "ROT:%d", bg_angle);
             drawModalButtonAt(198, 244, 132, 150, rot_lbl, false);
         } else {
-            renderDrawText("MODO DE PERSPECTIVA", 16, 36, RGB15(31, 31, 31), 0);
+            renderDrawText(uiTxt("MODO DE PERSPECTIVA", "PERSPECTIVE MODE"), 16, 36, RGB15(31, 31, 31), 0);
             
             drawModalButtonAt(12, 53, 46, 62, "OFF", (perspective_mode == 0));
             drawModalButtonAt(57, 101, 46, 62, "1 VP", (perspective_mode == 1));
@@ -825,47 +833,47 @@ void uiOpenModal(int modal_idx) {
             drawModalButtonAt(201, 244, 46, 62, "4 VP", (perspective_mode == 4));
             
             if (perspective_mode > 0) {
-                drawModalButtonAt(12, 244, 68, 84, "REUBICAR TODOS LOS PUNTOS", false);
+                drawModalButtonAt(12, 244, 68, 84, uiTxt("REUBICAR TODOS LOS PUNTOS", "RELOCATE ALL POINTS"), false);
             } else {
-                drawModalButtonAt(12, 244, 68, 84, "(SIN PERSPECTIVA)", false);
+                drawModalButtonAt(12, 244, 68, 84, uiTxt("(SIN PERSPECTIVA)", "(NO PERSPECTIVE)"), false);
             }
             
             // Individual point editing buttons
             if (perspective_mode >= 1) {
-                drawModalButtonAt(12, 65, 90, 106, "PUNTO 1", false);
+                drawModalButtonAt(12, 65, 90, 106, uiTxt("PUNTO 1", "POINT 1"), false);
             } else {
-                drawModalButtonDisabledAt(12, 65, 90, 106, "PUNTO 1");
+                drawModalButtonDisabledAt(12, 65, 90, 106, uiTxt("PUNTO 1", "POINT 1"));
             }
             
             if (perspective_mode >= 2) {
-                drawModalButtonAt(71, 124, 90, 106, "PUNTO 2", false);
+                drawModalButtonAt(71, 124, 90, 106, uiTxt("PUNTO 2", "POINT 2"), false);
             } else {
-                drawModalButtonDisabledAt(71, 124, 90, 106, "PUNTO 2");
+                drawModalButtonDisabledAt(71, 124, 90, 106, uiTxt("PUNTO 2", "POINT 2"));
             }
             
             if (perspective_mode >= 3) {
-                drawModalButtonAt(130, 183, 90, 106, "PUNTO 3", false);
+                drawModalButtonAt(130, 183, 90, 106, uiTxt("PUNTO 3", "POINT 3"), false);
             } else {
-                drawModalButtonDisabledAt(130, 183, 90, 106, "PUNTO 3");
+                drawModalButtonDisabledAt(130, 183, 90, 106, uiTxt("PUNTO 3", "POINT 3"));
             }
             
             if (perspective_mode >= 4) {
-                drawModalButtonAt(189, 244, 90, 106, "PUNTO 4", false);
+                drawModalButtonAt(189, 244, 90, 106, uiTxt("PUNTO 4", "POINT 4"), false);
             } else {
-                drawModalButtonDisabledAt(189, 244, 90, 106, "PUNTO 4");
+                drawModalButtonDisabledAt(189, 244, 90, 106, uiTxt("PUNTO 4", "POINT 4"));
             }
             
             char dens_lbl[32];
-            sprintf(dens_lbl, "DENSIDAD DE REJILLA: %d px", perspective_step);
+            sprintf(dens_lbl, uiTxt("DENSIDAD DE REJILLA: %d px", "GRID DENSITY: %d px"), perspective_step);
             drawModalButtonAt(12, 244, 112, 128, dens_lbl, false);
         }
     } 
     else if (open_modal == 4) {
         char label[32];
         if (angle_target == 1) {
-            sprintf(label, "ROTACION FONDO: %d", bg_angle);
+            sprintf(label, uiTxt("ROTACION FONDO: %d", "BG ROTATION: %d"), bg_angle);
         } else {
-            sprintf(label, "ANGULO DE LA PLUMA: %d", nib_angle);
+            sprintf(label, uiTxt("ANGULO DE LA PLUMA: %d", "NIB ANGLE: %d"), nib_angle);
         }
         renderDrawText(label, 16, 96, RGB15(31, 31, 31), 0);
         
@@ -885,22 +893,22 @@ void uiOpenModal(int modal_idx) {
     }
     else if (open_modal == 5) {
         // MENU DE LA NOTA
-        renderDrawText("MENU DE LA NOTA", 80, y0 + 6, RGB15(31, 31, 31), 0);
+        renderDrawText(uiTxt("MENU DE LA NOTA", "NOTE MENU"), 80, y0 + 6, RGB15(31, 31, 31), 0);
         
         // Draw options buttons
-        drawModalButtonAt(24, 232, y0 + 22, y0 + 44, "GUARDAR NOTA (SD)", false);
-        drawModalButtonAt(24, 232, y0 + 50, y0 + 72, "WIFI / CONEXION", false);
-        drawModalButtonAt(24, 232, y0 + 78, y0 + 100, "VOLVER AL MENU INICIO", false);
-        drawModalButtonAt(24, 232, y0 + 106, y0 + 128, "CANCELAR", false);
+        drawModalButtonAt(24, 232, y0 + 22, y0 + 44, uiTxt("GUARDAR NOTA (SD)", "SAVE NOTE (SD)"), false);
+        drawModalButtonAt(24, 232, y0 + 50, y0 + 72, uiTxt("WIFI / CONEXION", "WIFI / CONNECTION"), false);
+        drawModalButtonAt(24, 232, y0 + 78, y0 + 100, uiTxt("VOLVER AL MENU INICIO", "RETURN TO START MENU"), false);
+        drawModalButtonAt(24, 232, y0 + 106, y0 + 128, uiTxt("CANCELAR", "CANCEL"), false);
     }
     else if (open_modal == 6) {
         // ¿GUARDAR ANTES DE SALIR?
-        renderDrawText("¿GUARDAR ANTES DE SALIR?", 56, y0 + 8, RGB15(31, 5, 5), 0);
+        renderDrawText(uiTxt("¿GUARDAR ANTES DE SALIR?", "SAVE BEFORE EXITING?"), 56, y0 + 8, RGB15(31, 5, 5), 0);
         
         // Draw confirmation buttons
-        drawModalButtonAt(24, 232, y0 + 26, y0 + 48, "SI, GUARDAR Y SALIR", false);
-        drawModalButtonAt(24, 232, y0 + 54, y0 + 76, "NO, SALIR SIN GUARDAR", false);
-        drawModalButtonAt(24, 232, y0 + 82, y0 + 104, "CANCELAR", false);
+        drawModalButtonAt(24, 232, y0 + 26, y0 + 48, uiTxt("SI, GUARDAR Y SALIR", "YES, SAVE AND EXIT"), false);
+        drawModalButtonAt(24, 232, y0 + 54, y0 + 76, uiTxt("NO, SALIR SIN GUARDAR", "NO, EXIT WITHOUT SAVING"), false);
+        drawModalButtonAt(24, 232, y0 + 82, y0 + 104, uiTxt("CANCELAR", "CANCEL"), false);
     }
 }
 
@@ -1021,8 +1029,8 @@ void uiDrawToolbar(void) {
     }
 
     // Button 0: TOOL
-    const char* tool_label = "PINC";
-    if (is_eraser) tool_label = "BORR";
+    const char* tool_label = uiTxt("PINC", "PEN");
+    if (is_eraser) tool_label = uiTxt("BORR", "ERAS");
     else if (is_bucket) tool_label = "FILL";
     renderDrawText(tool_label, 9, 180, (open_modal == 0) ? active_text_color : default_text_color, 0);
 
@@ -1050,7 +1058,7 @@ void uiDrawToolbar(void) {
     renderDrawText("MENU", 178, 180, (open_modal == 5) ? active_text_color : default_text_color, 0);
 
     // Button 5: ENVIAR
-    renderDrawText("ENVIAR", 216, 180, RGB15(20, 31, 20), 0);
+    renderDrawText(uiTxt("ENVIAR", "SEND"), 216, 180, RGB15(20, 31, 20), 0);
 }
 
 #include "font8x8.h"
@@ -1157,6 +1165,25 @@ static void drawSubGridBackground(void) {
     }
 }
 
+static void drawSubPointerSheep(int target_x, int target_y) {
+    if (wizard_buffer == NULL) return;
+    for (int y = 0; y < 48; y++) {
+        for (int x = 0; x < 48; x++) {
+            int px = target_x + x;
+            int py = target_y + y;
+            if (px >= 0 && px < 256 && py >= 0 && py < 192) {
+                uint8_t alpha = pointer_sheep_data[y * 48 + x];
+                if (alpha > 0) {
+                    int alpha_32 = alpha >> 3;
+                    uint16_t bg_pixel = wizard_buffer[py * 256 + px];
+                    uint16_t blended = blendRGB555_int(app_theme_color, bg_pixel, alpha_32);
+                    wizard_buffer[py * 256 + px] = blended;
+                }
+            }
+        }
+    }
+}
+
 bool ssid_manual_input = false;
 
 void uiDrawFormUI(int step, const char* input_text) {
@@ -1179,7 +1206,7 @@ void uiDrawFormUI(int step, const char* input_text) {
     // 1. Header
     drawSubRect(0, 0, 255, 15, header_bg);
     drawSubLine(0, 16, 255, 16, border_col);
-    drawSubText("Connection Settings", 8, 4, header_text_col, 0);
+    drawSubText(uiTxt("Ajustes de Conexion", "Connection Settings"), 8, 4, header_text_col, 0);
 
     // 2. Footer (Cancel / Save)
     drawSubRect(0, 176, 255, 191, header_bg);
@@ -1188,12 +1215,12 @@ void uiDrawFormUI(int step, const char* input_text) {
     // [B] Cancel
     drawSubRectOutline(8, 180, 20, 188, border_col);
     drawSubText("B", 11, 181, header_text_col, 0);
-    drawSubText("Cancel", 24, 181, header_text_col, 0);
+    drawSubText(uiTxt("Cancelar", "Cancel"), 24, 181, header_text_col, 0);
 
     // [A] Save
     drawSubRectOutline(204, 180, 216, 188, border_col);
     drawSubText("A", 207, 181, header_text_col, 0);
-    drawSubText("Save", 220, 181, header_text_col, 0);
+    drawSubText(uiTxt("Guardar", "Save"), 220, 181, header_text_col, 0);
 
     // 3. Main Panel (centered, full width)
     drawSubRect(6, 22, 250, 110, panel_bg);
@@ -1202,10 +1229,10 @@ void uiDrawFormUI(int step, const char* input_text) {
     // Inner Header
     drawSubRect(7, 23, 249, 36, blendRGB555_int(app_theme_color, RGB15(4, 4, 5), 8));
     drawSubLine(6, 37, 250, 37, border_col);
-    drawSubText("Pairing Configuration", 10, 26, header_text_col, 0);
+    drawSubText(uiTxt("Config. de Emparejamiento", "Pairing Configuration"), 10, 26, header_text_col, 0);
 
     // Field 0: Code (y = 44 to 62)
-    drawSubText("Code", 12, 50, text_col, 0);
+    drawSubText(uiTxt("Codigo", "Code"), 12, 50, text_col, 0);
     drawSubRectOutline(50, 44, 244, 62, (step == 0) ? active_col : RGB15(15, 15, 15));
     if (step == 0) {
         drawSubRectOutline(51, 45, 243, 61, active_col);
@@ -1224,9 +1251,10 @@ void uiDrawFormUI(int step, const char* input_text) {
         drawSubText(wifi_ssid, 56, 75, text_col, 0);
     }
 
-    // Help text
-    drawSubText("Enter the PC code and select", 44, 120, text_col, 0);
-    drawSubText("your WiFi network below.", 56, 132, inactive_text, 0);
+    // Help text with pointer sheep pointing at it
+    drawSubPointerSheep(6, 118);
+    drawSubText(uiTxt("Pon el codigo que te aparece", "Enter the code shown in the"), 56, 124, text_col, 0);
+    drawSubText(uiTxt("en la app en otro dispositivo.", "app on another device."), 56, 136, inactive_text, 0);
 }
 
 static bool shift_active = false;
@@ -1330,11 +1358,11 @@ void uiDrawBottomForm(int step, const char* input_text) {
     drawRectOutline(10, 8, 246, 36, app_theme_color);
     
     char label[128];
-    if (step == 0)      sprintf(label, "CODE: %s_", input_text);
+    if (step == 0)      sprintf(label, "%s: %s_", uiTxt("CODIGO", "CODE"), input_text);
     else if (step == 1) sprintf(label, "WIFI: %s_", input_text);
     renderDrawText(label, 16, 17, RGB15(31, 31, 31), 0);
     
-    drawKey(10, 42, 120, 62, "CODE", (step == 0));
+    drawKey(10, 42, 120, 62, uiTxt("CODIGO", "CODE"), (step == 0));
     drawKey(126, 42, 246, 62, "WIFI", (step == 1));
     
     if (step == 0) {
@@ -1360,7 +1388,7 @@ void uiDrawBottomForm(int step, const char* input_text) {
                         sprintf(label, "%d: %s", i + 1, net_wfc_ssids[i]);
                     }
                 } else {
-                    sprintf(label, "%d: [Vacia]", i + 1);
+                    sprintf(label, "%d: %s", i + 1, uiTxt("[Vacia]", "[Empty]"));
                 }
                 drawKey(10, 68 + i * 30, 124, 92 + i * 30, label, high);
             }
@@ -1377,13 +1405,13 @@ void uiDrawBottomForm(int step, const char* input_text) {
                         sprintf(label, "%d: %s", i + 1, net_wfc_ssids[i]);
                     }
                 } else {
-                    sprintf(label, "%d: [Vacia]", i + 1);
+                    sprintf(label, "%d: %s", i + 1, uiTxt("[Vacia]", "[Empty]"));
                 }
                 drawKey(132, 68 + (i - 3) * 30, 246, 92 + (i - 3) * 30, label, high);
             }
             
             // 3. Manual (Teclado) spanning both columns at the bottom
-            drawKey(10, 158, 246, 182, "Manual (Teclado)", false);
+            drawKey(10, 158, 246, 182, uiTxt("Manual (Teclado)", "Manual (Keyboard)"), false);
         }
     }
 }
@@ -1487,7 +1515,7 @@ static void uiDrawLayersSidebar(void) {
     }
     
     // Header title "CAPAS"
-    renderDrawText("CAPAS", 148, 2, text_col, 0);
+    renderDrawText(uiTxt("CAPAS", "LAYERS"), 148, 2, text_col, 0);
     
     // Close button "X" (red on dark red) at x = 236..252, y = 1..11
     drawRect(236, 1, 252, 11, RGB15(6, 2, 2));
@@ -1499,26 +1527,26 @@ static void uiDrawLayersSidebar(void) {
         uint16_t plus_capa_bg = blendRGB555_int(app_theme_color, panel_bg, 6);
         drawRect(148, 14, 252, 24, plus_capa_bg);
         drawRectOutline(148, 14, 252, 24, border_col);
-        renderDrawText("+ CAPA", 182, 16, text_col, 0);
+        renderDrawText(uiTxt("+ CAPA", "+ LAYER"), 182, 16, text_col, 0);
     } else {
         drawRect(148, 14, 252, 24, RGB15(2, 2, 3));
         drawRectOutline(148, 14, 252, 24, RGB15(6, 6, 8));
-        renderDrawText("LLENO", 188, 16, RGB15(10, 10, 10), 0);
+        renderDrawText(uiTxt("LLENO", "FULL"), 188, 16, RGB15(10, 10, 10), 0);
     }
     
     // Draw layer items from layers_count-1 down to 0
     for (int i = layers_count - 1; i >= 0; i--) {
         int idx_from_top = layers_count - 1 - i;
-        int y_pos = 27 + idx_from_top * 14;
+        int y_pos = 27 + idx_from_top * 13;
         
-        // Drag handle: circle at cx = 151, cy = y_pos + 6
+        // Drag handle: circle at cx = 151, cy = y_pos + 5
         uint16_t circle_col = (dragging_layer_idx == i) ? app_theme_color : RGB15(8, 8, 10);
         // Draw filled circle (radius 2)
         for (int dy = -2; dy <= 2; dy++) {
             for (int dx = -2; dx <= 2; dx++) {
                 if (dx*dx + dy*dy <= 5) {
                     int px = 151 + dx;
-                    int py = y_pos + 6 + dy;
+                    int py = y_pos + 5 + dy;
                     if (px >= 144 && px < 256 && py >= 0 && py < 192) {
                         canvas_buffer[py * 256 + px] = circle_col;
                     }
@@ -1530,7 +1558,7 @@ static void uiDrawLayersSidebar(void) {
             for (int dx = -3; dx <= 3; dx++) {
                 if (dx*dx + dy*dy > 5 && dx*dx + dy*dy <= 10) {
                     int px = 151 + dx;
-                    int py = y_pos + 6 + dy;
+                    int py = y_pos + 5 + dy;
                     if (px >= 144 && px < 256 && py >= 0 && py < 192) {
                         canvas_buffer[py * 256 + px] = RGB15(0, 0, 0);
                     }
@@ -1538,63 +1566,85 @@ static void uiDrawLayersSidebar(void) {
             }
         }
         
-        // Active indicator / selection button: x = 158..212, y = y_pos..y_pos+12
+        // Active indicator / selection button: x = 158..212, y = y_pos..y_pos+11
         bool is_active = (active_layer_idx == i);
         uint16_t btn_bg = is_active ? blendRGB555_int(app_theme_color, panel_bg, 8) : RGB15(2, 2, 3);
         uint16_t btn_border = is_active ? app_theme_color : RGB15(6, 6, 8);
         uint16_t btn_txt = is_active ? (active_theme_idx == 0 ? RGB15(0, 0, 0) : RGB15(31, 31, 31)) : RGB15(20, 20, 22);
         
-        drawRect(158, y_pos, 212, y_pos + 12, btn_bg);
-        drawRectOutline(158, y_pos, 212, y_pos + 12, btn_border);
+        drawRect(158, y_pos, 212, y_pos + 11, btn_bg);
+        drawRectOutline(158, y_pos, 212, y_pos + 11, btn_border);
         
         char disp_name[7];
-        strncpy(disp_name, layer_names[i], 6);
-        disp_name[6] = '\0';
+        if (strncmp(layer_names[i], "CAPA ", 5) == 0) {
+            sprintf(disp_name, "%s%c", uiTxt("CAPA", "LAY"), layer_names[i][5]);
+        } else {
+            strncpy(disp_name, layer_names[i], 6);
+            disp_name[6] = '\0';
+        }
         renderDrawText(disp_name, 162, y_pos + 2, btn_txt, 0);
         
-        // Visibility toggle button: x = 216..232, y = y_pos..y_pos+12
+        // Visibility toggle button: x = 216..232, y = y_pos..y_pos+11
         bool is_visible = layers_visible[i];
         uint16_t vis_bg = is_visible ? blendRGB555_int(app_theme_color, panel_bg, 6) : RGB15(2, 2, 3);
         uint16_t vis_border = is_visible ? app_theme_color : RGB15(6, 6, 8);
         uint16_t vis_txt = is_visible ? (is_active && active_theme_idx == 0 ? RGB15(0, 0, 0) : RGB15(31, 31, 31)) : RGB15(10, 10, 10);
         
-        drawRect(216, y_pos, 232, y_pos + 12, vis_bg);
-        drawRectOutline(216, y_pos, 232, y_pos + 12, vis_border);
+        drawRect(216, y_pos, 232, y_pos + 11, vis_bg);
+        drawRectOutline(216, y_pos, 232, y_pos + 11, vis_border);
         renderDrawText(is_visible ? "V" : "H", 220, y_pos + 2, vis_txt, 0);
         
-        // Delete button: x = 236..252, y = y_pos..y_pos+12
+        // Delete button: x = 236..252, y = y_pos..y_pos+11
         if (i > 0) {
-            drawRect(236, y_pos, 252, y_pos + 12, RGB15(12, 3, 3));
-            drawRectOutline(236, y_pos, 252, y_pos + 12, RGB15(6, 2, 2));
+            drawRect(236, y_pos, 252, y_pos + 11, RGB15(12, 3, 3));
+            drawRectOutline(236, y_pos, 252, y_pos + 11, RGB15(6, 2, 2));
             renderDrawText("X", 241, y_pos + 2, RGB15(31, 10, 10), 0);
         } else {
-            drawRect(236, y_pos, 252, y_pos + 12, RGB15(2, 2, 3));
-            drawRectOutline(236, y_pos, 252, y_pos + 12, RGB15(6, 6, 8));
+            drawRect(236, y_pos, 252, y_pos + 11, RGB15(2, 2, 3));
+            drawRectOutline(236, y_pos, 252, y_pos + 11, RGB15(6, 6, 8));
             renderDrawText("-", 241, y_pos + 2, RGB15(10, 10, 10), 0);
         }
     }
     
-    // Draw "FONDO" item at bg_y = 27 + layers_count * 14
-    int bg_y = 27 + layers_count * 14;
-    drawRect(148, bg_y, 212, bg_y + 12, RGB15(2, 2, 3));
-    drawRectOutline(148, bg_y, 212, bg_y + 12, RGB15(6, 6, 8));
-    renderDrawText("FONDO", 158, bg_y + 2, text_col, 0);
+    // Draw "FONDO" item at bg_y = 27 + layers_count * 13
+    int bg_y = 27 + layers_count * 13;
+    drawRect(148, bg_y, 212, bg_y + 11, RGB15(2, 2, 3));
+    drawRectOutline(148, bg_y, 212, bg_y + 11, RGB15(6, 6, 8));
+    renderDrawText(uiTxt("FONDO", "BG"), 158, bg_y + 2, text_col, 0);
     
-    // Lock toggle: x = 216..252, y = bg_y..bg_y+12
-    drawRect(216, bg_y, 252, bg_y + 12, bg_modifiable ? blendRGB555_int(app_theme_color, panel_bg, 6) : RGB15(12, 3, 3));
-    drawRectOutline(216, bg_y, 252, bg_y + 12, bg_modifiable ? border_col : RGB15(6, 2, 2));
-    renderDrawText(bg_modifiable ? " MOD" : " LOK", 218, bg_y + 2, bg_modifiable ? text_col : RGB15(31, 10, 10), 0);
+    // Lock toggle: x = 216..252, y = bg_y..bg_y+11
+    drawRect(216, bg_y, 252, bg_y + 11, bg_modifiable ? blendRGB555_int(app_theme_color, panel_bg, 6) : RGB15(12, 3, 3));
+    drawRectOutline(216, bg_y, 252, bg_y + 11, bg_modifiable ? border_col : RGB15(6, 2, 2));
+    renderDrawText(bg_modifiable ? uiTxt(" MOD", " EDIT") : uiTxt(" LOK", " LOCK"), 218, bg_y + 2, bg_modifiable ? text_col : RGB15(31, 10, 10), 0);
     drawLockIcon(244, bg_y + 1, !bg_modifiable);
     
-    // Draw "COMBINAR" button at y = 157..169
-    bool can_merge = (active_layer_idx > 0);
-    uint16_t merge_bg = can_merge ? blendRGB555_int(app_theme_color, panel_bg, 8) : RGB15(2, 2, 3);
-    uint16_t merge_border = can_merge ? app_theme_color : RGB15(6, 6, 8);
-    uint16_t merge_txt = can_merge ? (active_theme_idx == 0 ? RGB15(0, 0, 0) : RGB15(31, 31, 31)) : RGB15(10, 10, 10);
+    // Draw Opacity Slider at y = 144..152
+    renderDrawText("OPAC:", 148, 145, text_col, 0);
+    drawRect(178, 148, 222, 149, RGB15(6, 6, 8));
+    int thumb_x = 178 + (layers_opacity[active_layer_idx] * 44) / 100;
+    drawRect(thumb_x - 2, 144, thumb_x + 2, 152, app_theme_color);
+    char op_str[16];
+    sprintf(op_str, "%d%%", layers_opacity[active_layer_idx]);
+    renderDrawText(op_str, 226, 145, text_col, 0);
     
-    drawRect(148, 157, 252, 169, merge_bg);
-    drawRectOutline(148, 157, 252, 169, merge_border);
-    renderDrawText("COMBINAR", 180, 160, merge_txt, 0);
+    // Draw merge buttons at y = 157..169
+    bool can_merge_down = (active_layer_idx > 0);
+    uint16_t mdown_bg = can_merge_down ? blendRGB555_int(app_theme_color, panel_bg, 8) : RGB15(2, 2, 3);
+    uint16_t mdown_border = can_merge_down ? app_theme_color : RGB15(6, 6, 8);
+    uint16_t mdown_txt = can_merge_down ? (active_theme_idx == 0 ? RGB15(0, 0, 0) : RGB15(31, 31, 31)) : RGB15(10, 10, 10);
+    
+    drawRect(148, 157, 198, 169, mdown_bg);
+    drawRectOutline(148, 157, 198, 169, mdown_border);
+    renderDrawText(uiTxt("C. ABJ", "MRG DN"), 154, 160, mdown_txt, 0);
+    
+    bool can_merge_up = (active_layer_idx < layers_count - 1);
+    uint16_t mup_bg = can_merge_up ? blendRGB555_int(app_theme_color, panel_bg, 8) : RGB15(2, 2, 3);
+    uint16_t mup_border = can_merge_up ? app_theme_color : RGB15(6, 6, 8);
+    uint16_t mup_txt = can_merge_up ? (active_theme_idx == 0 ? RGB15(0, 0, 0) : RGB15(31, 31, 31)) : RGB15(10, 10, 10);
+    
+    drawRect(202, 157, 252, 169, mup_bg);
+    drawRectOutline(202, 157, 252, 169, mup_border);
+    renderDrawText(uiTxt("C. ARB", "MRG UP"), 208, 160, mup_txt, 0);
 }
 
 void uiDrawLayersOverlay(void) {
@@ -1618,7 +1668,7 @@ void uiDrawLayersOverlay(void) {
     }
 }
 
-void uiDrawRenameKeyboard(const char* input_text, uint8_t opacity) {
+void uiDrawRenameKeyboard(const char* input_text) {
     uint16_t bg_color = RGB15(4, 4, 5);
     for (int y = 0; y < 192; y++) {
         for (int x = 0; x < 256; x++) {
@@ -1658,16 +1708,6 @@ void uiDrawRenameKeyboard(const char* input_text, uint8_t opacity) {
     // Save (A) at x = 166..246, y = 44..62
     drawKey(166, 44, 246, 62, "SAVE (A)", false);
     
-    // Opacity Selector:
-    renderDrawText("OPACIDAD:", 10, 73, RGB15(31, 31, 31), 0);
-    drawKey(100, 68, 124, 86, "-", false);
-    
-    char op_val_str[16];
-    sprintf(op_val_str, "%d%%", opacity);
-    renderDrawText(op_val_str, 138, 73, RGB15(31, 31, 31), 0);
-    
-    drawKey(176, 68, 200, 86, "+", false);
-    
     drawKeyboard();
 }
 
@@ -1686,6 +1726,60 @@ void uiDrawUndoRedoButtons(void) {
     drawRectOutline(24, 4, 40, 20, border_col);
     uint16_t redo_text_col = (redo_count > 0) ? RGB15(31, 31, 31) : RGB15(8, 8, 9);
     renderDrawText(">", 29, 8, redo_text_col, 0);
+}
+
+void uiDrawTopConsoleBox(const char* title) {
+    if (preview_buffer == NULL) return;
+    
+    // 1. First, compose the preview to update the drawing full-screen
+    renderUpdatePreview();
+    
+    // 2. Draw a premium status box in the preview_buffer
+    // Box bounds: x = 20..235, y = 44..147
+    uint16_t border_color = app_theme_color;
+    uint16_t bg_color = RGB15(3, 3, 4);
+    
+    for (int y = 44; y <= 147; y++) {
+        for (int x = 20; x <= 235; x++) {
+            // Draw double border
+            if (y <= 46 || y >= 145 || x <= 22 || x >= 233) {
+                preview_buffer[y * 256 + x] = border_color;
+            } else {
+                preview_buffer[y * 256 + x] = bg_color;
+            }
+        }
+    }
+    
+    // Draw a small header bar for the title inside the box
+    // Header bar: y = 47..59
+    uint16_t header_bg = blendRGB555_int(app_theme_color, bg_color, 8);
+    for (int y = 47; y <= 59; y++) {
+        for (int x = 23; x <= 232; x++) {
+            preview_buffer[y * 256 + x] = header_bg;
+        }
+    }
+    
+    // 3. Clear console and configure window
+    consoleSelect(&subConsole);
+    
+    // Print title inside title bar (row 6)
+    subConsole.windowX = 3;
+    subConsole.windowY = 6;
+    subConsole.windowWidth = 26;
+    subConsole.windowHeight = 1;
+    consoleClear();
+    
+    int title_len = strlen(title);
+    int pad = (26 - title_len) / 2;
+    if (pad < 0) pad = 0;
+    for (int p = 0; p < pad; p++) printf(" ");
+    printf("%s\n", title);
+    
+    // Set actual logging window (below title bar, row 8)
+    subConsole.windowX = 4;
+    subConsole.windowY = 8;
+    subConsole.windowWidth = 24;
+    subConsole.windowHeight = 9;
 }
 
 void uiDrawLogo(void) {
@@ -1708,6 +1802,62 @@ void uiDrawLogo(void) {
     }
 }
 
+const char* uiGetThemeName(int idx) {
+    if (current_lang == 1) {
+        switch(idx) {
+            case 0: return "BANANA (YELLOW)";
+            case 1: return "MINT (GREEN)";
+            case 2: return "SKY (BLUE)";
+            case 3: return "STRAWBERRY (RED)";
+            case 4: return "GRAPE (PURPLE)";
+            default: return "UNKNOWN";
+        }
+    } else {
+        switch(idx) {
+            case 0: return "BANANA (AMARILLO)";
+            case 1: return "MENTA (VERDE)";
+            case 2: return "CIELO (AZUL)";
+            case 3: return "FRESA (ROJO)";
+            case 4: return "UVA (MORADO)";
+            default: return "DESCONOCIDO";
+        }
+    }
+}
+
+void uiDrawLanguageModal(void) {
+    // Draw semi-transparent/dark background panel
+    // x = 32..224, y = 30..160
+    uint16_t modal_bg = RGB15(4, 4, 5);
+    drawRect(32, 30, 224, 160, modal_bg);
+    drawRectOutline(32, 30, 224, 160, app_theme_color);
+    drawRectOutline(33, 31, 223, 159, app_theme_color); // thicker border
+    
+    // Draw title
+    renderDrawText(uiTxt("SELECCIONAR IDIOMA", "SELECT LANGUAGE"), 56, 40, RGB15(31, 31, 31), 0);
+    
+    // Draw Spanish option button
+    // x = 48..208, y = 62..86
+    uint16_t es_bg = (current_lang == 0) ? blendRGB555_int(app_theme_color, RGB15(4, 4, 5), 8) : RGB15(12, 12, 14);
+    uint16_t es_border = (current_lang == 0) ? app_theme_color : RGB15(18, 18, 20);
+    drawRect(48, 62, 208, 86, es_bg);
+    drawRectOutline(48, 62, 208, 86, es_border);
+    renderDrawText("ESPANOL", 98, 70, RGB15(31, 31, 31), 0);
+    
+    // Draw English option button
+    // x = 48..208, y = 94..118
+    uint16_t en_bg = (current_lang == 1) ? blendRGB555_int(app_theme_color, RGB15(4, 4, 5), 8) : RGB15(12, 12, 14);
+    uint16_t en_border = (current_lang == 1) ? app_theme_color : RGB15(18, 18, 20);
+    drawRect(48, 94, 208, 118, en_bg);
+    drawRectOutline(48, 94, 208, 118, en_border);
+    renderDrawText("ENGLISH", 98, 102, RGB15(31, 31, 31), 0);
+    
+    // Draw Cerrar/Close button
+    // x = 48..208, y = 128..150
+    drawRect(48, 128, 208, 150, RGB15(24, 6, 6));
+    drawRectOutline(48, 128, 208, 150, RGB15(31, 0, 0));
+    renderDrawText(uiTxt("CERRAR", "CLOSE"), 108, 134, RGB15(31, 31, 31), 0);
+}
+
 void uiDrawStartMenu(void) {
     // Fill bottom screen with dark charcoal
     uint16_t bg_color = RGB15(4, 4, 5);
@@ -1726,34 +1876,53 @@ void uiDrawStartMenu(void) {
     }
     
     // Draw welcome title
-    renderDrawText("BIENVENIDO A OVENOTES DS", 32, 24, app_theme_color, 0);
+    renderDrawText(uiTxt("BIENVENIDO A OVENOTES DS", "WELCOME TO OVENOTES DS"), 32, 24, app_theme_color, 0);
+    
+    // Draw hamburger button at top-right
+    // x = 226..246, y = 8..28
+    drawRect(226, 8, 246, 28, RGB15(10, 10, 12));
+    drawRectOutline(226, 8, 246, 28, app_theme_color);
+    for (int px = 230; px <= 242; px++) {
+        renderSetPixel(px, 13, RGB15(31, 31, 31));
+        renderSetPixel(px, 14, RGB15(31, 31, 31));
+        
+        renderSetPixel(px, 18, RGB15(31, 31, 31));
+        renderSetPixel(px, 19, RGB15(31, 31, 31));
+        
+        renderSetPixel(px, 23, RGB15(31, 31, 31));
+        renderSetPixel(px, 24, RGB15(31, 31, 31));
+    }
     
     // Button 1: Crear Nueva Nota
     // x = 32..224, y = 56..80
     drawRect(32, 56, 224, 80, RGB15(10, 10, 12));
     drawRectOutline(32, 56, 224, 80, app_theme_color);
-    renderDrawText("CREAR NUEVA NOTA", 64, 64, RGB15(31, 31, 31), 0);
+    renderDrawText(uiTxt("CREAR NUEVA NOTA", "CREATE NEW NOTE"), 64, 64, RGB15(31, 31, 31), 0);
     
     // Button 2: Ver Notas Creadas
     // x = 32..224, y = 92..116
     drawRect(32, 92, 224, 116, RGB15(10, 10, 12));
     drawRectOutline(32, 92, 224, 116, app_theme_color);
-    renderDrawText("VER NOTAS CREADAS", 60, 100, RGB15(31, 31, 31), 0);
+    renderDrawText(uiTxt("VER NOTAS CREADAS", "VIEW CREATED NOTES"), 60, 100, RGB15(31, 31, 31), 0);
     
     // Button 3: Cambiar Tema
     // x = 32..224, y = 128..152
     drawRect(32, 128, 224, 152, RGB15(10, 10, 12));
     drawRectOutline(32, 128, 224, 152, app_theme_color);
     char theme_lbl[48];
-    sprintf(theme_lbl, "TEMA: %s", theme_names[active_theme_idx]);
+    sprintf(theme_lbl, uiTxt("TEMA: %s", "THEME: %s"), uiGetThemeName(active_theme_idx));
     int pad = (24 - strlen(theme_lbl)) * 4;
     if (pad < 0) pad = 0;
     renderDrawText(theme_lbl, 44 + pad, 136, RGB15(31, 31, 31), 0);
     
     // Bottom instructions
-    renderDrawText("Toca una opcion para comenzar", 20, 172, RGB15(20, 20, 22), 0);
+    renderDrawText(uiTxt("Toca una opcion para comenzar", "Tap an option to start"), 20, 172, RGB15(20, 20, 22), 0);
     
     uiDrawLogo();
+    
+    if (show_lang_modal) {
+        uiDrawLanguageModal();
+    }
 }
 
 void uiDrawNotesGallery(int selected_idx, int total_count, const char filenames[][32]) {
@@ -1775,18 +1944,18 @@ void uiDrawNotesGallery(int selected_idx, int total_count, const char filenames[
     
     // Header
     drawRect(0, 0, 255, 14, RGB15(12, 12, 12));
-    renderDrawText("VER NOTAS CREADAS", 8, 3, app_theme_color, 0);
+    renderDrawText(uiTxt("VER NOTAS CREADAS", "VIEW CREATED NOTES"), 8, 3, app_theme_color, 0);
     
     // Back button
     // x = 180..250, y = 1..13
     drawRect(180, 1, 250, 13, RGB15(24, 6, 6));
     drawRectOutline(180, 1, 250, 13, RGB15(31, 0, 0));
-    renderDrawText("VOLVER(B)", 186, 3, RGB15(31, 31, 31), 0);
+    renderDrawText(uiTxt("VOLVER(B)", "BACK(B)"), 186, 3, RGB15(31, 31, 31), 0);
     
     // If no notes are present
     if (total_count == 0) {
-        renderDrawText("No se encontraron notas.", 32, 80, RGB15(20, 20, 22), 0);
-        renderDrawText("Crea una nota en el menu de inicio.", 16, 96, RGB15(16, 16, 18), 0);
+        renderDrawText(uiTxt("No se encontraron notas.", "No notes found."), 32, 80, RGB15(20, 20, 22), 0);
+        renderDrawText(uiTxt("Crea una nota en el menu de inicio.", "Create a note in the start menu."), 16, 96, RGB15(16, 16, 18), 0);
         
         // Clean top screen preview to indicate empty
         if (wizard_buffer != NULL) {

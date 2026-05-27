@@ -76,6 +76,41 @@ const server = http.createServer((req, res) => {
                 res.end('Internal Server Error');
                 return;
             }
+            // Inject initial pairing code into the served HTML so the UI shows it immediately
+            try {
+                const injectionToken = "let pairingCodeData = { code: '------', ip: '...', port: '...' };";
+                const injected = `let pairingCodeData = { code: '${PAIRING_CODE}', ip: '${LOCAL_IP}', port: ${PORT} };`;
+                if (data.includes(injectionToken)) {
+                    data = data.replace(injectionToken, injected);
+                } else {
+                    // Fallback: append a small script with initial pairing data before </head>
+                    const scriptTag = `<script>window.initialPairing = { code: '${PAIRING_CODE}', ip: '${LOCAL_IP}', port: ${PORT} };</script>`;
+                    data = data.replace('</head>', scriptTag + '\n</head>');
+                }
+                // Inject cached notes list so thumbnails appear immediately
+                try {
+                    const notesFiles = fs.readdirSync(NOTES_DIR).filter(f => f.endsWith('.png'))
+                        .map(f => {
+                            const stats = fs.statSync(path.join(NOTES_DIR, f));
+                            return { name: f, time: stats.mtimeMs };
+                        })
+                        .sort((a,b) => b.time - a.time);
+
+                    const cachedToken = "let cachedNotes = [];";
+                    const cachedInjected = `let cachedNotes = ${JSON.stringify(notesFiles)};`;
+                    if (data.includes(cachedToken)) {
+                        data = data.replace(cachedToken, cachedInjected);
+                    } else {
+                        const scriptTag2 = `<script>window.initialNotes = ${JSON.stringify(notesFiles)};</script>`;
+                        data = data.replace('</head>', scriptTag2 + '\n</head>');
+                    }
+                } catch (e) {
+                    console.error('Notes injection failed', e);
+                }
+            } catch (e) {
+                console.error('Pairing injection failed', e);
+            }
+
             res.writeHead(200, { 'Content-Type': 'text/html' });
             res.end(data);
         });
