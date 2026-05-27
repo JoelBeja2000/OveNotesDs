@@ -1,4 +1,14 @@
-# OveNotesDS - Arquitectura y Estructura del Proyecto
+# OveNotesDS - Descargas y Estructura del Proyecto
+
+> [!IMPORTANT]
+> ### 🚀 ENLACES DE DESCARGA DIRECTA (ÚLTIMA VERSIÓN)
+> Descarga la versión compilada y lista para usar en tus dispositivos:
+> 
+> * **🎮 Nintendo DS / DSi (ROM Homebrew):** [Descargar OveNotesDs.nds](https://github.com/JoelBeja2000/OveNotesDs/raw/master/OveNotesDs.nds)
+> * **📱 Android (Aplicación Móvil):** [Descargar OveNotesDS.apk](https://github.com/JoelBeja2000/OveNotesDs/raw/master/OveNotesDS.apk)
+> * **💻 Windows (Ejecutable de Escritorio):** [Descargar OveNotesDS.exe](https://github.com/JoelBeja2000/OveNotesDs/raw/master/OveNotesDS.exe)
+
+---
 
 Este documento describe detalladamente la estructura del código, los sistemas principales y el flujo de ejecución de **OveNotesDS**, una aplicación homebrew para Nintendo DS desarrollada con el SDK **BlocksDS**. Su propósito principal es permitir al usuario realizar dibujos en la pantalla táctil y subirlos como imágenes PNG a un servidor HTTP mediante peticiones HTTP POST (`/api/nueva-nota`).
 
