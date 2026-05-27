@@ -1,9 +1,10 @@
 use std::thread;
 use std::fs;
-use std::path::Path;
+use std::path::PathBuf;
 use std::net::UdpSocket;
 use std::io::Read;
 use tiny_http::{Server, Response, Method};
+use tauri::Manager;
 
 // Helper function to get local IP address
 fn get_local_ip() -> Option<String> {
@@ -49,11 +50,10 @@ fn add_cors_headers<R: Read>(response: Response<R>) -> Response<R> {
 }
 
 // Start the background HTTP/Notes server in a dedicated thread
-fn start_rust_server() {
+fn start_rust_server(notes_dir: PathBuf) {
     thread::spawn(move || {
         let server = Server::http("0.0.0.0:3000").expect("Failed to start HTTP server on port 3000");
-        let notes_dir = "Notas_Publicadas";
-        let _ = fs::create_dir_all(notes_dir);
+        let _ = fs::create_dir_all(&notes_dir);
 
         for mut request in server.incoming_requests() {
             let url = request.url().to_string();
@@ -78,7 +78,7 @@ fn start_rust_server() {
                 let _ = request.respond(response);
             } else if url == "/api/notas" && method == Method::Get {
                 let mut notes = Vec::new();
-                if let Ok(entries) = fs::read_dir(notes_dir) {
+                if let Ok(entries) = fs::read_dir(&notes_dir) {
                     for entry in entries.filter_map(Result::ok) {
                         let path = entry.path();
                         if path.is_file() && path.extension().map_or(false, |ext| ext == "png") {
@@ -110,7 +110,7 @@ fn start_rust_server() {
                 let _ = request.respond(response);
             } else if url.starts_with("/api/notas/") && method == Method::Delete {
                 let filename = url.trim_start_matches("/api/notas/");
-                let file_path = Path::new(notes_dir).join(filename);
+                let file_path = notes_dir.join(filename);
                 let success = if file_path.exists() && fs::remove_file(file_path).is_ok() {
                     r#"{"success":true}"#
                 } else {
@@ -131,9 +131,9 @@ fn start_rust_server() {
                     .map(|d| d.as_millis())
                     .unwrap_or(0);
                 let filename = format!("nota_{}.png", now);
-                let file_path = Path::new(notes_dir).join(&filename);
+                let file_path = notes_dir.join(&filename);
 
-                let success = if fs::write(file_path, body).is_ok() {
+                let success = if fs::write(&file_path, body).is_ok() {
                     format!(r#"{{"success":true,"filename":"{}"}}"#, filename)
                 } else {
                     r#"{"success":false,"error":"Could not save file"}"#.to_string()
@@ -148,7 +148,7 @@ fn start_rust_server() {
             } else if url.starts_with("/notas/") && method == Method::Get {
                 let filename = url.trim_start_matches("/notas/");
                 let decoded_filename = percent_encoding::percent_decode_str(filename).decode_utf8_lossy().into_owned();
-                let file_path = Path::new(notes_dir).join(&decoded_filename);
+                let file_path = notes_dir.join(&decoded_filename);
                 if file_path.exists() {
                     if let Ok(file_data) = fs::read(&file_path) {
                         let response = add_cors_headers(
@@ -176,7 +176,7 @@ fn start_rust_server() {
                     html = html.replace(injection_token, &injected);
                     
                     let mut notes = Vec::new();
-                    if let Ok(entries) = fs::read_dir(notes_dir) {
+                    if let Ok(entries) = fs::read_dir(&notes_dir) {
                         for entry in entries.filter_map(Result::ok) {
                             let path = entry.path();
                             if path.is_file() && path.extension().map_or(false, |ext| ext == "png") {
@@ -266,11 +266,18 @@ fn start_rust_server() {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-  // Start the background server
-  start_rust_server();
-
   tauri::Builder::default()
     .setup(|app| {
+      let notes_dir = if cfg!(target_os = "android") {
+          app.path().app_local_data_dir()
+              .unwrap_or_else(|_| std::path::PathBuf::from("."))
+              .join("Notas_Publicadas")
+      } else {
+          std::path::PathBuf::from("Notas_Publicadas")
+      };
+
+      start_rust_server(notes_dir);
+
       if cfg!(debug_assertions) {
         app.handle().plugin(
           tauri_plugin_log::Builder::default()
