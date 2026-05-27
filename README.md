@@ -1,7 +1,107 @@
-# OveNotesDS - Descargas y Estructura del Proyecto
+# OveNotesDS
+
+[English](#english) | [Español](#español)
+
+## English
 
 > [!IMPORTANT]
-> ### 🚀 ENLACES DE DESCARGA DIRECTA (ÚLTIMA VERSIÓN)
+> ### 🚀 Direct Download Links (Latest Version)
+> Download the compiled, ready-to-use version for your devices:
+> 
+> * **🎮 Nintendo DS / DSi (Homebrew ROM):** [Download OveNotesDs.nds](https://github.com/JoelBeja2000/OveNotesDs/releases/latest/download/OveNotesDs.nds)
+> * **📱 Android (Mobile App):** [Download OveNotesDS.apk](https://github.com/JoelBeja2000/OveNotesDs/releases/latest/download/OveNotesDS.apk)
+> * **💻 Windows (Desktop Executable):** [Download OveNotesDS.exe](https://github.com/JoelBeja2000/OveNotesDs/releases/latest/download/OveNotesDS.exe)
+
+---
+
+This document describes the project structure, main systems, and execution flow of **OveNotesDS**, a Nintendo DS homebrew application built with the **BlocksDS** SDK. Its main purpose is to let the user draw on the touchscreen and upload the result as PNG images to a server using HTTP POST requests (`/api/nueva-nota`).
+
+---
+
+## 🛠️ Development Environment and Tools
+
+*   **SDK**: BlocksDS (Core).
+*   **Language**: C (ARM9).
+*   **Main libraries**:
+    *   `libnds9`: Handles Nintendo DS hardware (screens, VRAM, buttons, touchscreen input).
+    *   `libdswifi9` (`dswifi`): Initializes and manages Wi-Fi network connections.
+    *   `lodepng`: PNG encoder in C for converting the drawing buffer into compressed PNG data before upload.
+
+---
+
+## 📂 Source Structure (`/source`)
+
+The code is organized in independent modules for game logic, networking, UI and rendering.
+
+### 1. `main.c` (Entry Point)
+*   **Function**: Initializes exception handling, sets up the screens, and mounts the SD card with `fatInitDefault()`.
+*   **Flow**:
+    1. Calls `gameInit()` to configure VRAM and video modes.
+    2. If SD mount succeeds, initializes logging with `logInit()` and loads saved configuration with `netLoadConfig()`.
+    3. Enters the main loop, running `inputScan()`, `gameUpdate()`, and waiting for vertical sync (`swiWaitForVBlank()`) at 60 FPS.
+
+### 2. `game.c` and `game.h` (Application State Machine)
+*   **`GameState` states**:
+    *   `STATE_DRAW`: Main drawing screen, showing the canvas and toolbar.
+    *   `STATE_WIZARD`: Network setup form for IP, port, and Wi-Fi SSID with an on-screen keyboard.
+    *   `STATE_UPLOAD`: Encodes the canvas to PNG in RAM and sends it via HTTP POST over TCP sockets.
+*   **`gameUpdate()`**: Processes touchscreen input and dispatches events based on the active state.
+*   **Touch handling**: Uses release-based logic to avoid noisy initial ADC coordinates like `0,0` when the stylus first touches the screen.
+
+### 3. `net.c` and `net.h` (Networking and Sockets)
+*   **DS vs DSi networking**: Uses `Wifi_InitDefault(WIFI_ATTEMPT_DSI_MODE)` to try DSi mode first. If unavailable, falls back to DS-compatible networks.
+*   **`enviarNotaHTTP()`**:
+    *   Creates a TCP socket (`AF_INET`, `SOCK_STREAM`).
+    *   Connects to the configured remote server.
+    *   Builds standard HTTP POST headers (`Content-Type: application/octet-stream`, `Content-Length`).
+    *   Sends binary PNG data with non-blocking socket support and `select()` timeouts to avoid freezing the main loop.
+*   **Configuration persistence**:
+    *   `netLoadConfig()`: Reads `ovenotes_config.txt` from the SD root and parses IP, port, and SSID.
+    *   `netSaveConfig()`: Writes those values back to SD for later reuse.
+
+### 4. `ui.c` and `ui.h` (User Interface)
+*   **`uiDrawToolbar()`**: Renders the bottom toolbar with brush sizes (1, 3, 5), eraser, CONFIG, and UPLOAD.
+*   **`uiDrawFormUI()`**: Draws the network configuration panel and virtual keyboard.
+
+### 5. `render.c` and `render.h` (Drawing and Graphics)
+*   **Render engine**: Draws primitives directly to the touchscreen canvas buffer.
+*   **Functions**: Implements pixel drawing, interpolated line strokes, and preview buffers for the top screen.
+
+### 6. `input.c` and `input.h` (Hardware Input)
+*   Wraps button state and touchscreen ADC reading into a simple input abstraction.
+
+### 7. `log.c` and `log.h` (SD Logging)
+*   Replaces `printf` with `logPrintf` when `log.h` is included.
+*   Writes debug trace to `sd:/debug_log.txt`, flushing immediately to preserve logs after crashes.
+
+---
+
+## Screenshots
+
+### App launch
+![App launch](docs/screenshots/InicicioDeLaApp.jpg)
+
+### Note created
+![Note created](docs/screenshots/notaCreada.jpg)
+
+### Connection screen
+![Connection screen](docs/screenshots/Conexion.jpg)
+
+### Theme switch
+![Theme switch](docs/screenshots/FotoCambioDeTema.jpg)
+
+### Language switch
+![Language switch](docs/screenshots/Cambiodioma.jpg)
+
+### Extra screenshot
+![Additional screenshot](docs/screenshots/b9f0dd38-37db-4ba2-9692-18a966a032e4.jpg)
+
+---
+
+## Español
+
+> [!IMPORTANT]
+> ### 🚀 Enlaces de Descarga Directa (Última Versión)
 > Descarga la versión compilada y lista para usar en tus dispositivos:
 > 
 > * **🎮 Nintendo DS / DSi (ROM Homebrew):** [Descargar OveNotesDs.nds](https://github.com/JoelBeja2000/OveNotesDs/releases/latest/download/OveNotesDs.nds)
@@ -10,7 +110,7 @@
 
 ---
 
-Este documento describe detalladamente la estructura del código, los sistemas principales y el flujo de ejecución de **OveNotesDS**, una aplicación homebrew para Nintendo DS desarrollada con el SDK **BlocksDS**. Su propósito principal es permitir al usuario realizar dibujos en la pantalla táctil y subirlos como imágenes PNG a un servidor HTTP mediante peticiones HTTP POST (`/api/nueva-nota`).
+Este documento describe la estructura del proyecto, los sistemas principales y el flujo de ejecución de **OveNotesDS**, una aplicación homebrew para Nintendo DS desarrollada con el SDK **BlocksDS**. Su propósito principal es permitir al usuario dibujar en la pantalla táctil y subir el resultado como imágenes PNG a un servidor mediante peticiones HTTP POST (`/api/nueva-nota`).
 
 ---
 
@@ -19,82 +119,75 @@ Este documento describe detalladamente la estructura del código, los sistemas p
 *   **SDK**: BlocksDS (Core).
 *   **Lenguaje**: C (ARM9).
 *   **Librerías principales**:
-    *   `libnds9`: Control del hardware de Nintendo DS (pantallas, VRAM, entradas de botones y panel táctil).
-    *   `libdswifi9` (`dswifi`): Inicialización y manejo de la tarjeta de red Wi-Fi.
-    *   `lodepng`: Codificador PNG en C para transformar el búfer de dibujo en una imagen comprimida antes de subirla.
+    *   `libnds9`: Maneja el hardware de Nintendo DS (pantallas, VRAM, botones y entrada táctil).
+    *   `libdswifi9` (`dswifi`): Inicializa y maneja conexiones Wi-Fi.
+    *   `lodepng`: Codificador PNG en C que convierte el lienzo en datos PNG comprimidos antes de la subida.
 
 ---
 
 ## 📂 Estructura del Código Fuente (`/source`)
 
-El código está estructurado en módulos independientes encargados de lógica de juego, red, interfaz y renderizado:
-
-```mermaid
-graph TD
-    Main[main.c] --> Game[game.c]
-    Game --> Render[render.c]
-    Game --> UI[ui.c]
-    Game --> Net[net.c]
-    Game --> Input[input.c]
-    Game --> Log[log.c]
-    Net --> Log
-    Game --> Log
-```
+El código está organizado en módulos independientes para lógica del juego, red, UI y renderizado.
 
 ### 1. `main.c` (Punto de Entrada)
-*   **Función**: Inicializa el manejador de excepciones del hardware, inicia las pantallas y carga la tarjeta SD mediante `fatInitDefault()`.
+*   **Función**: Inicializa excepciones, configura pantallas y monta la tarjeta SD con `fatInitDefault()`.
 *   **Flujo**:
-    1. Llama a `gameInit()` para configurar la VRAM y modos de vídeo de la DS.
-    2. Si se monta la SD correctamente, inicializa el sistema de logs con `logInit()` y carga la última configuración guardada con `netLoadConfig()`.
-    3. Entra en el bucle principal infinito, ejecutando `inputScan()`, `gameUpdate()` y esperando la sincronización vertical (`swiWaitForVBlank()`) a 60 FPS.
+    1. Llama a `gameInit()` para configurar VRAM y modos de vídeo.
+    2. Si la SD se monta correctamente, inicializa el log con `logInit()` y carga la configuración con `netLoadConfig()`.
+    3. Entra en el bucle principal ejecutando `inputScan()`, `gameUpdate()` y esperando `swiWaitForVBlank()` a 60 FPS.
 
-### 2. `game.c` y `game.h` (Máquina de Estados de la Aplicación)
+### 2. `game.c` y `game.h` (Máquina de Estados)
 *   **Estados de `GameState`**:
-    *   `STATE_DRAW`: Pantalla principal donde se dibuja. Muestra el lienzo y la barra de herramientas.
-    *   `STATE_WIZARD`: Formulario de configuración de IP, puerto y SSID de Wi-Fi con teclado virtual en pantalla.
-    *   `STATE_UPLOAD`: Codifica el lienzo a PNG en memoria intermedia RAM (`lodepng`) y realiza la subida de datos HTTP POST a través de sockets TCP de red.
-*   **`gameUpdate()`**: Dirige la lectura del panel táctil y distribuye eventos basándose en el estado activo actual.
-*   **Gestión Táctil Robusta**: Implementa lógica basada en la **liberación de pulsación (release)** para evitar lecturas ruidosas de coordenadas `0,0` iniciales del digitalizador ADC de Nintendo DS (evitando que se pulsen botones por error al iniciar un toque).
+    *   `STATE_DRAW`: Pantalla de dibujo principal.
+    *   `STATE_WIZARD`: Formulario de configuración de red con teclado virtual.
+    *   `STATE_UPLOAD`: Codifica el lienzo a PNG y lo envía por HTTP POST.
+*   **`gameUpdate()`**: Procesa la entrada táctil y controla el comportamiento según el estado.
+*   **Control táctil**: Usa la lógica de liberación para evitar coordenadas iniciales `0,0` ruidosas.
 
-### 3. `net.c` y `net.h` (Comunicaciones y Sockets)
-*   **Red Clásica DS vs DSi**: Utiliza `Wifi_InitDefault(WIFI_ATTEMPT_DSI_MODE)`. Intenta usar el hardware DSi (permitiendo redes WPA/WPA2 modernas configuradas en ranuras 4-6). En DS clásica, cae a redes WEP o Abiertas sin seguridad (ranuras 1-3).
+### 3. `net.c` y `net.h` (Red)
+*   **DS vs DSi**: Usa `Wifi_InitDefault(WIFI_ATTEMPT_DSI_MODE)` y cae al modo compatible si es necesario.
 *   **`enviarNotaHTTP()`**:
-    *   Crea un socket TCP bloqueante (`AF_INET`, `SOCK_STREAM`).
-    *   Conecta al servidor remoto especificado.
-    *   Construye cabeceras HTTP POST estándar (`Content-Type: application/octet-stream`, `Content-Length`).
-    *   Envía de forma segura los búferes binarios usando sockets no bloqueantes y `select()` para gestionar tiempos de espera (timeout) y evitar cuelgues eternos de red.
-*   **Persistencia de datos**:
-    *   `netLoadConfig()`: Lee de la raíz de la SD `ovenotes_config.txt` y parsea los valores de IP, Puerto y SSID.
-    *   `netSaveConfig()`: Escribe estos tres campos de texto línea por línea para persistir tras apagados de consola.
+    *   Crea un socket TCP.
+    *   Conecta al servidor remoto configurado.
+    *   Construye cabeceras POST estándar.
+    *   Envía los datos PNG usando sockets no bloqueantes y `select()` para evitar bloqueos.
+*   **Persistencia**:
+    *   `netLoadConfig()`: Lee `ovenotes_config.txt` desde SD.
+    *   `netSaveConfig()`: Guarda IP, puerto y SSID en la SD.
 
-### 4. `ui.c` y `ui.h` (Interfaz Gráfica y Formularios)
-*   **`uiDrawToolbar()`**: Dibuja en la parte inferior de la pantalla la barra de herramientas táctiles: pinceles (tamaños 1, 3, 5), borrador (BORR), CONFIG y PUBLICAR.
-*   **`uiDrawFormUI()`**: Rinde todo el panel del configurador de red con soporte visual de cajas de entrada de texto seleccionables mediante pestañas en la pantalla superior y el teclado en la pantalla inferior.
+### 4. `ui.c` y `ui.h` (Interfaz)
+*   **`uiDrawToolbar()`**: Renderiza la barra de herramientas con pinceles, borrador, CONFIG y PUBLICAR.
+*   **`uiDrawFormUI()`**: Dibuja el panel de configuración de red y el teclado en pantalla.
 
-### 5. `render.c` y `render.h` (Dibujo y Gráficos)
-*   **Motor Gráfico**: Dibuja primitivas directo en la VRAM de la pantalla de dibujo (`canvas_buffer`).
-*   **Funciones**: Implementa dibujo de píxeles, dibujo de líneas continuas por interpolación (para evitar trazos punteados debido a tasas de muestreo en trazos rápidos) y búferes de previsualización a escala de 128x128 píxeles en la pantalla superior.
+### 5. `render.c` y `render.h` (Renderizado)
+*   **Motor**: Dibuja primitivas en el búfer del lienzo.
+*   **Funciones**: Dibujo de píxeles, líneas interpoladas y previsualización en la pantalla superior.
 
-### 6. `input.c` y `input.h` (Lectura del Hardware)
-*   Abstracción simple para envolver las llamadas estándar de lectura de teclas pulsadas, mantenidas y lectura del digitalizador de la pantalla táctil de la DS.
+### 6. `input.c` y `input.h` (Entrada)
+*   Encapsula la lectura de botones y la entrada táctil en una abstracción simple.
 
-### 7. `log.c` y `log.h` (Archivo de Logs en la SD)
-*   Reescribe la macro estándar de `printf` a `logPrintf` (siempre que se incluya `log.h`).
-*   Escribe toda traza de depuración en la consola y de forma inmediata en el archivo `sd:/debug_log.txt` (forzando actualización de la estructura FAT con `fflush` y `fsync`), permitiendo al desarrollador revisar errores y caídas leyendo el log desde su PC.
+### 7. `log.c` y `log.h` (Logs)
+*   Sustituye `printf` por `logPrintf`.
+*   Escribe la traza de depuración en `sd:/debug_log.txt` y fuerza la escritura inmediata.
 
 ---
 
-## ⚠️ Puntos Críticos para Futuras Correcciones de Errores
+## Capturas de pantalla
 
-1.  **Crashes de Red (Punteros Nulos)**:
-    *   *Detalle*: `Wifi_DisconnectAP()` crasheará si se invoca antes de `Wifi_InitDefault()`.
-    *   *Solución*: Se ha protegido con un booleano global `wifi_inicializado`. Cualquier función de red debe comprobar este estado antes de interactuar con el chip.
-2.  **Lecturas Táctiles Ruinosas (ADC Touch Noise)**:
-    *   *Detalle*: El primer frame de contacto táctil (`keysDown() & KEY_TOUCH`) suele devolver las coordenadas `0,0` debido a la estabilización de los voltajes del ADC.
-    *   *Solución*: Registrar las pulsaciones de menús y botones al soltar el lápiz óptico (`keysHeld()` no contiene la tecla táctil, pero en el frame anterior sí), utilizando la variable de coordenada previamente leída en el frame de retención final.
-3.  **Memoria RAM Limitada**:
-    *   *Detalle*: La Nintendo DS tiene 4MB de memoria RAM principal (modo DS) o 16MB (modo DSi).
-    *   *Solución*: El guardado temporal del dibujo (`backup_canvas`, `backup_preview`) e imágenes PNG comprimidas dinámicas se reserva con `malloc` y se libera de inmediato con `free`. Asegurarse de liberar recursos de memoria tras codificar PNGs o salir de los estados del asistente de red.
-4.  **Sockets Bloqueantes**:
-    *   *Detalle*: Los sockets estándar de dswifi pueden congelar el bucle principal si el servidor HTTP remoto no responde o la red se pierde a mitad de la subida.
-    *   *Solución*: Utilizar sockets no-bloqueantes temporales empleando la llamada de sistema `select()` con un timeout estricto de pocos segundos (implementado en `send_all_timeout` y `recv_timeout`).
+### Inicio de la app
+![Inicio de la app](docs/screenshots/InicicioDeLaApp.jpg)
+
+### Nota creada
+![Nota creada](docs/screenshots/notaCreada.jpg)
+
+### Pantalla de conexión
+![Pantalla de conexión](docs/screenshots/Conexion.jpg)
+
+### Cambio de tema
+![Cambio de tema](docs/screenshots/FotoCambioDeTema.jpg)
+
+### Cambio de idioma
+![Cambio de idioma](docs/screenshots/Cambiodioma.jpg)
+
+### Captura extra
+![Captura extra](docs/screenshots/b9f0dd38-37db-4ba2-9692-18a966a032e4.jpg)
