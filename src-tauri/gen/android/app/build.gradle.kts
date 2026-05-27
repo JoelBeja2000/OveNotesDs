@@ -17,7 +17,7 @@ android {
     compileSdk = 36
     namespace = "com.joelbeja.ovenotesds"
     defaultConfig {
-        manifestPlaceholders["usesCleartextTraffic"] = "false"
+        manifestPlaceholders["usesCleartextTraffic"] = "true"
         applicationId = "com.joelbeja.ovenotesds"
         minSdk = 24
         targetSdk = 36
