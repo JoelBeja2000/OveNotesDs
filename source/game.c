@@ -1030,7 +1030,7 @@ void gameUpdate(void) {
                                     // Guardar nota
                                     uiCloseModal();
                                     renderComposeCanvas();
-                                    bool success = ioSaveNote(canvas_buffer);
+                                    bool success = ioSaveNote(composite_buffer);
                                     if (success) {
                                         printf("[SYS] Nota guardada correctamente en la SD!\n");
                                     } else {
@@ -1058,7 +1058,7 @@ void gameUpdate(void) {
                                     // SI, GUARDAR Y SALIR
                                     uiCloseModal();
                                     renderComposeCanvas();
-                                    ioSaveNote(canvas_buffer);
+                                    ioSaveNote(composite_buffer);
                                     current_state = STATE_START_MENU;
                                     videoSetModeSub(MODE_5_2D | DISPLAY_BG3_ACTIVE);
                                     bg_sub_wizard = bgInitSub(3, BgType_Bmp16, BgSize_B16_256x256, 0, 0);
@@ -1118,7 +1118,7 @@ void gameUpdate(void) {
         // Save note to SD Card with KEY_SELECT
         if (keys_down & KEY_SELECT) {
             renderComposeCanvas();
-            bool success = ioSaveNote(canvas_buffer);
+            bool success = ioSaveNote(composite_buffer);
             if (success) {
                 printf("[SYS] Nota guardada correctamente en la SD!\n");
             } else {
