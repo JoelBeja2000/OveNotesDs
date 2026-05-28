@@ -12,6 +12,8 @@
 > * **📱 Android (Mobile App):** [Download OveNotesDS.apk](https://github.com/JoelBeja2000/OveNotesDs/releases/latest/download/OveNotesDS.apk)
 > * **💻 Windows (Desktop Executable):** [Download OveNotesDS.exe](https://github.com/JoelBeja2000/OveNotesDs/releases/latest/download/OveNotesDS.exe)
 
+You need to have your DS connected to a Wi-Fi network and download the .nds file, the APK, or the .exe. Once you are in the note creation view, click the menu button. There, you will find a form to enter the DS code that appears on your PC or mobile device. You must also select your Wi-Fi name in that same form.
+
 ---
 
 This document describes the project structure, main systems, and execution flow of **OveNotesDS**, a Nintendo DS homebrew application built with the **BlocksDS** SDK. Its main purpose is to let the user draw on the touchscreen and upload the result as PNG images to a server using HTTP POST requests (`/api/nueva-nota`).
@@ -108,6 +110,8 @@ The code is organized in independent modules for game logic, networking, UI and 
 > * **📱 Android (Aplicación Móvil):** [Descargar OveNotesDS.apk](https://github.com/JoelBeja2000/OveNotesDs/releases/latest/download/OveNotesDS.apk)
 > * **💻 Windows (Ejecutable de Escritorio):** [Descargar OveNotesDS.exe](https://github.com/JoelBeja2000/OveNotesDs/releases/latest/download/OveNotesDS.exe)
 
+
+Tienes que tener tu DS conectada a una red wifi y descargarte el archivo .nds, la APK o el .exe. Una vez que estés en la vista para crear notas, haces clic en el botón de menú. Ahí encontrarás un formulario para introducir el código de la DS que te aparece en el PC o en el móvil. También tienes que seleccionar el nombre de tu wifi en ese mismo formulario.
 ---
 
 Este documento describe la estructura del proyecto, los sistemas principales y el flujo de ejecución de **OveNotesDS**, una aplicación homebrew para Nintendo DS desarrollada con el SDK **BlocksDS**. Su propósito principal es permitir al usuario dibujar en la pantalla táctil y subir el resultado como imágenes PNG a un servidor mediante peticiones HTTP POST (`/api/nueva-nota`).
