@@ -1,3 +1,4 @@
+// #define NO_UI_COMPAT_MACROS
 #include "render.h"
 #include "font8x8.h"
 #include "ui.h"
@@ -13,33 +14,12 @@ uint16_t* wizard_buffer = NULL;
 uint16_t* drawing_buffer = NULL;
 uint16_t* composite_buffer = NULL;
 uint16_t* layers[MAX_LAYERS] = {NULL};
-int layers_count = 1;
-int active_layer_idx = 0;
-bool layers_visible[MAX_LAYERS] = {false};
-bool layers_panel_open = false;
-int dragging_layer_idx = -1;
-char layer_names[MAX_LAYERS][16] = {
-    "Capa 0", "Capa 1", "Capa 2", "Capa 3", "Capa 4", "Capa 5", "Capa 6", "Capa 7"
-};
-uint8_t layers_opacity[MAX_LAYERS] = {100, 100, 100, 100, 100, 100, 100, 100};
 
 UndoStep undo_stack[MAX_UNDO_STEPS];
 UndoStep redo_stack[MAX_UNDO_STEPS];
 int undo_count = 0;
 int redo_count = 0;
 
-bool toolbar_hidden = false;
-
-bool bg_modifiable = false;
-int bg_angle = 0;
-int bg_color_p_idx = 0;
-int bg_color_s_idx = 0;
-int angle_target = 0; // 0 = brush, 1 = background
-
-int perspective_mode = 0;
-int perspective_points[4][2] = { {32, 88}, {224, 88}, {128, 40}, {128, 136} };
-int perspective_step = 32;
-int nib_angle = 0;
 
 const uint16_t bg_primary_palette[4] = {
     RGB15(31, 31, 31), // White
@@ -1161,4 +1141,270 @@ void renderRedo(void) {
     
     renderComposeCanvas();
     renderUpdatePreview();
+}
+
+uint16_t hsv_to_rgb15(int h, int s, int v) {
+    float fh = h;
+    float fs = s / 31.0f;
+    float fv = v / 31.0f;
+    
+    float r = 0, g = 0, b = 0;
+    
+    if (s == 0) {
+        r = g = b = fv;
+    } else {
+        float sectorPos = fh / 60.0f;
+        int sectorNumber = (int)floorf(sectorPos);
+        float fractionalSector = sectorPos - sectorNumber;
+        
+        float p = fv * (1.0f - fs);
+        float q = fv * (1.0f - (fs * fractionalSector));
+        float t = fv * (1.0f - (fs * (1.0f - fractionalSector)));
+        
+        switch (sectorNumber % 6) {
+            case 0: r = fv; g = t;  b = p;  break;
+            case 1: r = q;  g = fv; b = p;  break;
+            case 2: r = p;  g = fv; b = t;  break;
+            case 3: r = p;  g = q;  b = fv; break;
+            case 4: r = t;  g = p;  b = fv; break;
+            case 5: r = fv; g = p;  b = q;  break;
+        }
+    }
+    
+    int ir = (int)(r * 31.0f + 0.5f);
+    int ig = (int)(g * 31.0f + 0.5f);
+    int ib = (int)(b * 31.0f + 0.5f);
+    
+    return RGB15(ir, ig, ib);
+}
+
+void rgb15_to_hsv(uint16_t color, int* h, int* s, int* v) {
+    int r = color & 31;
+    int g = (color >> 5) & 31;
+    int b = (color >> 10) & 31;
+    
+    int max_val = r;
+    if (g > max_val) max_val = g;
+    if (b > max_val) max_val = b;
+    
+    int min_val = r;
+    if (g < min_val) min_val = g;
+    if (b < min_val) min_val = b;
+    
+    *v = max_val;
+    
+    int delta = max_val - min_val;
+    if (max_val == 0) {
+        *s = 0;
+    } else {
+        *s = (delta * 31) / max_val;
+    }
+    
+    if (delta == 0) {
+        *h = 0;
+    } else {
+        if (max_val == r) {
+            *h = (60 * (g - b)) / delta;
+        } else if (max_val == g) {
+            *h = 120 + (60 * (b - r)) / delta;
+        } else {
+            *h = 240 + (60 * (r - g)) / delta;
+        }
+        if (*h < 0) *h += 360;
+    }
+}
+
+void renderDrawHSMap(int x0, int y0, int w, int h) {
+    for (int dy = 0; dy < h; dy++) {
+        int s = 31 - (dy * 31) / h;
+        for (int dx = 0; dx < w; dx++) {
+            int hue = (dx * 360) / w;
+            canvas_buffer[(y0 + dy) * 256 + (x0 + dx)] = hsv_to_rgb15(hue, s, 31);
+        }
+    }
+}
+
+void renderDrawBrightnessSlider(int x0, int y0, int w, int h, int ph, int ps) {
+    for (int dy = 0; dy < h; dy++) {
+        int v = 31 - (dy * 31) / h;
+        uint16_t slider_color = hsv_to_rgb15(ph, ps, v);
+        for (int dx = 0; dx < w; dx++) {
+            canvas_buffer[(y0 + dy) * 256 + (x0 + dx)] = slider_color;
+        }
+    }
+}
+
+void renderDrawRect(int x0, int y0, int x1, int y1, uint16_t color) {
+    if (x0 < 0) x0 = 0;
+    if (x1 >= 256) x1 = 255;
+    if (y0 < 0) y0 = 0;
+    if (y1 >= 192) y1 = 191;
+    for (int y = y0; y <= y1; y++) {
+        for (int x = x0; x <= x1; x++) {
+            canvas_buffer[y * 256 + x] = color;
+        }
+    }
+}
+
+void renderDrawRectOutline(int x0, int y0, int x1, int y1, uint16_t color) {
+    if (x0 < 0) x0 = 0;
+    if (x1 >= 256) x1 = 255;
+    if (y0 < 0) y0 = 0;
+    if (y1 >= 192) y1 = 191;
+    for (int x = x0; x <= x1; x++) {
+        canvas_buffer[y0 * 256 + x] = color;
+        canvas_buffer[y1 * 256 + x] = color;
+    }
+    for (int y = y0; y <= y1; y++) {
+        canvas_buffer[y * 256 + x0] = color;
+        canvas_buffer[y * 256 + x1] = color;
+    }
+}
+
+void renderDrawLineSimple(int x0, int y0, int x1, int y1, uint16_t color) {
+    int dx = abs(x1 - x0), sx = x0 < x1 ? 1 : -1;
+    int dy = -abs(y1 - y0), sy = y0 < y1 ? 1 : -1;
+    int err = dx + dy, e2;
+    while (1) {
+        if (x0 >= 0 && x0 < 256 && y0 >= 0 && y0 < 192) {
+            canvas_buffer[y0 * 256 + x0] = color;
+        }
+        if (x0 == x1 && y0 == y1) break;
+        e2 = 2 * err;
+        if (e2 >= dy) { err += dy; x0 += sx; }
+        if (e2 <= dx) { err += dx; y0 += sy; }
+    }
+}
+
+void renderDrawCircleOutline(int xc, int yc, int r, uint16_t color) {
+    int x = 0;
+    int y = r;
+    int d = 3 - 2 * r;
+    while (y >= x) {
+        #define SET_P(px, py) if ((px) >= 0 && (px) < 256 && (py) >= 0 && (py) < 192) canvas_buffer[(py)*256 + (px)] = color
+        SET_P(xc + x, yc + y); SET_P(xc - x, yc + y);
+        SET_P(xc + x, yc - y); SET_P(xc - x, yc - y);
+        SET_P(xc + y, yc + x); SET_P(xc - y, yc + x);
+        SET_P(xc + y, yc - x); SET_P(xc - y, yc - x);
+        #undef SET_P
+        x++;
+        if (d > 0) {
+            y--;
+            d = d + 4 * (x - y) + 10;
+        } else {
+            d = d + 4 * x + 6;
+        }
+    }
+}
+
+void renderDrawFilledCircle(int xm, int ym, int r, uint16_t color) {
+    int x = -r, y = 0, err = 2-2*r;
+    do {
+        for (int i = xm + x; i <= xm - x; i++) {
+            if (i >= 0 && i < 256 && ym + y >= 0 && ym + y < 192) {
+                canvas_buffer[(ym + y) * 256 + i] = color;
+            }
+            if (i >= 0 && i < 256 && ym - y >= 0 && ym - y < 192) {
+                canvas_buffer[(ym - y) * 256 + i] = color;
+            }
+        }
+        r = err;
+        if (r <= y) err += ++y*2+1;
+        if (r > x || err > y) err += ++x*2+1;
+    } while (x < 0);
+}
+
+void renderDrawPatternPreview(int x0, int y0, int x1, int y1, int pat_idx, bool selected) {
+    uint16_t p_color = bg_primary_palette[bg_color_p_idx];
+    uint16_t s_color = bg_secondary_palette[bg_color_s_idx];
+    uint16_t red_margin = RGB15(30, 8, 8);
+    uint16_t outline = selected ? app_theme_color : RGB15(0, 0, 0);
+    
+    renderDrawRect(x0, y0, x1, y1, p_color);
+    
+    for (int y = y0 + 1; y < y1; y++) {
+        for (int x = x0 + 1; x < x1; x++) {
+            int rx = x - x0;
+            int ry = y - y0;
+            
+            bool draw_s = false;
+            bool draw_red = false;
+            
+            if (pat_idx == 1) {
+                if (ry % 8 == 0 && rx % 8 == 0) draw_s = true;
+            } else if (pat_idx == 2) {
+                if (ry % 8 == 0) draw_s = true;
+            } else if (pat_idx == 3) {
+                if (ry % 8 == 0 || rx % 8 == 0) draw_s = true;
+            } else if (pat_idx == 4) {
+                if (rx % 8 == 0) draw_s = true;
+            } else if (pat_idx == 5) {
+                if ((rx + ry * 2) % 16 == 0 || (rx - ry * 2) % 16 == 0) draw_s = true;
+            } else if (pat_idx == 6) {
+                if (ry % 12 == 0) draw_s = true;
+            } else if (pat_idx == 7) {
+                if (ry % 8 == 0) draw_s = true;
+                if (rx == 8) draw_red = true;
+            }
+            
+            if (draw_red) {
+                canvas_buffer[y * 256 + x] = red_margin;
+            } else if (draw_s) {
+                canvas_buffer[y * 256 + x] = s_color;
+            }
+        }
+    }
+    
+    renderDrawRectOutline(x0, y0, x1, y1, outline);
+    if (selected) {
+        renderDrawRectOutline(x0 + 1, y0 + 1, x1 - 1, y1 - 1, outline);
+    }
+}
+
+void renderDrawLockIcon(int x, int y, bool locked) {
+    uint16_t metal = RGB15(12, 12, 12);
+    uint16_t body = RGB15(26, 15, 0); // Golden body
+    if (locked) {
+        body = RGB15(28, 5, 5); // Red body when locked
+    }
+    // Draw body: 8x6 rectangle
+    for (int dy = 4; dy <= 9; dy++) {
+        for (int dx = 1; dx <= 8; dx++) {
+            if (x + dx >= 0 && x + dx < 256 && y + dy >= 0 && y + dy < 192) {
+                canvas_buffer[(y + dy) * 256 + (x + dx)] = body;
+            }
+        }
+    }
+    // Draw shackle
+    if (locked) {
+        // Closed shackle: loop connecting both sides
+        for (int i = 0; i < 4; i++) {
+            if (x + 3 >= 0 && x + 3 < 256 && y + i >= 0 && y + i < 192) {
+                canvas_buffer[(y + i) * 256 + (x + 3)] = metal;
+            }
+            if (x + 6 >= 0 && x + 6 < 256 && y + i >= 0 && y + i < 192) {
+                canvas_buffer[(y + i) * 256 + (x + 6)] = metal;
+            }
+        }
+        for (int dx = 4; dx <= 5; dx++) {
+            if (x + dx >= 0 && x + dx < 256 && y >= 0 && y < 192) {
+                canvas_buffer[y * 256 + (x + dx)] = metal;
+            }
+        }
+    } else {
+        // Open shackle: loop is open/turned on one side
+        for (int i = 0; i < 4; i++) {
+            if (x + 2 >= 0 && x + 2 < 256 && y + i >= 0 && y + i < 192) {
+                canvas_buffer[(y + i) * 256 + (x + 2)] = metal;
+            }
+        }
+        for (int dx = 3; dx <= 4; dx++) {
+            if (x + dx >= 0 && x + dx < 256 && y >= 0 && y < 192) {
+                canvas_buffer[y * 256 + (x + dx)] = metal;
+            }
+        }
+        if (x + 4 >= 0 && x + 4 < 256 && y + 1 >= 0 && y + 1 < 192) {
+            canvas_buffer[(y + 1) * 256 + (x + 4)] = metal;
+        }
+    }
 }

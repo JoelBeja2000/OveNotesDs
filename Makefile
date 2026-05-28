@@ -33,7 +33,7 @@ SDIMAGE		?= image.bin
 # -----------------
 
 SOURCEDIRS	?= source
-INCLUDEDIRS	?=
+INCLUDEDIRS	?= source source/ui source/systems source/assets source/vendor
 GFXDIRS		?=
 BINDIRS		?=
 AUDIODIRS	?=

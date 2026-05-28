@@ -80,18 +80,25 @@ void gameInit(void) {
 
 static void enterWizardState(void) {
     printf("[GAME] Entrando a enterWizardState...\n");
+    
+    bool coming_from_draw = (current_state == STATE_DRAW);
     current_state = STATE_WIZARD;
     
-    // Backup canvas and preview
-    printf("[GAME] Creando backups en RAM del canvas y preview...\n");
-    backup_canvas = malloc(256 * 192 * 2);
-    backup_preview = malloc(256 * 192 * 2);
-    if (backup_canvas && backup_preview) {
-        memcpy(backup_canvas, canvas_buffer, 256 * 192 * 2);
-        memcpy(backup_preview, preview_buffer, 256 * 192 * 2);
-        printf("[GAME] Backups creados con exito\n");
+    // Backup canvas and preview only if coming from STATE_DRAW
+    if (coming_from_draw) {
+        printf("[GAME] Creando backups en RAM del canvas y preview...\n");
+        backup_canvas = malloc(256 * 192 * 2);
+        backup_preview = malloc(256 * 192 * 2);
+        if (backup_canvas && backup_preview) {
+            memcpy(backup_canvas, canvas_buffer, 256 * 192 * 2);
+            memcpy(backup_preview, preview_buffer, 256 * 192 * 2);
+            printf("[GAME] Backups creados con exito\n");
+        } else {
+            printf("[GAME] Advertencia: fallo al asignar backups de memoria\n");
+        }
     } else {
-        printf("[GAME] Advertencia: fallo al asignar backups de memoria\n");
+        backup_canvas = NULL;
+        backup_preview = NULL;
     }
     
     // Keep the bottom screen video mode as MODE_5_2D | DISPLAY_BG2_ACTIVE, so we can draw on canvas_buffer
@@ -135,11 +142,21 @@ static void exitWizardState(bool canceled) {
         backup_canvas = NULL;
         backup_preview = NULL;
         printf("[GAME] Backups restaurados y liberados\n");
+        // Deshabilitar la visualizacion del subConsole para dejar solo el dibujo a pantalla completa
+        videoSetModeSub(MODE_5_2D | DISPLAY_BG2_ACTIVE);
+        current_state = STATE_DRAW;
+    } else {
+        // Re-initialize upper screen for start menu (which uses Bg3 as sub wizard/logo)
+        videoSetModeSub(MODE_5_2D | DISPLAY_BG3_ACTIVE);
+        bg_sub_wizard = bgInitSub(3, BgType_Bmp16, BgSize_B16_256x256, 0, 0);
+        wizard_buffer = (uint16_t*)bgGetGfxPtr(bg_sub_wizard);
+        bgSet(bg_sub_wizard, 0, 1 << 8, 1 << 8, 0, 0, 0, 0);
+        bgUpdate();
+        
+        current_state = STATE_START_MENU;
+        uiDrawStartMenu();
+        printf("[GAME] Retornado al Start Menu sin restaurar backups\n");
     }
-    
-    // Deshabilitar la visualizacion del subConsole para dejar solo el dibujo a pantalla completa
-    videoSetModeSub(MODE_5_2D | DISPLAY_BG2_ACTIVE);
-    current_state = STATE_DRAW;
 }
 
 static void runUpload(void) {
@@ -268,12 +285,14 @@ void gameUpdate(void) {
                     if (prev_x >= 48 && prev_x <= 208 && prev_y >= 62 && prev_y <= 86) {
                         current_lang = 0;
                         netSaveConfig();
+                        show_lang_modal = false;
                         uiDrawStartMenu();
                     }
                     // English option button
                     else if (prev_x >= 48 && prev_x <= 208 && prev_y >= 94 && prev_y <= 118) {
                         current_lang = 1;
                         netSaveConfig();
+                        show_lang_modal = false;
                         uiDrawStartMenu();
                     }
                     // Close button
@@ -287,8 +306,8 @@ void gameUpdate(void) {
                         show_lang_modal = true;
                         uiDrawStartMenu();
                     }
-                    // Button 1: Crear Nueva Nota (y = 56..80, x = 32..224)
-                    else if (prev_x >= 32 && prev_x <= 224 && prev_y >= 56 && prev_y <= 80) {
+                    // Button 1: Crear Nueva Nota (y = 42..64, x = 32..224)
+                    else if (prev_x >= 32 && prev_x <= 224 && prev_y >= 42 && prev_y <= 64) {
                         videoBgDisableSub(3);
                         
                         // Initialize BG2 bitmap for preview on the top screen
@@ -309,8 +328,8 @@ void gameUpdate(void) {
                         
                         current_state = STATE_DRAW;
                     }
-                    // Button 2: Ver Notas Creadas (y = 92..116, x = 32..224)
-                    else if (prev_x >= 32 && prev_x <= 224 && prev_y >= 92 && prev_y <= 116) {
+                    // Button 2: Ver Notas Creadas (y = 72..94, x = 32..224)
+                    else if (prev_x >= 32 && prev_x <= 224 && prev_y >= 72 && prev_y <= 94) {
                         char filenames[100][32];
                         int count = ioGetNoteList(filenames, 100);
                         
@@ -333,8 +352,12 @@ void gameUpdate(void) {
                         
                         uiDrawNotesGallery(gallery_selected_idx, gallery_count, gallery_filenames);
                     }
-                    // Button 3: Cambiar Tema (y = 128..152, x = 32..224)
-                    else if (prev_x >= 32 && prev_x <= 224 && prev_y >= 128 && prev_y <= 152) {
+                    // Button 3: WiFi / Conexión (y = 102..124, x = 32..224)
+                    else if (prev_x >= 32 && prev_x <= 224 && prev_y >= 102 && prev_y <= 124) {
+                        enterWizardState();
+                    }
+                    // Button 4: Cambiar Tema (y = 132..154, x = 32..224)
+                    else if (prev_x >= 32 && prev_x <= 224 && prev_y >= 132 && prev_y <= 154) {
                         active_theme_idx = (active_theme_idx + 1) % 5;
                         app_theme_color = theme_colors[active_theme_idx];
                         uiDrawStartMenu();
