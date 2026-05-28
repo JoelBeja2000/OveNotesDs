@@ -2,7 +2,11 @@ const fs = require('fs');
 const jpeg = require('jpeg-js');
 const PNG = require('pngjs').PNG;
 
-const filename = 'C:\\Users\\JOel\\.gemini\\antigravity\\brain\\3c35ccee-0312-4f9d-970f-b0f54b1ff54d\\pointer_sheep_sharp_1779837050861.png';
+const filename = process.argv[2] || './pointer_sheep.png';
+if (!fs.existsSync(filename)) {
+    console.error(`Error: File not found: ${filename}\nUsage: node process_pointer_sheep.js <path_to_image_file>`);
+    process.exit(1);
+}
 const data = fs.readFileSync(filename);
 
 let width, height, pixels;

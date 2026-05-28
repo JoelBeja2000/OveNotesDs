@@ -1,6 +1,8 @@
-$env:DEVKITPRO = '/d/Proyectos/OveNotesDs/devKitPro'
-$env:DEVKITARM = '/d/Proyectos/OveNotesDs/devKitPro/devkitARM'
-$env:PATH = 'D:\Proyectos\OveNotesDs\devKitPro\msys2\usr\bin;D:\Proyectos\OveNotesDs\devKitPro\devkitARM\bin;D:\Proyectos\OveNotesDs\devKitPro\tools\bin;' + $env:PATH
+$devkitproWin = Join-Path $PSScriptRoot "devKitPro"
+$devkitproMsys = "/" + ($devkitproWin -replace ':', '' -replace '\\', '/')
+$env:DEVKITPRO = $devkitproMsys
+$env:DEVKITARM = "$devkitproMsys/devkitARM"
+$env:PATH = "$devkitproWin\msys2\usr\bin;$devkitproWin\devkitARM\bin;$devkitproWin\tools\bin;" + $env:PATH
 
 Write-Host "Running make clean..."
 make clean
@@ -8,16 +10,17 @@ Write-Host "Running make..."
 make
 
 # Check if make succeeded
-if (Test-Path 'OveNotesDs.nds') {
+if (Test-Path (Join-Path $PSScriptRoot 'OveNotesDs.nds')) {
     Write-Host "Patching ROM header..."
-    $bytes = [System.IO.File]::ReadAllBytes('OveNotesDs.nds')
+    $romPath = Join-Path $PSScriptRoot 'OveNotesDs.nds'
+    $bytes = [System.IO.File]::ReadAllBytes($romPath)
     $bytes[0x10] = 48 # '0'
     $bytes[0x11] = 48 # '0'
     $bytes[0x12] = 0  # DS Mode (NTR)
-    [System.IO.File]::WriteAllBytes('OveNotesDs.nds', $bytes)
+    [System.IO.File]::WriteAllBytes($romPath, $bytes)
     
     Write-Host "Running ndstool to fix Header CRC..."
-    & "D:\Proyectos\OveNotesDs\devKitPro\tools\bin\ndstool.exe" -f OveNotesDs.nds
+    & "$devkitproWin\tools\bin\ndstool.exe" -f $romPath
     
     Write-Host "Compilation and patching complete!"
 } else {

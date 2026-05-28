@@ -15,6 +15,11 @@ function Dump-Header($path) {
     Write-Output ""
 }
 
-Dump-Header "D:\Proyectos\OveNotesDs\OveNotesDs.nds"
-Dump-Header "F:\roms\nds\OveNotesDs.nds"
-Dump-Header "F:\OveNotesDs.nds"
+Dump-Header (Join-Path $PSScriptRoot "OveNotesDs.nds")
+# Also check typical SD card paths if they exist
+foreach ($drive in Get-PSDrive -PSProvider FileSystem) {
+    $romPath = Join-Path $drive.Root "OveNotesDs.nds"
+    if (Test-Path $romPath) { Dump-Header $romPath }
+    $romPath2 = Join-Path $drive.Root "roms\nds\OveNotesDs.nds"
+    if (Test-Path $romPath2) { Dump-Header $romPath2 }
+}

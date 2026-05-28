@@ -5,7 +5,7 @@ echo Compilando OveNotesDS con BlocksDS...
 echo ====================================================
 echo.
 
-C:\msys64\usr\bin\bash.exe -l -c "source /opt/wonderful/bin/wf-env && cd /d/Proyectos/OveNotesDs && make clean && make"
+C:\msys64\usr\bin\bash.exe -l -c "source /opt/wonderful/bin/wf-env && cd \"$(cygpath '%~dp0')\" && make clean && make"
 
 if %ERRORLEVEL% EQU 0 (
     echo.

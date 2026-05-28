@@ -2,7 +2,11 @@ const fs = require('fs');
 const jpeg = require('jpeg-js');
 const PNG = require('pngjs').PNG;
 
-const filename = 'C:\\Users\\JOel\\.gemini\\antigravity\\brain\\7b50d8f8-2d81-4874-a1d8-4c0c8f501420\\ovenotes_logo_sheep_1779740660384.png';
+const filename = process.argv[2] || './ovenotes_logo_sheep.png';
+if (!fs.existsSync(filename)) {
+    console.error(`Error: File not found: ${filename}\nUsage: node process_logo.js <path_to_image_file>`);
+    process.exit(1);
+}
 const data = fs.readFileSync(filename);
 
 let width, height, pixels;

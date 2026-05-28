@@ -2,6 +2,12 @@
 
 [English](#english) | [Español](#español)
 
+<p align="center">
+  <img src="https://github.com/JoelBeja2000/OveNotesDs/releases/download/v1.0.0/nds.gif" alt="OveNotesDS Demo" width="400">
+</p>
+
+---
+
 ## English
 
 > [!IMPORTANT]
@@ -81,22 +87,22 @@ The code is organized in independent modules for game logic, networking, UI and 
 ## Screenshots
 
 ### App launch
-![App launch](docs/screenshots/InicicioDeLaApp.jpg)
+![App launch](https://github.com/JoelBeja2000/OveNotesDs/releases/download/v1.0.0/InicicioDeLaApp.jpg)
 
 ### Note created
-![Note created](docs/screenshots/notaCreada.jpg)
+![Note created](https://github.com/JoelBeja2000/OveNotesDs/releases/download/v1.0.0/notaCreada.jpg)
 
 ### Connection screen
-![Connection screen](docs/screenshots/Conexion.jpg)
+![Connection screen](https://github.com/JoelBeja2000/OveNotesDs/releases/download/v1.0.0/Conexion.jpg)
 
 ### Theme switch
-![Theme switch](docs/screenshots/FotoCambioDeTema.jpg)
+![Theme switch](https://github.com/JoelBeja2000/OveNotesDs/releases/download/v1.0.0/FotoCambioDeTema.jpg)
 
 ### Language switch
-![Language switch](docs/screenshots/Cambiodioma.jpg)
+![Language switch](https://github.com/JoelBeja2000/OveNotesDs/releases/download/v1.0.0/Cambiodioma.jpg)
 
 ### Extra screenshot
-![Additional screenshot](docs/screenshots/b9f0dd38-37db-4ba2-9692-18a966a032e4.jpg)
+![Additional screenshot](https://github.com/JoelBeja2000/OveNotesDs/releases/download/v1.0.0/b9f0dd38-37db-4ba2-9692-18a966a032e4.jpg)
 
 ---
 
@@ -179,19 +185,19 @@ El código está organizado en módulos independientes para lógica del juego, r
 ## Capturas de pantalla
 
 ### Inicio de la app
-![Inicio de la app](docs/screenshots/InicicioDeLaApp.jpg)
+![Inicio de la app](https://github.com/JoelBeja2000/OveNotesDs/releases/download/v1.0.0/InicicioDeLaApp.jpg)
 
 ### Nota creada
-![Nota creada](docs/screenshots/notaCreada.jpg)
+![Nota creada](https://github.com/JoelBeja2000/OveNotesDs/releases/download/v1.0.0/notaCreada.jpg)
 
 ### Pantalla de conexión
-![Pantalla de conexión](docs/screenshots/Conexion.jpg)
+![Pantalla de conexión](https://github.com/JoelBeja2000/OveNotesDs/releases/download/v1.0.0/Conexion.jpg)
 
 ### Cambio de tema
-![Cambio de tema](docs/screenshots/FotoCambioDeTema.jpg)
+![Cambio de tema](https://github.com/JoelBeja2000/OveNotesDs/releases/download/v1.0.0/FotoCambioDeTema.jpg)
 
 ### Cambio de idioma
-![Cambio de idioma](docs/screenshots/Cambiodioma.jpg)
+![Cambio de idioma](https://github.com/JoelBeja2000/OveNotesDs/releases/download/v1.0.0/Cambiodioma.jpg)
 
 ### Captura extra
-![Captura extra](docs/screenshots/b9f0dd38-37db-4ba2-9692-18a966a032e4.jpg)
+![Captura extra](https://github.com/JoelBeja2000/OveNotesDs/releases/download/v1.0.0/b9f0dd38-37db-4ba2-9692-18a966a032e4.jpg)

@@ -1,4 +1,9 @@
-$b = [System.IO.File]::ReadAllBytes("D:\Proyectos\OveNotesDs\OveNotesDs.nds")
+$romPath = Join-Path $PSScriptRoot "OveNotesDs.nds"
+if (-not (Test-Path $romPath)) {
+    Write-Error "OveNotesDs.nds not found in script directory."
+    exit 1
+}
+$b = [System.IO.File]::ReadAllBytes($romPath)
 Write-Output ("Unit Code (0x12): 0x{0:X2}" -f $b[0x12])
 Write-Output ("DSi Region (0x1B0): 0x{0:X8}" -f [System.BitConverter]::ToUInt32($b, 0x1B0))
 Write-Output ("DSi TitleID lo (0x230): 0x{0:X8}" -f [System.BitConverter]::ToUInt32($b, 0x230))
