@@ -22,7 +22,7 @@ You need to have your DS connected to a Wi-Fi network and download the .nds file
 
 ---
 
-This document describes the project structure, main systems, and execution flow of **OveNotesDS**, a Nintendo DS homebrew application built with the **[BlocksDS](https://github.com/blocksds)** SDK created by **[@AntonioND](https://github.com/AntonioND)** (which made this project possible!). Its main purpose is to let the user draw on the touchscreen and upload the result as PNG images to a server using HTTP POST requests (`/api/nueva-nota`).
+This document describes the project structure, main systems, and execution flow of **OveNotesDS**, a Nintendo DS homebrew application. It is built using the **[BlocksDS](https://github.com/blocksds)** SDK (developed by **[@AntonioND](https://github.com/AntonioND)**), which made this project possible! The main purpose of the application is to let the user draw on the touchscreen and upload the result as PNG images to a server using HTTP POST requests (`/api/nueva-nota`).
 
 ---
 
@@ -141,7 +141,7 @@ Connecting a DS to a local or private server is safe. However, keep in mind that
 Tienes que tener tu DS conectada a una red wifi y descargarte el archivo .nds, la APK o el .exe. Una vez que estés en la vista para crear notas, haces clic en el botón de menú. Ahí encontrarás un formulario para introducir el código de la DS que te aparece en el PC o en el móvil. También tienes que seleccionar el nombre de tu wifi en ese mismo formulario.
 ---
 
-Este documento describe la estructura del proyecto, los sistemas principales y el flujo de ejecución de **OveNotesDS**, una aplicación homebrew para Nintendo DS desarrollada con el SDK **[BlocksDS](https://github.com/blocksds)** de **[@AntonioND](https://github.com/AntonioND)** (gracias al cual este proyecto ha sido posible). Su propósito principal es permitir al usuario dibujar en la pantalla táctil y subir el resultado como imágenes PNG a un servidor mediante peticiones HTTP POST (`/api/nueva-nota`).
+Este documento describe la estructura del proyecto, los sistemas principales y el flujo de ejecución de **OveNotesDS**, una aplicación homebrew para Nintendo DS. Está desarrollada utilizando el SDK **[BlocksDS](https://github.com/blocksds)** (creado por **[@AntonioND](https://github.com/AntonioND)**), gracias al cual este proyecto ha sido posible. Su propósito principal es permitir al usuario dibujar en la pantalla táctil y subir el resultado como imágenes PNG a un servidor mediante peticiones HTTP POST (`/api/nueva-nota`).
 
 ---
 
