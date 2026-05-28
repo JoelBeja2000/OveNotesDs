@@ -87,9 +87,9 @@ The code is organized in independent modules for game logic, networking, UI and 
 ## 💬 FAQ
 
 ### 1. Does this app work on the Nintendo 3DS / 2DS?
-**Yes!** You can run the `.nds` ROM on any 3DS or 2DS system using **TWiLight Menu++** (via `nds-bootstrap`).
-*   **WPA2 Wi-Fi Support on 3DS:** Since the ROM is compiled with DSi support, launching it in **DSi Mode** within TWiLight Menu++ allows the app to connect to modern **WPA2 Wi-Fi networks** saved in your console's system settings.
-*   If you run it in **DS Mode** (or using a classic DS flashcart like an older R4), it will be restricted to DS-classic networks (WEP or open hotspot).
+**Yes!** You can run the `.nds` ROM on any 3DS or 2DS system (via custom launchers or homebrew forwarders running `nds-bootstrap`).
+*   **WPA2 Wi-Fi Support on 3DS:** Since the ROM is compiled with DSi support, launching the application in **DSi Mode** allows it to connect directly to the modern **WPA2 Wi-Fi networks** configured in your 3DS/2DS console's system settings.
+*   If you run it in **DS Mode** (e.g., from a standard DS flashcart), it will be restricted to DS-classic network slots (WEP or open/unencrypted hotspots).
 
 ### 2. Why is the Wi-Fi connection failing on my original DS / DS Lite?
 The original Nintendo DS and DS Lite hardware only support **WEP security** or **unencrypted (open) networks**. Most modern home routers use WPA2 or WPA3. To connect a classic DS, you will need to set up an open (password-less) mobile hotspot on your smartphone.
@@ -228,9 +228,9 @@ El código está organizado en módulos independientes para lógica del juego, r
 ## 💬 FAQ (Preguntas Frecuentes)
 
 ### 1. ¿Funciona en Nintendo 3DS / 2DS?
-**¡Sí!** Puedes iniciar la ROM `.nds` en cualquier 3DS o 2DS utilizando **TWiLight Menu++** (mediante `nds-bootstrap`).
-*   **Soporte de Wi-Fi WPA2 en 3DS:** Dado que la ROM está compilada con soporte extendido para DSi, si la ejecutas en **Modo DSi** dentro de TWiLight Menu++, podrá conectarse a redes **Wi-Fi WPA2 modernas** configuradas en tu consola.
-*   Si la ejecutas en **Modo DS** (o desde un cartucho flashcart R4 clásico), estará limitada a redes de DS clásica (cifrado WEP o punto de acceso abierto).
+**¡Sí!** Puedes iniciar la ROM `.nds` en cualquier 3DS o 2DS (utilizando cargadores de homebrew o accesos directos/forwarders compatibles con `nds-bootstrap`).
+*   **Soporte de Wi-Fi WPA2 en 3DS:** Dado que la ROM está compilada con soporte extendido para DSi, si la ejecutas en **Modo DSi**, podrá conectarse directamente a las redes **Wi-Fi WPA2 modernas** configuradas en los ajustes de tu consola.
+*   Si la ejecutas en **Modo DS** (por ejemplo, desde un cartucho flashcart clásico), estará limitada a las conexiones de DS clásica (cifrado WEP o punto de acceso abierto).
 
 ### 2. ¿Por qué falla la conexión Wi-Fi en mi DS clásica o DS Lite?
 El hardware de la DS original y la DS Lite solo admite redes **WEP** o **abiertas (sin contraseña)**. La mayoría de los routers domésticos modernos usan WPA2/WPA3. Para conectar una DS clásica, necesitarás crear un punto de acceso móvil abierto (sin contraseña) de forma temporal en tu móvil.
