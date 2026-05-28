@@ -84,6 +84,27 @@ The code is organized in independent modules for game logic, networking, UI and 
 
 ---
 
+## 💬 FAQ
+
+### 1. Does this app work on the Nintendo 3DS / 2DS?
+**Yes!** You can run the `.nds` ROM on any 3DS or 2DS system using **TWiLight Menu++** (via `nds-bootstrap`).
+*   **WPA2 Wi-Fi Support on 3DS:** Since the ROM is compiled with DSi support, launching it in **DSi Mode** within TWiLight Menu++ allows the app to connect to modern **WPA2 Wi-Fi networks** saved in your console's system settings.
+*   If you run it in **DS Mode** (or using a classic DS flashcart like an older R4), it will be restricted to DS-classic networks (WEP or open hotspot).
+
+### 2. Why is the Wi-Fi connection failing on my original DS / DS Lite?
+The original Nintendo DS and DS Lite hardware only support **WEP security** or **unencrypted (open) networks**. Most modern home routers use WPA2 or WPA3. To connect a classic DS, you will need to set up an open (password-less) mobile hotspot on your smartphone.
+
+### 3. Is this project "vibe coded" (AI-assisted)?
+**Yes!** The prototype and codebase were built with the assistance of AI tools to rapidly experiment with Nintendo DS homebrew development and build a cross-platform connection flow. It is completely open-source, and **we welcome any manual optimizations, code cleanups, or refactoring** from the homebrew community! Feel free to open a PR.
+
+### 4. Can this be used for instant messaging or chat?
+Currently, the app only supports drawing and uploading notes as PNGs to a server. However, since the network layer uses TCP sockets, expanding it to support bidirectional real-time chat is entirely possible. It is a great candidate feature for future updates.
+
+### 5. Is it safe to connect my DS to the internet?
+Connecting a DS to a local or private server is safe. However, keep in mind that the DS hardware uses legacy network protocols (HTTP without SSL/TLS). Avoid sending sensitive or personal data.
+
+---
+
 ## Screenshots
 
 ### App launch
@@ -201,3 +222,24 @@ El código está organizado en módulos independientes para lógica del juego, r
 
 ### Captura extra
 ![Captura extra](https://github.com/JoelBeja2000/OveNotesDs/releases/download/v1.0.0/b9f0dd38-37db-4ba2-9692-18a966a032e4.jpg)
+
+---
+
+## 💬 FAQ (Preguntas Frecuentes)
+
+### 1. ¿Funciona en Nintendo 3DS / 2DS?
+**¡Sí!** Puedes iniciar la ROM `.nds` en cualquier 3DS o 2DS utilizando **TWiLight Menu++** (mediante `nds-bootstrap`).
+*   **Soporte de Wi-Fi WPA2 en 3DS:** Dado que la ROM está compilada con soporte extendido para DSi, si la ejecutas en **Modo DSi** dentro de TWiLight Menu++, podrá conectarse a redes **Wi-Fi WPA2 modernas** configuradas en tu consola.
+*   Si la ejecutas en **Modo DS** (o desde un cartucho flashcart R4 clásico), estará limitada a redes de DS clásica (cifrado WEP o punto de acceso abierto).
+
+### 2. ¿Por qué falla la conexión Wi-Fi en mi DS clásica o DS Lite?
+El hardware de la DS original y la DS Lite solo admite redes **WEP** o **abiertas (sin contraseña)**. La mayoría de los routers domésticos modernos usan WPA2/WPA3. Para conectar una DS clásica, necesitarás crear un punto de acceso móvil abierto (sin contraseña) de forma temporal en tu móvil.
+
+### 3. ¿Es este proyecto "vibe coded" (asistido por Inteligencia Artificial)?
+**¡Sí!** El prototipo y el código se desarrollaron utilizando herramientas de IA para experimentar rápidamente con el desarrollo homebrew en Nintendo DS y crear un flujo de conexión multiplataforma funcional. Es de código abierto, y **estamos encantados de recibir optimizaciones manuales, limpiezas de código o refactorizaciones** por parte de la comunidad homebrew. ¡Siéntete libre de abrir un PR!
+
+### 4. ¿Se puede usar para mensajería instantánea o chat?
+Por ahora solo permite dibujar y subir notas como PNG a tu servidor. No obstante, dado que la capa de red usa sockets TCP, expandir el proyecto para admitir un chat bidireccional en tiempo real es totalmente factible y es un excelente candidato para futuras actualizaciones.
+
+### 5. ¿Es seguro conectar mi DS a Internet?
+Conectar la DS a un servidor local o privado es seguro. Sin embargo, ten en cuenta que el hardware de la DS utiliza protocolos de red antiguos sin cifrado moderno (HTTP sin SSL/TLS). Evita transmitir datos personales o confidenciales.
