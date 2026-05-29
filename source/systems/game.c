@@ -159,43 +159,48 @@ static void exitWizardState(bool canceled) {
     }
 }
 
-static void runUpload(void) {
-    // Initialize the sub console for showing upload progress dynamically
-    consoleInit(&subConsole, 
-                0,                  // layer 0
-                BgType_Text4bpp,     // text mode
-                BgSize_T_256x256,    // map size 256x256
-                24,                 // map base 24 (48KB offset)
-                6,                  // tile base 6 (96KB offset)
-                false,              // false = Sub Engine
-                true);              // load default graphics
-    consoleSelect(&subConsole);
+static int upload_log_line = 0;
 
-    // 1. Enable sub console layer display
-    videoSetModeSub(MODE_5_2D | DISPLAY_BG0_ACTIVE | DISPLAY_BG2_ACTIVE);
-    
-    // 2. Draw our premium console text box window
+static void clearUploadLogs(void) {
+    upload_log_line = 0;
+}
+
+static void drawUploadLog(const char* msg) {
+    if (upload_log_line >= 8) return;
+    int x = 28;
+    int y = 66 + upload_log_line * 9;
+    renderDrawTextOnBuffer(preview_buffer, msg, x, y, RGB15(31, 31, 31), 0);
+    upload_log_line++;
+    swiWaitForVBlank();
+}
+
+static void runUpload(void) {
+    // 1. Clear upload log line tracker
+    clearUploadLogs();
+
+    // 2. Draw our premium console text box window on the preview_buffer
     uiDrawTopConsoleBox(uiTxt("ENVIANDO DIBUJO...", "UPLOADING DRAWING..."));
     
-    printf(uiTxt("Iniciando Wi-Fi...\n", "Starting Wi-Fi...\n"));
+    // 3. Make sure the upper screen is set to show BG2 (the preview bitmap)
+    videoSetModeSub(MODE_5_2D | DISPLAY_BG2_ACTIVE);
+    
+    drawUploadLog(uiTxt("Iniciando Wi-Fi...", "Starting Wi-Fi..."));
     
     if (!netInitWifi()) {
-        printf(uiTxt("Error: fallo al iniciar Wi-Fi!\n", "Error: failed to start Wi-Fi!\n"));
+        drawUploadLog(uiTxt("Error: fallo al iniciar Wi-Fi!", "Error: failed to start Wi-Fi!"));
         for(int i=0; i<120; i++) swiWaitForVBlank();
-        videoSetModeSub(MODE_5_2D | DISPLAY_BG2_ACTIVE);
         renderComposeCanvas();
         renderUpdatePreview();
         current_state = STATE_DRAW;
         return;
     }
     
-    printf(uiTxt("Codificando PNG...\n", "Encoding PNG...\n"));
+    drawUploadLog(uiTxt("Codificando PNG...", "Encoding PNG..."));
     
     unsigned char* rgb_buf = malloc(256 * 192 * 3);
     if (!rgb_buf) {
-        printf("Error: no hay memoria RAM\n");
+        drawUploadLog(uiTxt("Error: no hay memoria RAM", "Error: out of memory"));
         for(int i=0; i<120; i++) swiWaitForVBlank();
-        videoSetModeSub(MODE_5_2D | DISPLAY_BG2_ACTIVE);
         renderComposeCanvas();
         renderUpdatePreview();
         current_state = STATE_DRAW;
@@ -218,28 +223,28 @@ static void runUpload(void) {
     free(rgb_buf);
     
     if (png_err) {
-        printf("Error PNG: %d\n", png_err);
+        char err_msg[32];
+        snprintf(err_msg, sizeof(err_msg), "Error PNG: %d", png_err);
+        drawUploadLog(err_msg);
         for(int j=0; j<120; j++) swiWaitForVBlank();
-        videoSetModeSub(MODE_5_2D | DISPLAY_BG2_ACTIVE);
         renderComposeCanvas();
         renderUpdatePreview();
         current_state = STATE_DRAW;
         return;
     }
     
-    printf(uiTxt("Conectando al servidor %s:%s...\n", "Connecting to server %s:%s...\n"), http_ip, http_port_str);
+    drawUploadLog(uiTxt("Conectando al servidor...", "Connecting to server..."));
     
     if (enviarNotaHTTP(http_ip, atoi(http_port_str), png_data, png_size)) {
-        printf(uiTxt("Enviado con exito!\n", "Uploaded successfully!\n"));
+        drawUploadLog(uiTxt("Enviado con exito!", "Uploaded successfully!"));
     } else {
-        printf(uiTxt("Error al enviar dibujo.\n", "Error sending drawing.\n"));
+        drawUploadLog(uiTxt("Error al enviar dibujo.", "Error sending drawing."));
     }
     
     free(png_data);
     for(int j=0; j<120; j++) swiWaitForVBlank();
     
-    // Hide sub console layer and return to full-screen drawing
-    videoSetModeSub(MODE_5_2D | DISPLAY_BG2_ACTIVE);
+    // Return to drawing state with refreshed preview
     renderComposeCanvas();
     renderUpdatePreview();
     current_state = STATE_DRAW;

@@ -85,6 +85,8 @@ void renderOverlayPerspectiveGuides(void);
 
 void renderDrawChar(char c, int x, int y, uint16_t color, uint16_t bg_color);
 void renderDrawText(const char* text, int x, int y, uint16_t color, uint16_t bg_color);
+void renderDrawCharOnBuffer(uint16_t* buffer, char c, int x, int y, uint16_t color, uint16_t bg_color);
+void renderDrawTextOnBuffer(uint16_t* buffer, const char* text, int x, int y, uint16_t color, uint16_t bg_color);
 void renderDrawBrushPoint(int xc, int yc, uint16_t color, int size);
 void renderDrawEraserPoint(int xc, int yc);
 void renderDrawLine(int x0, int y0, int x1, int y1, uint16_t color, int size, bool eraser);

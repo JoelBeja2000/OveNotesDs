@@ -18,7 +18,6 @@ extern AppState g_app_state;
 #include "ui_menu.h"
 #include "ui_form.h"
 
-extern PrintConsole subConsole;
 extern uint16_t modal_backup[256 * 156];
 extern uint16_t preset_palettes[20][5];
 extern uint16_t custom_palettes[50][5];

@@ -564,6 +564,33 @@ void renderDrawText(const char* text, int x, int y, uint16_t color, uint16_t bg_
     }
 }
 
+void renderDrawCharOnBuffer(uint16_t* buffer, char c, int x, int y, uint16_t color, uint16_t bg_color) {
+    if ((unsigned char)c < 32 || !buffer) return;
+    const unsigned char *glyph = &font5x7[((unsigned char)c) * 5];
+    for (int dx = 0; dx < 5; dx++) {
+        unsigned char col_data = glyph[dx];
+        for (int dy = 0; dy < 8; dy++) {
+            int px = x + dx;
+            int py = y + dy;
+            if (px >= 0 && px < 256 && py >= 0 && py < 192) {
+                if (col_data & (1 << dy)) {
+                    buffer[py * 256 + px] = color;
+                } else if (bg_color != 0) {
+                    buffer[py * 256 + px] = bg_color;
+                }
+            }
+        }
+    }
+}
+
+void renderDrawTextOnBuffer(uint16_t* buffer, const char* text, int x, int y, uint16_t color, uint16_t bg_color) {
+    while (*text) {
+        renderDrawCharOnBuffer(buffer, *text, x, y, color, bg_color);
+        x += 6;
+        text++;
+    }
+}
+
 void renderDrawBrushPoint(int xc, int yc, uint16_t color, int size) {
     if (drawing_mode == 7) { // Calligraphy Stub Pen
         float rad = nib_angle * 3.14159265f / 180.0f;

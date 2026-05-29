@@ -7,7 +7,6 @@
 #include <stdlib.h>
 #include <math.h>
 
-PrintConsole subConsole;
 
 AppState g_app_state = {
     .draw = {
@@ -601,22 +600,10 @@ void uiDrawTopConsoleBox(const char* title) {
         }
     }
     
-    consoleSelect(&subConsole);
-    
-    subConsole.windowX = 3;
-    subConsole.windowY = 6;
-    subConsole.windowWidth = 26;
-    subConsole.windowHeight = 1;
-    consoleClear();
-    
     int title_len = strlen(title);
-    int pad = (26 - title_len) / 2;
-    if (pad < 0) pad = 0;
-    for (int p = 0; p < pad; p++) printf(" ");
-    printf("%s\n", title);
-    
-    subConsole.windowX = 4;
-    subConsole.windowY = 8;
-    subConsole.windowWidth = 24;
-    subConsole.windowHeight = 9;
+    int text_width = title_len * 6;
+    int tx = 23 + (210 - text_width) / 2;
+    int ty = 47 + (13 - 8) / 2;
+    if (tx < 23) tx = 23;
+    renderDrawTextOnBuffer(preview_buffer, title, tx, ty, RGB15(31, 31, 31), 0);
 }
