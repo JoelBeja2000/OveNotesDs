@@ -54,6 +54,22 @@ function encodePairingCode(ip, port) {
 const LOCAL_IP = getLocalIP();
 const PAIRING_CODE = encodePairingCode(LOCAL_IP, PORT);
 
+function restartServer() {
+    const spawn = require('child_process').spawn;
+    const process = require('process');
+    
+    console.log('🔄 Reiniciando el servidor...');
+    
+    const child = spawn(process.argv[0], process.argv.slice(1), {
+        cwd: process.cwd(),
+        detached: true,
+        stdio: 'ignore'
+    });
+    
+    child.unref();
+    process.exit(0);
+}
+
 // ────────────────────────────────────────────────────────────────────
 
 const server = http.createServer((req, res) => {
@@ -220,8 +236,11 @@ const server = http.createServer((req, res) => {
 
     // Serve static image files
     if (req.url.startsWith('/notas/') && req.method === 'GET') {
-        const filename = path.basename(req.url);
+        const cleanUrl = req.url.split('?')[0];
+        const filename = path.basename(cleanUrl);
         const filepath = path.join(NOTES_DIR, filename);
+        const isDownload = req.url.includes('download=1');
+
         if (fs.existsSync(filepath)) {
             fs.readFile(filepath, (err, data) => {
                 if (err) {
@@ -229,7 +248,11 @@ const server = http.createServer((req, res) => {
                     res.end('Error reading image');
                     return;
                 }
-                res.writeHead(200, { 'Content-Type': 'image/png' });
+                const headers = { 'Content-Type': 'image/png' };
+                if (isDownload) {
+                    headers['Content-Disposition'] = `attachment; filename="${filename}"`;
+                }
+                res.writeHead(200, headers);
                 res.end(data);
             });
         } else {
@@ -258,6 +281,16 @@ const server = http.createServer((req, res) => {
             res.writeHead(404, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ success: false, error: 'File not found' }));
         }
+        return;
+    }
+
+    // Restart server endpoint
+    if (req.url === '/api/restart' && req.method === 'POST') {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, message: 'Server is restarting...' }));
+        setTimeout(() => {
+            restartServer();
+        }, 1000);
         return;
     }
 

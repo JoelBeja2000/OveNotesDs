@@ -126,6 +126,27 @@
       filter: brightness(0.9);
     }
 
+    .btn-restart {
+      background: transparent;
+      color: #ffd100;
+      border: 1px solid rgba(255, 209, 0, 0.3);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-weight: 800;
+      font-size: 11px;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: all 0.2s ease;
+      font-family: 'NDS BIOS', Outfit, sans-serif;
+    }
+    .btn-restart:hover {
+      background: rgba(255, 209, 0, 0.1);
+      border-color: #ffd100;
+    }
+    .btn-restart:active {
+      transform: scale(0.95);
+    }
+
     @media (max-width:720px){.wrap{margin:8px;padding:12px}.pairing-code{font-size:28px;letter-spacing:6px}.note-thumb{height:100px}}
   </style>
 </head>
@@ -136,6 +157,9 @@
         <div class="pairing-title">CÓDIGO DE CONEXIÓN</div>
         <div id="pairingCode" class="pairing-code">------</div>
         <div id="pairingMeta" class="meta">IP: ... &nbsp;&nbsp; PORT: ...</div>
+        <div style="text-align: center;">
+          <button class="btn-restart" onclick="restartServer()">Reiniciar Servidor</button>
+        </div>
       </div>
 
       <div>
@@ -216,36 +240,43 @@
       document.getElementById('noteModal').classList.remove('show');
     }
 
-    async function downloadNote(url, filename){
+    function downloadNote(url, filename){
+      const downloadUrl = url + (url.includes('?') ? '&' : '?') + 'download=1';
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    async function restartServer() {
+      const ok = confirm('¿Seguro que quieres reiniciar el servidor?');
+      if (!ok) return;
       try {
-        const response = await fetch(url);
-        const blob = await response.blob();
-        const reader = new FileReader();
-        reader.onloadend = function() {
-          const base64data = reader.result;
-          const a = document.createElement('a');
-          a.href = base64data;
-          a.download = filename;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-        };
-        reader.readAsDataURL(blob);
+        const btn = document.querySelector('.btn-restart');
+        const oldText = btn.textContent;
+        btn.textContent = 'Reiniciando...';
+        btn.disabled = true;
+        
+        const r = await fetch(getApiUrl('/api/restart'), { method: 'POST' });
+        if (r.ok) {
+          alert('El servidor se está reiniciando. Por favor, espera unos segundos y recarga la página.');
+          setTimeout(() => {
+            window.location.reload();
+          }, 3000);
+        } else {
+          alert('Error al reiniciar el servidor.');
+          btn.textContent = oldText;
+          btn.disabled = false;
+        }
       } catch (e) {
-        console.error('Base64 download failed, trying Object URL fallback', e);
-        try {
-          const r = await fetch(url);
-          const b = await r.blob();
-          const blobUrl = URL.createObjectURL(b);
-          const a = document.createElement('a');
-          a.href = blobUrl;
-          a.download = filename;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          URL.revokeObjectURL(blobUrl);
-        } catch (err) {
-          window.open(url, '_blank');
+        console.error('restart failed', e);
+        alert('Error al conectar con el servidor.');
+        const btn = document.querySelector('.btn-restart');
+        if (btn) {
+          btn.textContent = 'Reiniciar Servidor';
+          btn.disabled = false;
         }
       }
     }
