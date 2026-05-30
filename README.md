@@ -16,7 +16,8 @@
 > 
 > * **🎮 Nintendo DS / DSi (Homebrew ROM):** [Download OveNotesDs.nds](https://github.com/JoelBeja2000/OveNotesDs/releases/latest/download/OveNotesDs.nds)
 > * **📱 Android (Mobile App):** [Download OveNotesDS.apk](https://github.com/JoelBeja2000/OveNotesDs/releases/latest/download/OveNotesDS.apk)
-> * **💻 Windows (Desktop Executable):** [Download OveNotesDS.exe](https://github.com/JoelBeja2000/OveNotesDs/releases/latest/download/OveNotesDS.exe)
+> * **💻 Windows 64-bit (Desktop Executable):** [Download OveNotesDS.exe](https://github.com/JoelBeja2000/OveNotesDs/releases/latest/download/OveNotesDS.exe)
+> * **💻 Windows 32-bit (i686 Executable):** [Download OveNotesDS_x86.exe](https://github.com/JoelBeja2000/OveNotesDs/releases/latest/download/OveNotesDS_x86.exe)
 > * **🍎 macOS (Desktop App):** [Download OveNotesDS.dmg](https://github.com/JoelBeja2000/OveNotesDs/releases/latest/download/OveNotesDS.dmg)
 
 You need to have your DS connected to a Wi-Fi network and download the .nds file, the APK, or the .exe. Once you are in the note creation view, click the menu button. There, you will find a form to enter the DS code that appears on your PC or mobile device. You must also select your Wi-Fi name in that same form.
@@ -136,7 +137,8 @@ Connecting a DS to a local or private server is safe. However, keep in mind that
 > 
 > * **🎮 Nintendo DS / DSi (ROM Homebrew):** [Descargar OveNotesDs.nds](https://github.com/JoelBeja2000/OveNotesDs/releases/latest/download/OveNotesDs.nds)
 > * **📱 Android (Aplicación Móvil):** [Descargar OveNotesDS.apk](https://github.com/JoelBeja2000/OveNotesDs/releases/latest/download/OveNotesDS.apk)
-> * **💻 Windows (Ejecutable de Escritorio):** [Descargar OveNotesDS.exe](https://github.com/JoelBeja2000/OveNotesDs/releases/latest/download/OveNotesDS.exe)
+> * **💻 Windows 64 bits (Ejecutable de Escritorio):** [Descargar OveNotesDS.exe](https://github.com/JoelBeja2000/OveNotesDs/releases/latest/download/OveNotesDS.exe)
+> * **💻 Windows 32 bits (Ejecutable i686):** [Descargar OveNotesDS_x86.exe](https://github.com/JoelBeja2000/OveNotesDs/releases/latest/download/OveNotesDS_x86.exe)
 > * **🍎 macOS (Aplicación de Escritorio):** [Descargar OveNotesDS.dmg](https://github.com/JoelBeja2000/OveNotesDs/releases/latest/download/OveNotesDS.dmg)
 
 
