@@ -319,7 +319,15 @@
       document.getElementById('noteModal').classList.remove('show');
     }
 
-    function downloadNote(url, filename){
+    async function downloadNote(url, filename){
+      if (window.__TAURI__ && window.__TAURI__.core && typeof window.__TAURI__.core.invoke === 'function') {
+        try {
+          await window.__TAURI__.core.invoke('save_note_file', { filename: filename });
+        } catch (e) {
+          console.error("Tauri download failed", e);
+        }
+        return;
+      }
       const downloadUrl = url + (url.includes('?') ? '&' : '?') + 'download=1';
       const a = document.createElement('a');
       a.href = downloadUrl;
