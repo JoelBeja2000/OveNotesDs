@@ -133,8 +133,8 @@ Connecting a DS to a local or private server is safe. However, keep in mind that
 
 | Contribution | User | Link |
 |---|---|---|
-| French localization review: translation corrections, AZERTY keyboard layout, font compatibility fixes | **tockyng** (Izuku Midoriya) | [Reddit u/tockyng](https://www.reddit.com/user/tockyng) |
 | Created and maintains **BlocksDS**, the SDK that made this entire project possible | **@AntonioND** | [GitHub @AntonioND](https://github.com/AntonioND) |
+| French localization review: translation corrections, AZERTY keyboard layout, font compatibility fixes | **tockyng** (Izuku Midoriya) | [Reddit u/tockyng](https://www.reddit.com/user/tockyng) |
 
 > Special thanks to **tockyng** (Izuku Midoriya) from Reddit for reviewing the French localization and providing the corrections that made the French language support accurate and complete.
 >
