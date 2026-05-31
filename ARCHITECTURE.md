@@ -63,12 +63,15 @@ Reusable, low-level interactive UI components.
 - **`toolbar.c/.h`:** Bottom toolbar containing quick shortcuts for color, tools, canvas adjustments, and system menus.
 - **`widget_buttons.c/.h`:** Base widget to render buttons with text, icons, and borders adapted to the current UI theme color.
 
-### 5. 🌍 Localization & Coordination Base
+### 5. 🌍 Localization Layer (`source/ui/i18n/`)
+Translation resource files and local text mappings.
+- **`language_en.c`, `language_es.c`, `language_fr.c`** (in `source/ui/i18n/`): Contain translation strings and localization arrays for English, Spanish, and French.
+- **`texts.h`** (in `include/`): Declares the text ID enumeration (`TextId`) representing all UI label resources.
+
+### 6. ⚙️ Coordination Base (`source/ui/`)
+Core files orchestrating the UI state and compatibility mapping.
 - **`ui.c/.h`:** Main user interface manager and coordinator. Keeps track of the open modal state (`g_app_state.ui`) and handles window routing.
 - **`ui_compat.h`:** Compatibility macros that map short legacy names to the modern nested properties in `g_app_state` without breaking historic references.
-- **`language_en.c`, `language_es.c`, `language_fr.c` / `language.h`:** Translation resource files and font mapping.
-  > [!NOTE]
-  > *Transition Phase:* Currently, these files reside in the root of `source/ui/` for historical compatibility reasons, but there is a planned task to extract them to their own localization directory `source/ui/i18n/` in **Phase 2** of the refactoring to keep the root directory clean.
 
 ---
 

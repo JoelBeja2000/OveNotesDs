@@ -63,12 +63,15 @@ Elementos gráficos interactivos de bajo nivel y reutilizables.
 - **`toolbar.c/.h`:** Barra de herramientas inferior con los botones rápidos de selección de color, herramientas, ajustes de lienzo y menú.
 - **`widget_buttons.c/.h`:** Componente base para dibujar botones estilizados con textos, iconos y bordes adaptados al tema de color actual.
 
-### 5. 🌍 Localización y Coordinación Base
+### 5. 🌍 Capa de Localización (`source/ui/i18n/`)
+Archivos de recursos de traducción y mapeo de textos locales.
+- **`language_en.c`, `language_es.c`, `language_fr.c`** (en `source/ui/i18n/`): Contienen las cadenas traducidas y los arrays de localización para inglés, español y francés.
+- **`texts.h`** (en `include/`): Declara la enumeración de identificadores de textos (`TextId`) que representan todas las etiquetas de la UI.
+
+### 6. ⚙️ Coordinación Base (`source/ui/`)
+Archivos principales que orquestan el estado de la interfaz y la compatibilidad.
 - **`ui.c/.h`:** Coordinador central de la interfaz de usuario. Almacena el estado global de ventanas (`g_app_state.ui`) y gestiona las transiciones entre modales.
 - **`ui_compat.h`:** Archivo de macros de compatibilidad. Traduce variables legadas cortas a la jerarquía moderna estructurada dentro de `g_app_state` sin romper código histórico.
-- **`language_en.c`, `language_es.c`, `language_fr.c` / `language.h`:** Cadenas de traducción internacional y mapeo de fuentes.
-  > [!NOTE]
-  > *Fase de transición:* Actualmente estos archivos residen en la raíz de `source/ui/` por razones de compatibilidad histórica, pero está planificado extraerlos a un directorio propio de localización `source/ui/i18n/` en la **Fase 2** de la refactorización para mantener la raíz limpia.
 
 ---
 

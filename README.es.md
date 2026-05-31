@@ -172,12 +172,10 @@ OveNotesDs/
 │   └── ui/
 │       ├── ui.c/.h         # Coordinador / enrutador de vistas (UI)
 │       ├── forms/          # Formularios de entrada (form_wifi.c, form_rename.c)
+│       ├── i18n/           # Recursos de traducción (language_en.c, language_es.c, language_fr.c)
 │       ├── modals/         # Modales de interfaz (colores, herramientas, fondos, pincel, confirmación, idioma...)
 │       ├── views/          # Vistas de pantalla principal (view_canvas.c, view_menu.c, view_gallery.c, view_wizard.c)
-│       ├── widgets/        # Componentes/widgets de bajo nivel (keyboard.c, sidebar.c, toolbar.c, widget_buttons.c)
-│       ├── language_en.c   # Localización en inglés
-│       ├── language_es.c   # Localización en español
-│       └── language_fr.c   # Localización en francés
+│       └── widgets/        # Componentes/widgets de bajo nivel (keyboard.c, sidebar.c, toolbar.c, widget_buttons.c)
 ├── dist/index.html         # Interfaz web companion (servida por server.js)
 ├── server.js               # Servidor Node.js de emparejamiento y galería
 ├── src-tauri/              # Shell de la app Tauri
