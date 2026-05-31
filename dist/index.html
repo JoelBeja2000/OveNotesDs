@@ -328,13 +328,29 @@
         }
         return;
       }
-      const downloadUrl = url + (url.includes('?') ? '&' : '?') + 'download=1';
-      const a = document.createElement('a');
-      a.href = downloadUrl;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      try {
+        const downloadUrl = url + (url.includes('?') ? '&' : '?') + 'download=1';
+        const res = await fetch(downloadUrl);
+        if (!res.ok) throw new Error("Fetch failed");
+        const blob = await res.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(blobUrl);
+      } catch (err) {
+        console.error("Blob download failed, trying standard fallback", err);
+        const downloadUrl = url + (url.includes('?') ? '&' : '?') + 'download=1';
+        const a = document.createElement('a');
+        a.href = downloadUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
     }
 
     async function restartServer() {

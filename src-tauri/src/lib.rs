@@ -62,7 +62,7 @@ fn add_cors_headers<R: Read>(response: Response<R>) -> Response<R> {
 }
 
 // Start the background HTTP/Notes server in a dedicated thread
-fn start_rust_server(notes_dir: PathBuf) {
+fn start_rust_server(app_handle: tauri::AppHandle, notes_dir: PathBuf) {
     thread::spawn(move || {
         let server =
             Server::http("0.0.0.0:3000").expect("Failed to start HTTP server on port 3000");
@@ -187,14 +187,17 @@ fn start_rust_server(notes_dir: PathBuf) {
                 );
                 let _ = request.respond(response);
             } else if url.starts_with("/notas/") && method == Method::Get {
-                let filename = url.trim_start_matches("/notas/");
+                let parts: Vec<&str> = url.split('?').collect();
+                let path_part = parts[0];
+                let is_download = parts.get(1).map_or(false, |q| q.contains("download=1"));
+                let filename = path_part.trim_start_matches("/notas/");
                 let decoded_filename = percent_encoding::percent_decode_str(filename)
                     .decode_utf8_lossy()
                     .into_owned();
                 let file_path = notes_dir.join(&decoded_filename);
                 if file_path.exists() {
                     if let Ok(file_data) = fs::read(&file_path) {
-                        let response = add_cors_headers(
+                        let mut response = add_cors_headers(
                             Response::from_data(file_data)
                                 .with_status_code(200)
                                 .with_header(
@@ -205,6 +208,16 @@ fn start_rust_server(notes_dir: PathBuf) {
                                     .unwrap(),
                                 ),
                         );
+                        if is_download {
+                            let disposition = format!("attachment; filename=\"{}\"", decoded_filename);
+                            response = response.with_header(
+                                tiny_http::Header::from_bytes(
+                                    &b"Content-Disposition"[..],
+                                    disposition.as_bytes(),
+                                )
+                                .unwrap()
+                            );
+                        }
                         let _ = request.respond(response);
                         continue;
                     }
@@ -327,6 +340,25 @@ fn start_rust_server(notes_dir: PathBuf) {
                     let response = add_cors_headers(Response::empty(404));
                     let _ = request.respond(response);
                 }
+            } else if url == "/api/restart" && method == Method::Post {
+                let response = add_cors_headers(
+                    Response::from_string(r#"{"success":true,"message":"Server is restarting..."}"#)
+                        .with_status_code(200)
+                        .with_header(
+                            tiny_http::Header::from_bytes(
+                                &b"Content-Type"[..],
+                                &b"application/json"[..],
+                            )
+                            .unwrap(),
+                        ),
+                );
+                let _ = request.respond(response);
+
+                let app_c = app_handle.clone();
+                thread::spawn(move || {
+                    thread::sleep(std::time::Duration::from_millis(500));
+                    app_c.restart();
+                });
             } else {
                 let response =
                     add_cors_headers(Response::from_string("Not Found").with_status_code(404));
@@ -339,7 +371,7 @@ fn start_rust_server(notes_dir: PathBuf) {
 #[tauri::command]
 fn save_note_file(app: tauri::AppHandle, filename: String) -> Result<(), String> {
     use tauri_plugin_dialog::DialogExt;
-    
+
     let notes_dir = if cfg!(target_os = "android") {
         app.path()
             .app_local_data_dir()
@@ -348,12 +380,12 @@ fn save_note_file(app: tauri::AppHandle, filename: String) -> Result<(), String>
     } else {
         std::path::PathBuf::from("Notas_Publicadas")
     };
-    
+
     let source_path = notes_dir.join(&filename);
     if !source_path.exists() {
         return Err(format!("File {} not found", filename));
     }
-    
+
     let file_path = app
         .dialog()
         .file()
@@ -378,6 +410,7 @@ fn save_note_file(app: tauri::AppHandle, filename: String) -> Result<(), String>
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![save_note_file])
         .setup(|app| {
@@ -390,7 +423,7 @@ pub fn run() {
                 std::path::PathBuf::from("Notas_Publicadas")
             };
 
-            start_rust_server(notes_dir);
+            start_rust_server(app.handle().clone(), notes_dir);
 
             if cfg!(debug_assertions) {
                 app.handle().plugin(
