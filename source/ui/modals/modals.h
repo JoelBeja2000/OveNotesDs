@@ -1,5 +1,5 @@
-#ifndef UI_MODAL_H
-#define UI_MODAL_H
+#ifndef MODALS_H
+#define MODALS_H
 
 #include "ui_types.h"
 
@@ -18,4 +18,4 @@ void uiDrawModalNoteMenu(const AppState* app, int y0, int y1);
 void uiDrawModalSaveConfirm(const AppState* app, int y0, int y1);
 void uiDrawLanguageModal(const AppState* app);
 
-#endif // UI_MODAL_H
+#endif // MODALS_H

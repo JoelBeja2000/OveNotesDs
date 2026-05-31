@@ -11,12 +11,19 @@ extern AppState g_app_state;
 #include "ui_compat.h"
 #endif
 
-// Include modular headers so that existing references in game.c / net.c / main.c do not break
-#include "ui_shared.h"
-#include "ui_modal.h"
-#include "ui_keyboard.h"
-#include "ui_menu.h"
-#include "ui_form.h"
+// Include new modular headers
+#include "widget_buttons.h"
+#include "keyboard.h"
+#include "toolbar.h"
+#include "sidebar.h"
+#include "modals.h"
+#include "form_wifi.h"
+#include "form_rename.h"
+#include "view_canvas.h"
+#include "view_menu.h"
+#include "view_gallery.h"
+#include "view_wizard.h"
+#include "texts.h"
 
 extern uint16_t modal_backup[256 * 156];
 extern uint16_t preset_palettes[20][5];
@@ -37,6 +44,5 @@ void uiDrawTopConsoleBox(const char* title);
 
 extern uint16_t theme_colors[5];
 extern const char* theme_names[5];
-#include "texts.h"
 
 #endif // UI_H

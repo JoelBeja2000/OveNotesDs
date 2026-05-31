@@ -2,11 +2,15 @@
 #include "ui.h"
 #include "render.h"
 #include "net.h"
+#include "modals.h"
+#include "toolbar.h"
+#include "sidebar.h"
+#include "view_canvas.h"
+#include "widget_buttons.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
-
 
 AppState g_app_state = {
     .draw = {
@@ -121,13 +125,6 @@ uint16_t custom_palettes[50][5] = {
 };
 
 uint16_t modal_backup[256 * 156];
-static void fillButtonBg(int x_start, int x_end, uint16_t color) {
-    for (int y = 177; y < 191; y++) {
-        for (int x = x_start + 1; x < x_end; x++) {
-            canvas_buffer[y * 256 + x] = color;
-        }
-    }
-}
 
 static void getModalYRange(int modal, int* y0, int* y1) {
     if (modal == 0 || modal == 2 || modal == 3) {
@@ -147,8 +144,6 @@ static void getModalYRange(int modal, int* y0, int* y1) {
         *y1 = 170;
     }
 }
-
-
 
 void uiUpdateColorPickerSelection(void) {
     if (open_modal != 2) return;
@@ -177,11 +172,11 @@ void uiUpdateColorPickerSelection(void) {
     uint16_t bg_col = hsv_to_rgb15(picker_h, picker_s, 31);
     int r = bg_col & 31, g = (bg_col >> 5) & 31, b = (bg_col >> 10) & 31;
     uint16_t reticle_color = (r + g + b > 45) ? RGB15(0, 0, 0) : RGB15(31, 31, 31);
-    drawCircleOutline(reticle_x, reticle_y, 3, reticle_color);
+    renderDrawCircleOutline(reticle_x, reticle_y, 3, reticle_color);
 
     // 3. Draw the vertical Preview Swatch
     uint16_t preview_color = palette_colors[active_color_idx];
-    drawRect(153, 57, 175, 115, preview_color);
+    renderDrawRect(153, 57, 175, 115, preview_color);
 
     // 4. Draw the vertical Value (brightness) slider
     for (int dy = 0; dy < 59; dy++) {
@@ -193,8 +188,8 @@ void uiUpdateColorPickerSelection(void) {
     }
     
     // Clear left and right sides of Value indicator line to grey background
-    drawRect(190, 57, 191, 115, RGB15(28, 28, 28));
-    drawRect(217, 57, 218, 115, RGB15(28, 28, 28));
+    renderDrawRect(190, 57, 191, 115, RGB15(28, 28, 28));
+    renderDrawRect(217, 57, 218, 115, RGB15(28, 28, 28));
     // Restore vertical borders of Value slider
     for (int y = 57; y <= 115; y++) {
         canvas_buffer[y * 256 + 192] = RGB15(0, 0, 0);
@@ -205,8 +200,8 @@ void uiUpdateColorPickerSelection(void) {
     int v_indicator_y = 57 + ((31 - picker_v) * 59) / 31;
     if (v_indicator_y < 57) v_indicator_y = 57;
     if (v_indicator_y > 115) v_indicator_y = 115;
-    drawRect(190, v_indicator_y - 1, 218, v_indicator_y + 1, RGB15(0, 0, 0));
-    drawRect(191, v_indicator_y, 217, v_indicator_y, RGB15(31, 31, 31));
+    renderDrawRect(190, v_indicator_y - 1, 218, v_indicator_y + 1, RGB15(0, 0, 0));
+    renderDrawRect(191, v_indicator_y, 217, v_indicator_y, RGB15(31, 31, 31));
 }
 
 void uiUpdatePickerPosFromActiveColor(void) {
@@ -241,8 +236,8 @@ void uiOpenModal(int modal_idx) {
     }
     
     uint16_t modal_bg = RGB15(4, 4, 5);
-    drawRect(8, y0, 247, y1, modal_bg);
-    drawRectOutline(8, y0, 247, y1, app_theme_color);
+    renderDrawRect(8, y0, 247, y1, modal_bg);
+    renderDrawRectOutline(8, y0, 247, y1, app_theme_color);
     
     if (open_modal == 0) {
         uiDrawModalToolbox(&g_app_state, y0, y1);
@@ -273,7 +268,7 @@ void uiUpdateAngleWheelVisuals(void) {
     uint16_t light_grey = RGB15(28, 28, 28);
     
     // Clear old text area and redraw it
-    drawRect(16, 96, 220, 104, light_grey);
+    renderDrawRect(16, 96, 220, 104, light_grey);
     char label[32];
     if (angle_target == 1) {
         sprintf(label, "ROTACION FONDO: %d", bg_angle);
@@ -285,18 +280,18 @@ void uiUpdateAngleWheelVisuals(void) {
     // Clear circle interior only (radius 27)
     int cx = 128;
     int cy = 132;
-    drawFilledCircle(cx, cy, 27, light_grey);
+    renderDrawFilledCircle(cx, cy, 27, light_grey);
     
     // Redraw crosshair inside circle
-    drawRect(cx - 2, cy, cx + 2, cy, RGB15(15, 15, 15));
-    drawRect(cx, cy - 2, cx, cy + 2, RGB15(15, 15, 15));
+    renderDrawRect(cx - 2, cy, cx + 2, cy, RGB15(15, 15, 15));
+    renderDrawRect(cx, cy - 2, cx, cy + 2, RGB15(15, 15, 15));
     
     // Draw the new angle line
     int current_angle = (angle_target == 1) ? bg_angle : nib_angle;
     float rad = current_angle * 3.14159265f / 180.0f;
     int end_x = cx + (int)(cosf(rad) * 26.0f);
     int end_y = cy + (int)(sinf(rad) * 26.0f);
-    drawLine(cx, cy, end_x, end_y, RGB15(31, 0, 0));
+    renderDrawLineSimple(cx, cy, end_x, end_y, RGB15(31, 0, 0));
 }
 
 void uiCloseModal(void) {
@@ -325,291 +320,4 @@ void uiUpdateModalBackup(void) {
     }
     
     uiOpenModal(open_modal);
-}
-
-void uiDrawToolbar(void) {
-    // Fill toolbar background
-    for (int y = 176; y < 192; y++) {
-        for (int x = 0; x < 256; x++) {
-            canvas_buffer[y * 256 + x] = RGB15(2, 2, 3);
-        }
-    }
-
-    // Draw vertical separators
-    for (int y = 176; y < 192; y++) {
-        renderSetPixel(42, y, RGB15(6, 6, 8));
-        renderSetPixel(84, y, RGB15(6, 6, 8));
-        renderSetPixel(126, y, RGB15(6, 6, 8));
-        renderSetPixel(168, y, RGB15(6, 6, 8));
-        renderSetPixel(212, y, RGB15(6, 6, 8));
-    }
-
-    // Highlight active modal buttons
-    uint16_t active_bg = blendRGB555_int(app_theme_color, RGB15(4, 4, 5), 8);
-    if (open_modal == 0) fillButtonBg(0, 42, active_bg);
-    if (open_modal == 1) fillButtonBg(42, 84, active_bg);
-    if (open_modal == 2) fillButtonBg(84, 126, active_bg);
-    if (open_modal == 3) fillButtonBg(126, 168, active_bg);
-
-    // Highlight Menu (Button 4)
-    if (open_modal == 5) {
-        fillButtonBg(168, 212, active_bg);
-    } else {
-        fillButtonBg(168, 212, RGB15(3, 3, 4));
-    }
-    
-    fillButtonBg(212, 256, RGB15(1, 5, 2));
-
-    uint16_t default_text_color = RGB15(22, 22, 24);
-    uint16_t active_text_color = RGB15(31, 31, 31);
-    if (active_theme_idx == 0) { // Yellow theme text flip
-        active_text_color = RGB15(0, 0, 0);
-    }
-
-    // Button 0: TOOL
-    const char* tool_label = uiTxt(TXT_TOOLBAR_PINC);
-    if (is_eraser) tool_label = uiTxt(TXT_TOOLBAR_BORR);
-    else if (is_bucket) tool_label = "FILL";
-    renderDrawText(tool_label, 9, 180, (open_modal == 0) ? active_text_color : default_text_color, 0);
-
-    // Button 1: SIZE
-    char size_label[8];
-    if (is_eraser) sprintf(size_label, uiTxt(TXT_SIZE_ABBR_FORMAT), eraser_size);
-    else sprintf(size_label, uiTxt(TXT_SIZE_ABBR_FORMAT), active_brush_size);
-    renderDrawText(size_label, 50, 180, (open_modal == 1) ? active_text_color : default_text_color, 0);
-
-    // Button 2: COLOR
-    uint16_t current_color = palette_colors[active_color_idx];
-    renderDrawText(uiTxt(TXT_COL_ABBR), 90, 180, (open_modal == 2) ? active_text_color : default_text_color, 0);
-    for (int dy = 0; dy < 6; dy++) {
-        for (int dx = 0; dx < 6; dx++) {
-            renderSetPixel(112 + dx, 181 + dy, current_color);
-        }
-    }
-
-    // Button 3: BG
-    char bg_label[16];
-    sprintf(bg_label, uiTxt(TXT_BG_ABBR_FORMAT), bg_pattern_idx);
-    renderDrawText(bg_label, 128, 180, (open_modal == 3) ? active_text_color : default_text_color, 0);
-
-    // Button 4: MENU
-    renderDrawText("MENU", 178, 180, (open_modal == 5) ? active_text_color : default_text_color, 0);
-
-    // Button 5: ENVIAR
-    renderDrawText(uiTxt(TXT_TOOLBAR_ENVIAR), 216, 180, RGB15(20, 31, 20), 0);
-}
-
-static void uiDrawLayersSidebar(void) {
-    uint16_t panel_bg = RGB15(4, 4, 5);
-    uint16_t border_col = app_theme_color;
-    uint16_t text_col = RGB15(31, 31, 31);
-    
-    // Fill sidebar region
-    for (int y = 0; y < 176; y++) {
-        for (int x = 144; x < 256; x++) {
-            canvas_buffer[y * 256 + x] = panel_bg;
-        }
-        canvas_buffer[y * 256 + 143] = border_col;
-    }
-    
-    // Header title
-    renderDrawText(uiTxt(TXT_SIDEBAR_CAPAS), 148, 2, text_col, 0);
-    
-    // Close button "X"
-    drawRect(236, 1, 252, 11, RGB15(6, 2, 2));
-    drawRectOutline(236, 1, 252, 11, border_col);
-    renderDrawText("X", 241, 2, RGB15(31, 10, 10), 0);
-    
-    // Add layer button
-    if (layers_count < MAX_LAYERS) {
-        uint16_t plus_capa_bg = blendRGB555_int(app_theme_color, panel_bg, 6);
-        drawRect(148, 14, 252, 24, plus_capa_bg);
-        drawRectOutline(148, 14, 252, 24, border_col);
-        renderDrawText(uiTxt(TXT_SIDEBAR_ADD_CAPA), 182, 16, text_col, 0);
-    } else {
-        drawRect(148, 14, 252, 24, RGB15(2, 2, 3));
-        drawRectOutline(148, 14, 252, 24, RGB15(6, 6, 8));
-        renderDrawText(uiTxt(TXT_SIDEBAR_LLENO), 188, 16, RGB15(10, 10, 10), 0);
-    }
-    
-    // Layer items
-    for (int i = layers_count - 1; i >= 0; i--) {
-        int idx_from_top = layers_count - 1 - i;
-        int y_pos = 27 + idx_from_top * 13;
-        
-        // Drag handle
-        uint16_t circle_col = (dragging_layer_idx == i) ? app_theme_color : RGB15(8, 8, 10);
-        for (int dy = -2; dy <= 2; dy++) {
-            for (int dx = -2; dx <= 2; dx++) {
-                if (dx*dx + dy*dy <= 5) {
-                    int px = 151 + dx;
-                    int py = y_pos + 5 + dy;
-                    if (px >= 144 && px < 256 && py >= 0 && py < 192) {
-                        canvas_buffer[py * 256 + px] = circle_col;
-                    }
-                }
-            }
-        }
-        for (int dy = -3; dy <= 3; dy++) {
-            for (int dx = -3; dx <= 3; dx++) {
-                if (dx*dx + dy*dy > 5 && dx*dx + dy*dy <= 10) {
-                    int px = 151 + dx;
-                    int py = y_pos + 5 + dy;
-                    if (px >= 144 && px < 256 && py >= 0 && py < 192) {
-                        canvas_buffer[py * 256 + px] = RGB15(0, 0, 0);
-                    }
-                }
-            }
-        }
-        
-        // Selection button
-        bool is_active = (active_layer_idx == i);
-        uint16_t btn_bg = is_active ? blendRGB555_int(app_theme_color, panel_bg, 8) : RGB15(2, 2, 3);
-        uint16_t btn_border = is_active ? app_theme_color : RGB15(6, 6, 8);
-        uint16_t btn_txt = is_active ? (active_theme_idx == 0 ? RGB15(0, 0, 0) : RGB15(31, 31, 31)) : RGB15(20, 20, 22);
-        
-        drawRect(158, y_pos, 212, y_pos + 11, btn_bg);
-        drawRectOutline(158, y_pos, 212, y_pos + 11, btn_border);
-        
-        char disp_name[7];
-        if (strncmp(layer_names[i], "CAPA ", 5) == 0) {
-            sprintf(disp_name, "%s%c", uiTxt(TXT_SIDEBAR_CAPA), layer_names[i][5]);
-        } else {
-            strncpy(disp_name, layer_names[i], 6);
-            disp_name[6] = '\0';
-        }
-        renderDrawText(disp_name, 162, y_pos + 2, btn_txt, 0);
-        
-        // Visibility toggle
-        bool is_visible = layers_visible[i];
-        uint16_t vis_bg = is_visible ? blendRGB555_int(app_theme_color, panel_bg, 6) : RGB15(2, 2, 3);
-        uint16_t vis_border = is_visible ? app_theme_color : RGB15(6, 6, 8);
-        uint16_t vis_txt = is_visible ? (is_active && active_theme_idx == 0 ? RGB15(0, 0, 0) : RGB15(31, 31, 31)) : RGB15(10, 10, 10);
-        
-        drawRect(216, y_pos, 232, y_pos + 11, vis_bg);
-        drawRectOutline(216, y_pos, 232, y_pos + 11, vis_border);
-        renderDrawText(is_visible ? "V" : "H", 220, y_pos + 2, vis_txt, 0);
-        
-        // Delete button
-        if (i > 0) {
-            drawRect(236, y_pos, 252, y_pos + 11, RGB15(12, 3, 3));
-            drawRectOutline(236, y_pos, 252, y_pos + 11, RGB15(6, 2, 2));
-            renderDrawText("X", 241, y_pos + 2, RGB15(31, 10, 10), 0);
-        } else {
-            drawRect(236, y_pos, 252, y_pos + 11, RGB15(2, 2, 3));
-            drawRectOutline(236, y_pos, 252, y_pos + 11, RGB15(6, 6, 8));
-            renderDrawText("-", 241, y_pos + 2, RGB15(10, 10, 10), 0);
-        }
-    }
-    
-    // Draw "FONDO" item
-    int bg_y = 27 + layers_count * 13;
-    drawRect(148, bg_y, 212, bg_y + 11, RGB15(2, 2, 3));
-    drawRectOutline(148, bg_y, 212, bg_y + 11, RGB15(6, 6, 8));
-    renderDrawText(uiTxt(TXT_SIDEBAR_FONDO), 158, bg_y + 2, text_col, 0);
-    
-    // Lock toggle
-    drawRect(216, bg_y, 252, bg_y + 11, bg_modifiable ? blendRGB555_int(app_theme_color, panel_bg, 6) : RGB15(12, 3, 3));
-    drawRectOutline(216, bg_y, 252, bg_y + 11, bg_modifiable ? border_col : RGB15(6, 2, 2));
-    renderDrawText(bg_modifiable ? uiTxt(TXT_SIDEBAR_MOD) : uiTxt(TXT_SIDEBAR_LOK), 218, bg_y + 2, bg_modifiable ? text_col : RGB15(31, 10, 10), 0);
-    drawLockIcon(244, bg_y + 1, !bg_modifiable);
-    
-    // Draw Opacity Slider
-    renderDrawText("OPAC:", 148, 145, text_col, 0);
-    drawRect(178, 148, 222, 149, RGB15(6, 6, 8));
-    int thumb_x = 178 + (layers_opacity[active_layer_idx] * 44) / 100;
-    drawRect(thumb_x - 2, 144, thumb_x + 2, 152, app_theme_color);
-    char op_str[16];
-    sprintf(op_str, "%d%%", layers_opacity[active_layer_idx]);
-    renderDrawText(op_str, 226, 145, text_col, 0);
-    
-    // Draw merge buttons
-    bool can_merge_down = (active_layer_idx > 0);
-    uint16_t mdown_bg = can_merge_down ? blendRGB555_int(app_theme_color, panel_bg, 8) : RGB15(2, 2, 3);
-    uint16_t mdown_border = can_merge_down ? app_theme_color : RGB15(6, 6, 8);
-    uint16_t mdown_txt = can_merge_down ? (active_theme_idx == 0 ? RGB15(0, 0, 0) : RGB15(31, 31, 31)) : RGB15(10, 10, 10);
-    
-    drawRect(148, 157, 198, 169, mdown_bg);
-    drawRectOutline(148, 157, 198, 169, mdown_border);
-    renderDrawText(uiTxt(TXT_SIDEBAR_C_ABJ), 154, 160, mdown_txt, 0);
-    
-    bool can_merge_up = (active_layer_idx < layers_count - 1);
-    uint16_t mup_bg = can_merge_up ? blendRGB555_int(app_theme_color, panel_bg, 8) : RGB15(2, 2, 3);
-    uint16_t mup_border = can_merge_up ? app_theme_color : RGB15(6, 6, 8);
-    uint16_t mup_txt = can_merge_up ? (active_theme_idx == 0 ? RGB15(0, 0, 0) : RGB15(31, 31, 31)) : RGB15(10, 10, 10);
-    
-    drawRect(202, 157, 252, 169, mup_bg);
-    drawRectOutline(202, 157, 252, 169, mup_border);
-    renderDrawText(uiTxt(TXT_SIDEBAR_C_ARB), 208, 160, mup_txt, 0);
-}
-
-void uiDrawLayersOverlay(void) {
-    if (layers_panel_open) {
-        uiDrawLayersSidebar();
-    } else {
-        // Draw a small floating tab button on the right edge
-        uint16_t tab_bg = RGB15(2, 2, 3);
-        uint16_t tab_border = app_theme_color;
-        
-        drawRect(244, 70, 255, 106, tab_bg);
-        drawRectOutline(244, 70, 255, 106, tab_border);
-        
-        // Stack of three sheets
-        uint16_t sheet_col = blendRGB555_int(app_theme_color, RGB15(31, 31, 31), 16);
-        drawRect(247, 76, 252, 78, sheet_col);
-        drawRect(247, 82, 252, 84, sheet_col);
-        drawRect(247, 88, 252, 90, sheet_col);
-        
-        renderDrawText("<", 247, 96, RGB15(31, 31, 31), 0);
-    }
-}
-
-void uiDrawUndoRedoButtons(void) {
-    uint16_t btn_bg = RGB15(4, 4, 5);
-    uint16_t border_col = app_theme_color;
-    
-    // Undo
-    drawRect(4, 4, 20, 20, btn_bg);
-    drawRectOutline(4, 4, 20, 20, border_col);
-    uint16_t undo_text_col = (undo_count > 0) ? RGB15(31, 31, 31) : RGB15(8, 8, 9);
-    renderDrawText("<", 9, 8, undo_text_col, 0);
-    
-    // Redo
-    drawRect(24, 4, 40, 20, btn_bg);
-    drawRectOutline(24, 4, 40, 20, border_col);
-    uint16_t redo_text_col = (redo_count > 0) ? RGB15(31, 31, 31) : RGB15(8, 8, 9);
-    renderDrawText(">", 29, 8, redo_text_col, 0);
-}
-
-void uiDrawTopConsoleBox(const char* title) {
-    if (preview_buffer == NULL) return;
-    
-    renderUpdatePreview();
-    
-    uint16_t border_color = app_theme_color;
-    uint16_t bg_color = RGB15(3, 3, 4);
-    
-    for (int y = 44; y <= 147; y++) {
-        for (int x = 20; x <= 235; x++) {
-            if (y <= 46 || y >= 145 || x <= 22 || x >= 233) {
-                preview_buffer[y * 256 + x] = border_color;
-            } else {
-                preview_buffer[y * 256 + x] = bg_color;
-            }
-        }
-    }
-    
-    uint16_t header_bg = blendRGB555_int(app_theme_color, bg_color, 8);
-    for (int y = 47; y <= 59; y++) {
-        for (int x = 23; x <= 232; x++) {
-            preview_buffer[y * 256 + x] = header_bg;
-        }
-    }
-    
-    int title_len = strlen(title);
-    int text_width = title_len * 6;
-    int tx = 23 + (210 - text_width) / 2;
-    int ty = 47 + (13 - 8) / 2;
-    if (tx < 23) tx = 23;
-    renderDrawTextOnBuffer(preview_buffer, title, tx, ty, RGB15(31, 31, 31), 0);
 }

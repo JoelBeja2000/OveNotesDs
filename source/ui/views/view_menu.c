@@ -1,11 +1,16 @@
-#include "ui_menu.h"
-#include "ui_shared.h"
+#define NO_UI_COMPAT_MACROS
+#include "view_menu.h"
 #include "ui.h"
-#include "ui_modal.h"
 #include "render.h"
 #include "logo_data.h"
+#include "modals.h"
 #include <stdio.h>
 #include <string.h>
+
+#define app_theme_color g_app_state.ui.app_theme_color
+#define active_theme_idx g_app_state.ui.active_theme_idx
+#define current_lang g_app_state.ui.current_lang
+#define show_lang_modal g_app_state.ui.show_lang_modal
 
 void uiDrawLogo(void) {
     if (wizard_buffer == NULL) return;
@@ -80,8 +85,8 @@ void uiDrawStartMenu(void) {
     
     // Draw language/flag button at top-right
     // x = 226..246, y = 8..28
-    drawRect(226, 8, 246, 28, RGB15(10, 10, 12));
-    drawRectOutline(226, 8, 246, 28, app_theme_color);
+    renderDrawRect(226, 8, 246, 28, RGB15(10, 10, 12));
+    renderDrawRectOutline(226, 8, 246, 28, app_theme_color);
     
     if (current_lang == 0) {
         // Spain Flag
@@ -135,8 +140,8 @@ void uiDrawStartMenu(void) {
     
     // Button 1: Crear Nueva Nota
     // x = 32..224, y = 42..64
-    drawRect(32, 42, 224, 64, RGB15(10, 10, 12));
-    drawRectOutline(32, 42, 224, 64, app_theme_color);
+    renderDrawRect(32, 42, 224, 64, RGB15(10, 10, 12));
+    renderDrawRectOutline(32, 42, 224, 64, app_theme_color);
     char create_lbl[48];
     sprintf(create_lbl, "%s", uiTxt(TXT_CREATE_NOTE));
     int create_pad = (24 - strlen(create_lbl)) * 4;
@@ -145,8 +150,8 @@ void uiDrawStartMenu(void) {
     
     // Button 2: Ver Notas Creadas
     // x = 32..224, y = 72..94
-    drawRect(32, 72, 224, 94, RGB15(10, 10, 12));
-    drawRectOutline(32, 72, 224, 94, app_theme_color);
+    renderDrawRect(32, 72, 224, 94, RGB15(10, 10, 12));
+    renderDrawRectOutline(32, 72, 224, 94, app_theme_color);
     char view_lbl[48];
     sprintf(view_lbl, "%s", uiTxt(TXT_VIEW_NOTES));
     int view_pad = (24 - strlen(view_lbl)) * 4;
@@ -155,8 +160,8 @@ void uiDrawStartMenu(void) {
     
     // Button 3: WiFi / Conexión
     // x = 32..224, y = 102..124
-    drawRect(32, 102, 224, 124, RGB15(10, 10, 12));
-    drawRectOutline(32, 102, 224, 124, app_theme_color);
+    renderDrawRect(32, 102, 224, 124, RGB15(10, 10, 12));
+    renderDrawRectOutline(32, 102, 224, 124, app_theme_color);
     char wifi_lbl[48];
     sprintf(wifi_lbl, "%s", uiTxt(TXT_WIFI_CONNECTION));
     int wifi_pad = (24 - strlen(wifi_lbl)) * 4;
@@ -165,8 +170,8 @@ void uiDrawStartMenu(void) {
     
     // Button 4: Cambiar Tema
     // x = 32..224, y = 132..154
-    drawRect(32, 132, 224, 154, RGB15(10, 10, 12));
-    drawRectOutline(32, 132, 224, 154, app_theme_color);
+    renderDrawRect(32, 132, 224, 154, RGB15(10, 10, 12));
+    renderDrawRectOutline(32, 132, 224, 154, app_theme_color);
     char theme_lbl[48];
     sprintf(theme_lbl, uiTxt(TXT_THEME_LABEL), uiGetThemeName(active_theme_idx));
     int theme_pad = (24 - strlen(theme_lbl)) * 4;
@@ -183,85 +188,6 @@ void uiDrawStartMenu(void) {
     }
 }
 
-void uiDrawNotesGallery(int selected_idx, int total_count, const char filenames[][32]) {
-    // Fill bottom screen with dark charcoal background
-    uint16_t bg_color = RGB15(4, 4, 5);
-    for (int y = 0; y < 192; y++) {
-        for (int x = 0; x < 256; x++) {
-            canvas_buffer[y * 256 + x] = bg_color;
-        }
-    }
-    
-    // Draw screen grid
-    uint16_t grid_color = RGB15(8, 8, 10);
-    for (int y = 0; y < 192; y += 16) {
-        for (int x = 0; x < 256; x += 16) {
-            renderSetPixel(x, y, grid_color);
-        }
-    }
-    
-    // Header
-    drawRect(0, 0, 255, 14, RGB15(12, 12, 12));
-    renderDrawText(uiTxt(TXT_VIEW_NOTES), 8, 3, app_theme_color, 0);
-    
-    // Back button
-    // x = 180..250, y = 1..13
-    drawRect(180, 1, 250, 13, RGB15(24, 6, 6));
-    drawRectOutline(180, 1, 250, 13, RGB15(31, 0, 0));
-    renderDrawText(uiTxt(TXT_BACK_B), 186, 3, RGB15(31, 31, 31), 0);
-    
-    // If no notes are present
-    if (total_count == 0) {
-        renderDrawText(uiTxt(TXT_NO_NOTES_FOUND), 32, 80, RGB15(20, 20, 22), 0);
-        renderDrawText(uiTxt(TXT_CREATE_NOTE_IN_START_MENU), 16, 96, RGB15(16, 16, 18), 0);
-        
-        // Clean top screen preview to indicate empty
-        if (wizard_buffer != NULL) {
-            for (int i = 0; i < 256 * 256; i++) {
-                wizard_buffer[i] = RGB15(0, 0, 0);
-            }
-            for (int y = 0; y < 192; y++) {
-                for (int x = 0; x < 256; x++) {
-                    if (x == 0 || x == 255 || y == 0 || y == 191) {
-                        wizard_buffer[y * 256 + x] = app_theme_color;
-                    }
-                }
-            }
-        }
-        return;
-    }
-    
-    // Draw list of notes (max 5 visible at a time)
-    int start_visible = (selected_idx / 5) * 5;
-    int end_visible = start_visible + 5;
-    if (end_visible > total_count) end_visible = total_count;
-    
-    int row_y = 24;
-    for (int i = start_visible; i < end_visible; i++) {
-        bool is_selected = (i == selected_idx);
-        uint16_t row_bg = is_selected ? RGB15(12, 12, 18) : RGB15(6, 6, 8);
-        uint16_t border_col = is_selected ? app_theme_color : RGB15(12, 12, 14);
-        
-        // Row box: x = 10..246, y = row_y..row_y+20
-        drawRect(10, row_y, 246, row_y + 20, row_bg);
-        drawRectOutline(10, row_y, 246, row_y + 20, border_col);
-        
-        // Note text
-        char label[64];
-        sprintf(label, "%s %s", is_selected ? ">" : " ", filenames[i]);
-        renderDrawText(label, 18, row_y + 6, is_selected ? RGB15(31, 31, 31) : RGB15(24, 24, 24), 0);
-        
-        row_y += 26;
-    }
-    
-    // Draw scrolling markers if needed
-    if (start_visible > 0) {
-        renderDrawText(uiTxt(TXT_MORE_NOTES_ABOVE), 48, 18, app_theme_color, 0);
-    }
-    if (end_visible < total_count) {
-        renderDrawText(uiTxt(TXT_MORE_NOTES_BELOW), 52, 156, app_theme_color, 0);
-    }
-    
-    // Instructions at the very bottom
-    renderDrawText(uiTxt(TXT_GALLERY_INSTRUCTIONS), 12, 172, RGB15(16, 16, 18), 0);
+void view_menu_show(void) {
+    uiDrawStartMenu();
 }

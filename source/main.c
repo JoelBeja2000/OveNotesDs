@@ -25,7 +25,7 @@ int main(void) {
     }
     
     // Limpiar cualquier corrupcion de VRAM dejada por los printf() de inicializacion
-    uiDrawStartMenu();
+    view_menu_show();
     
     // Bucle de interaccion principal coordinado por la maquina de estados
     while (1) {

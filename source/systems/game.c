@@ -75,7 +75,7 @@ void gameInit(void) {
     bgUpdate();
     
     current_state = STATE_START_MENU;
-    uiDrawStartMenu();
+    view_menu_show();
 }
 
 static void enterWizardState(void) {
@@ -114,8 +114,7 @@ static void enterWizardState(void) {
     strcpy(current_input, pairing_code);
     input_len = strlen(current_input);
     
-    uiDrawFormUI(wizard_step, current_input);
-    uiDrawBottomForm(wizard_step, current_input);
+    view_wizard_show(wizard_step, current_input);
 }
 
 static void exitWizardState(bool canceled) {
@@ -154,7 +153,7 @@ static void exitWizardState(bool canceled) {
         bgUpdate();
         
         current_state = STATE_START_MENU;
-        uiDrawStartMenu();
+        view_menu_show();
         printf("[GAME] Retornado al Start Menu sin restaurar backups\n");
     }
 }
@@ -267,8 +266,7 @@ static void changeWizardStep(int new_step) {
     }
     
     input_len = strlen(current_input);
-    uiDrawFormUI(wizard_step, current_input);
-    uiDrawBottomForm(wizard_step, current_input);
+    view_wizard_show(wizard_step, current_input);
 }
 
 void gameUpdate(void) {
@@ -291,32 +289,32 @@ void gameUpdate(void) {
                         current_lang = 0;
                         netSaveConfig();
                         show_lang_modal = false;
-                        uiDrawStartMenu();
+                        view_menu_show();
                     }
                     // English option button
                     else if (prev_x >= 48 && prev_x <= 208 && prev_y >= 78 && prev_y <= 100) {
                         current_lang = 1;
                         netSaveConfig();
                         show_lang_modal = false;
-                        uiDrawStartMenu();
+                        view_menu_show();
                     }
                     // French option button
                     else if (prev_x >= 48 && prev_x <= 208 && prev_y >= 104 && prev_y <= 126) {
                         current_lang = 2;
                         netSaveConfig();
                         show_lang_modal = false;
-                        uiDrawStartMenu();
+                        view_menu_show();
                     }
                     // Close button
                     else if (prev_x >= 48 && prev_x <= 208 && prev_y >= 132 && prev_y <= 152) {
                         show_lang_modal = false;
-                        uiDrawStartMenu();
+                        view_menu_show();
                     }
                 } else {
                     // Hamburger button at top-right
                     if (prev_x >= 226 && prev_x <= 246 && prev_y >= 8 && prev_y <= 28) {
                         show_lang_modal = true;
-                        uiDrawStartMenu();
+                        view_menu_show();
                     }
                     // Button 1: Crear Nueva Nota (y = 42..64, x = 32..224)
                     else if (prev_x >= 32 && prev_x <= 224 && prev_y >= 42 && prev_y <= 64) {
@@ -330,13 +328,7 @@ void gameUpdate(void) {
                         
                         videoSetModeSub(MODE_5_2D | DISPLAY_BG2_ACTIVE);
                         
-                        renderInitCanvas();
-                        renderInitPreview();
-                        renderComposeCanvas();
-                        renderUpdatePreview();
-                        if (!toolbar_hidden) {
-                            uiDrawToolbar();
-                        }
+                        view_canvas_show();
                         
                         current_state = STATE_DRAW;
                     }
@@ -362,7 +354,7 @@ void gameUpdate(void) {
                             ioLoadNote(gallery_filenames[0], wizard_buffer);
                         }
                         
-                        uiDrawNotesGallery(gallery_selected_idx, gallery_count, gallery_filenames);
+                        view_gallery_show(gallery_selected_idx, gallery_count, gallery_filenames);
                     }
                     // Button 3: WiFi / Conexión (y = 102..124, x = 32..224)
                     else if (prev_x >= 32 && prev_x <= 224 && prev_y >= 102 && prev_y <= 124) {
@@ -372,7 +364,7 @@ void gameUpdate(void) {
                     else if (prev_x >= 32 && prev_x <= 224 && prev_y >= 132 && prev_y <= 154) {
                         active_theme_idx = (active_theme_idx + 1) % 5;
                         app_theme_color = theme_colors[active_theme_idx];
-                        uiDrawStartMenu();
+                        view_menu_show();
                     }
                 }
                 was_touching = false;
@@ -386,7 +378,7 @@ void gameUpdate(void) {
                 active_theme_idx = (active_theme_idx + 1) % 5;
             }
             app_theme_color = theme_colors[active_theme_idx];
-            uiDrawStartMenu();
+            view_menu_show();
         }
         return;
     }
@@ -403,7 +395,7 @@ void gameUpdate(void) {
                 // Back button: x = 180..250, y = 1..13
                 if (prev_x >= 180 && prev_x <= 250 && prev_y >= 1 && prev_y <= 13) {
                     current_state = STATE_START_MENU;
-                    uiDrawStartMenu();
+                    view_menu_show();
                 }
                 // Row items: 5 visible rows starting from y = 24
                 else if (prev_x >= 10 && prev_x <= 246 && prev_y >= 24 && prev_y <= 24 + 5 * 26) {
@@ -428,16 +420,12 @@ void gameUpdate(void) {
                             active_layer_idx = 0;
                             drawing_buffer = layers[0];
                             
-                            renderComposeCanvas();
-                            renderUpdatePreview();
-                            if (!toolbar_hidden) {
-                                uiDrawToolbar();
-                            }
+                            view_canvas_show();
                             current_state = STATE_DRAW;
                         } else {
                             gallery_selected_idx = target_idx;
                             ioLoadNote(gallery_filenames[gallery_selected_idx], wizard_buffer);
-                            uiDrawNotesGallery(gallery_selected_idx, gallery_count, gallery_filenames);
+                            view_gallery_show(gallery_selected_idx, gallery_count, gallery_filenames);
                         }
                     }
                 }
@@ -449,19 +437,19 @@ void gameUpdate(void) {
             if (gallery_selected_idx > 0) {
                 gallery_selected_idx--;
                 ioLoadNote(gallery_filenames[gallery_selected_idx], wizard_buffer);
-                uiDrawNotesGallery(gallery_selected_idx, gallery_count, gallery_filenames);
+                view_gallery_show(gallery_selected_idx, gallery_count, gallery_filenames);
             }
         }
         if (keys_down & KEY_DOWN) {
             if (gallery_selected_idx < gallery_count - 1) {
                 gallery_selected_idx++;
                 ioLoadNote(gallery_filenames[gallery_selected_idx], wizard_buffer);
-                uiDrawNotesGallery(gallery_selected_idx, gallery_count, gallery_filenames);
+                view_gallery_show(gallery_selected_idx, gallery_count, gallery_filenames);
             }
         }
         if (keys_down & KEY_B) {
             current_state = STATE_START_MENU;
-            uiDrawStartMenu();
+            view_menu_show();
         }
         if (keys_down & KEY_A) {
             if (gallery_count > 0) {
@@ -481,11 +469,7 @@ void gameUpdate(void) {
                 active_layer_idx = 0;
                 drawing_buffer = layers[0];
                 
-                renderComposeCanvas();
-                renderUpdatePreview();
-                if (!toolbar_hidden) {
-                    uiDrawToolbar();
-                }
+                view_canvas_show();
                 current_state = STATE_DRAW;
             }
         }
@@ -1100,7 +1084,7 @@ void gameUpdate(void) {
                                     wizard_buffer = (uint16_t*)bgGetGfxPtr(bg_sub_wizard);
                                     bgSet(bg_sub_wizard, 0, 1 << 8, 1 << 8, 0, 0, 0, 0);
                                     bgUpdate();
-                                    uiDrawStartMenu();
+                                    view_menu_show();
                                     option_selected = false;
                                 } else if (prev_y >= 104 && prev_y <= 126) {
                                     // NO, SALIR SIN GUARDAR
@@ -1111,7 +1095,7 @@ void gameUpdate(void) {
                                     wizard_buffer = (uint16_t*)bgGetGfxPtr(bg_sub_wizard);
                                     bgSet(bg_sub_wizard, 0, 1 << 8, 1 << 8, 0, 0, 0, 0);
                                     bgUpdate();
-                                    uiDrawStartMenu();
+                                    view_menu_show();
                                     option_selected = false;
                                 } else if (prev_y >= 132 && prev_y <= 154) {
                                     // CANCELAR (go back to options modal 5)
@@ -1136,17 +1120,20 @@ void gameUpdate(void) {
             return;
         }
 
-        // Toggle toolbar visibility with D-pad Up or Down
-        if (keys_down & (KEY_UP | KEY_DOWN)) {
+        // Hide toolbar and sidebar with D-pad Down
+        if (keys_down & KEY_DOWN) {
             uiCloseModal(); // Close open modal if any
-            toolbar_hidden = !toolbar_hidden;
-            if (toolbar_hidden) {
-                // Compose background pattern region on the bottom 16 pixels
-                renderComposeCanvas();
-            } else {
-                // Restore toolbar
-                uiDrawToolbar();
-            }
+            layers_panel_open = false;
+            toolbar_hidden = true;
+            renderComposeCanvas();
+            renderUpdatePreview();
+        }
+
+        // Show toolbar with D-pad Up
+        if (keys_down & KEY_UP) {
+            uiCloseModal(); // Close open modal if any
+            toolbar_hidden = false;
+            renderComposeCanvas();
             renderUpdatePreview();
         }
 
@@ -1263,7 +1250,7 @@ void gameUpdate(void) {
             int limit_y = toolbar_hidden ? 192 : 176;
             if (touch.py < limit_y) {
                 if (!touch_started_in_toolbar) {
-                    bool inside_undo_redo = (touch.px >= 4 && touch.px <= 40 && touch.py >= 4 && touch.py <= 20);
+                    bool inside_undo_redo = !toolbar_hidden && (touch.px >= 4 && touch.px <= 40 && touch.py >= 4 && touch.py <= 20);
                     bool ignore_draw = layers_panel_open || (dragging_layer_idx != -1) || inside_undo_redo;
                     if (!ignore_draw) {
                         if (is_bucket) {
@@ -1318,7 +1305,7 @@ void gameUpdate(void) {
                 
                 bool sidebar_action_taken = false;
                 int limit_y = toolbar_hidden ? 192 : 176;
-                if (!touch_started_in_toolbar && prev_y < limit_y && prev_x >= 4 && prev_x <= 40 && prev_y >= 4 && prev_y <= 20) {
+                if (!toolbar_hidden && !touch_started_in_toolbar && prev_y < limit_y && prev_x >= 4 && prev_x <= 40 && prev_y >= 4 && prev_y <= 20) {
                     if (prev_x >= 4 && prev_x <= 20) {
                         renderUndo();
                     } else if (prev_x >= 24 && prev_x <= 40) {

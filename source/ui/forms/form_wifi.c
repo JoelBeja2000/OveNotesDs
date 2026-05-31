@@ -1,14 +1,19 @@
-#include "ui_form.h"
+#define NO_UI_COMPAT_MACROS
+#include "form_wifi.h"
+#include "keyboard.h"
 #include "ui.h"
-#include "ui_shared.h"
 #include "net.h"
 #include "render.h"
 #include "pointer_sheep_data.h"
+#include "font8x8.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "font8x8.h"
+#define app_theme_color g_app_state.ui.app_theme_color
+#define active_theme_idx g_app_state.ui.active_theme_idx
+
+bool ssid_manual_input = false;
 
 // Sub-screen drawing helpers
 static void drawSubPixel(int x, int y, uint16_t color) {
@@ -110,108 +115,6 @@ static void drawSubPointerSheep(int target_x, int target_y) {
     }
 }
 
-bool ssid_manual_input = false;
-
-// Custom key-drawing for form bottom layout
-static void drawFormKey(int x0, int y0, int x1, int y1, const char* label, bool highlighted) {
-    uint16_t bg_color = highlighted ? blendRGB555_int(app_theme_color, RGB15(4, 4, 5), 6) : RGB15(2, 2, 3);
-    uint16_t border_color = highlighted ? app_theme_color : blendRGB555_int(app_theme_color, RGB15(2, 2, 3), 8);
-    uint16_t text_color = RGB15(31, 31, 31);
-    if (highlighted && active_theme_idx == 0) {
-        text_color = RGB15(0, 0, 0);
-    }
-    
-    // Draw background
-    for (int y = y0; y <= y1; y++) {
-        for (int x = x0; x <= x1; x++) {
-            canvas_buffer[y * 256 + x] = bg_color;
-        }
-    }
-    // Draw border
-    for (int x = x0; x <= x1; x++) {
-        canvas_buffer[y0 * 256 + x] = border_color;
-        canvas_buffer[y1 * 256 + x] = border_color;
-    }
-    for (int y = y0; y <= y1; y++) {
-        canvas_buffer[y * 256 + x0] = border_color;
-        canvas_buffer[y * 256 + x1] = border_color;
-    }
-    
-    // Center label
-    int len = strlen(label);
-    int text_w = len * 6 - 1; // 5px per char + 1px spacing
-    if (text_w < 0) text_w = 0;
-    int text_h = 7;
-    int tx = x0 + (x1 - x0 + 1 - text_w) / 2;
-    int ty = y0 + (y1 - y0 + 1 - text_h) / 2;
-    renderDrawText(label, tx, ty, text_color, 0);
-}
-
-// From ui_keyboard.c
-extern bool shift_active;
-extern bool caps_active;
-
-static void drawFormKeyboard(void) {
-    bool upper = shift_active || caps_active;
-    
-    // Row 1: 1 to = and Bksp
-    const char* r1_labels_low[] = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-", "="};
-    const char* r1_labels_up[]  = {"!", "@", "#", "$", "%", "^", "&", "*", "(", ")", "_", "+"};
-    for (int i = 0; i < 12; i++) {
-        int x0 = 4 + i * 18;
-        drawFormKey(x0, 96, x0 + 16, 116, upper ? r1_labels_up[i] : r1_labels_low[i], false);
-    }
-    drawFormKey(220, 96, 252, 116, "<-", false);
-    
-    // Row 2: q to backslash
-    const char* r2_labels_low_qwerty[] = {"q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "[", "]", "\\"};
-    const char* r2_labels_up_qwerty[]  = {"Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P", "{", "}", "|"};
-    const char* r2_labels_low_azerty[] = {"a", "z", "e", "r", "t", "y", "u", "i", "o", "p", "[", "]", "\\"};
-    const char* r2_labels_up_azerty[]  = {"A", "Z", "E", "R", "T", "Y", "U", "I", "O", "P", "{", "}", "|"};
-    
-    const char** r2_labels_low = (current_lang == 2) ? r2_labels_low_azerty : r2_labels_low_qwerty;
-    const char** r2_labels_up  = (current_lang == 2) ? r2_labels_up_azerty : r2_labels_up_qwerty;
-    
-    for (int i = 0; i < 13; i++) {
-        int x0 = 4 + i * 19;
-        drawFormKey(x0, 118, x0 + 17, 138, upper ? r2_labels_up[i] : r2_labels_low[i], false);
-    }
-    
-    // Row 3: Caps, a to ' and Rtrn
-    drawFormKey(4, 140, 29, 160, "CPS", caps_active);
-    
-    const char* r3_labels_low_qwerty[] = {"a", "s", "d", "f", "g", "h", "j", "k", "l", ";", "'"};
-    const char* r3_labels_up_qwerty[]  = {"A", "S", "D", "F", "G", "H", "J", "K", "L", ":", "\""};
-    const char* r3_labels_low_azerty[] = {"q", "s", "d", "f", "g", "h", "j", "k", "l", "m", "'"};
-    const char* r3_labels_up_azerty[]  = {"Q", "S", "D", "F", "G", "H", "J", "K", "L", "M", "\""};
-    
-    const char** r3_labels_low = (current_lang == 2) ? r3_labels_low_azerty : r3_labels_low_qwerty;
-    const char** r3_labels_up  = (current_lang == 2) ? r3_labels_up_azerty : r3_labels_up_qwerty;
-    
-    for (int i = 0; i < 11; i++) {
-        int x0 = 31 + i * 18;
-        drawFormKey(x0, 140, x0 + 16, 160, upper ? r3_labels_up[i] : r3_labels_low[i], false);
-    }
-    drawFormKey(229, 140, 253, 160, "Ent", false);
-    
-    // Row 4: Shift, z to /, Space
-    drawFormKey(4, 162, 29, 182, "SFT", shift_active);
-    
-    const char* r4_labels_low_qwerty[] = {"z", "x", "c", "v", "b", "n", "m", ",", ".", "/"};
-    const char* r4_labels_up_qwerty[]  = {"Z", "X", "C", "V", "B", "N", "M", "<", ">", "?"};
-    const char* r4_labels_low_azerty[] = {"w", "x", "c", "v", "b", "n", ",", ";", ".", "/"};
-    const char* r4_labels_up_azerty[]  = {"W", "X", "C", "V", "B", "N", "<", ";", ".", "?"};
-    
-    const char** r4_labels_low = (current_lang == 2) ? r4_labels_low_azerty : r4_labels_low_qwerty;
-    const char** r4_labels_up  = (current_lang == 2) ? r4_labels_up_azerty : r4_labels_up_qwerty;
-    
-    for (int i = 0; i < 10; i++) {
-        int x0 = 31 + i * 18;
-        drawFormKey(x0, 162, x0 + 16, 182, upper ? r4_labels_up[i] : r4_labels_low[i], false);
-    }
-    drawFormKey(211, 162, 254, 182, uiTxt(TXT_KEY_SPACE), false);
-}
-
 void uiDrawFormUI(int step, const char* input_text) {
     if (wizard_buffer == NULL) return;
 
@@ -303,21 +206,21 @@ void uiDrawBottomForm(int step, const char* input_text) {
             canvas_buffer[y * 256 + x] = RGB15(2, 2, 3);
         }
     }
-    drawRectOutline(10, 8, 246, 36, app_theme_color);
+    renderDrawRectOutline(10, 8, 246, 36, app_theme_color);
     
     char label[128];
     if (step == 0)      sprintf(label, "%s: %s_", uiTxt(TXT_CODIGO_CAPS), input_text);
     else if (step == 1) sprintf(label, "WIFI: %s_", input_text);
     renderDrawText(label, 16, 17, RGB15(31, 31, 31), 0);
     
-    drawFormKey(10, 42, 120, 62, uiTxt(TXT_CODIGO_CAPS), (step == 0));
-    drawFormKey(126, 42, 246, 62, "WIFI", (step == 1));
+    drawKey(10, 42, 120, 62, uiTxt(TXT_CODIGO_CAPS), (step == 0));
+    drawKey(126, 42, 246, 62, "WIFI", (step == 1));
     
     if (step == 0) {
-        drawFormKeyboard();
+        drawKeyboard();
     } else {
         if (ssid_manual_input) {
-            drawFormKeyboard();
+            drawKeyboard();
         } else {
             // Draw 2-column WiFi profile selection menu
             for (int i = 0; i < 3; i++) {
@@ -333,7 +236,7 @@ void uiDrawBottomForm(int step, const char* input_text) {
                 } else {
                     sprintf(label, "%d: %s", i + 1, uiTxt(TXT_EMPTY_SLOT));
                 }
-                drawFormKey(10, 68 + i * 30, 124, 92 + i * 30, label, high);
+                drawKey(10, 68 + i * 30, 124, 92 + i * 30, label, high);
             }
             
             for (int i = 3; i < 6; i++) {
@@ -349,10 +252,10 @@ void uiDrawBottomForm(int step, const char* input_text) {
                 } else {
                     sprintf(label, "%d: %s", i + 1, uiTxt(TXT_EMPTY_SLOT));
                 }
-                drawFormKey(132, 68 + (i - 3) * 30, 246, 92 + (i - 3) * 30, label, high);
+                drawKey(132, 68 + (i - 3) * 30, 246, 92 + (i - 3) * 30, label, high);
             }
             
-            drawFormKey(10, 158, 246, 182, uiTxt(TXT_MANUAL_KEYBOARD), false);
+            drawKey(10, 158, 246, 182, uiTxt(TXT_MANUAL_KEYBOARD), false);
         }
     }
 }
