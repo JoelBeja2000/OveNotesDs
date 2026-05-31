@@ -87,12 +87,15 @@ To maintain strong cohesion and prevent the UI coordinator from becoming a "catc
 
 ## 🛠️ How to Compile & Add New Features
 
-1. **Add a new Modal/Form/Widget:**
-   Create it in its corresponding folder (e.g., `source/ui/modals/modal_export.c`).
-2. **Update the Makefile:**
-   Files are added automatically upon building as the Makefile scans all subdirectories recursively:
+1. **Add a new `.c` file:**
+   Create it in its corresponding folder. The `Makefile` automatically detects all `.c` files recursively within the `source/` tree using the following directive:
    ```make
-   SOURCES := source source/systems source/ui source/ui/widgets source/ui/modals source/ui/forms source/ui/views source/vendor
+   SOURCES_C += $(shell find -L $(SOURCEDIRS) -name "*.c")
+   ```
+2. **Update the Makefile (Only if adding a new directory containing headers):**
+   If you add a new subdirectory containing `.h` header files, you must include it in the `INCLUDEDIRS` variable in the `Makefile` so the compiler can locate the headers:
+   ```make
+   INCLUDEDIRS ?= include source source/ui source/ui/i18n source/ui/views source/ui/modals source/ui/widgets source/ui/forms source/systems source/assets source/vendor
    ```
 3. **Adhere to Layering Rules:**
    If you write a widget in `widgets/`, ensure it **never** imports any headers from `views/` or `modals/`. This ensures components remain isolated and testable.

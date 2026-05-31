@@ -87,12 +87,15 @@ Para mantener la cohesión y evitar que el coordinador central se convierta en u
 
 ## 🛠️ Cómo compilar y añadir una nueva funcionalidad
 
-1. **Añadir un nuevo Modal/Formulario/Widget:**
-   Créalo en su carpeta respectiva. Ej: `source/ui/modals/modal_export.c`.
-2. **Actualizar el Makefile:**
-   Los archivos se agregan automáticamente al compilar porque el Makefile escanea los subdirectorios dentro de `source/ui/` de forma recursiva:
+1. **Añadir un nuevo archivo `.c`:**
+   Créalo en la carpeta correspondiente. El `Makefile` detecta automáticamente todos los archivos `.c` de forma recursiva en el árbol de `source/` usando la directiva:
    ```make
-   SOURCES := source source/systems source/ui source/ui/widgets source/ui/modals source/ui/forms source/ui/views source/vendor
+   SOURCES_C += $(shell find -L $(SOURCEDIRS) -name "*.c")
+   ```
+2. **Actualizar el Makefile (Solo si agregas un nuevo directorio de cabeceras):**
+   Si añades una nueva subcarpeta que contenga archivos `.h`, debes incluirla en la variable `INCLUDEDIRS` del `Makefile` para que el compilador encuentre los include:
+   ```make
+   INCLUDEDIRS ?= include source source/ui source/ui/i18n source/ui/views source/ui/modals source/ui/widgets source/ui/forms source/systems source/assets source/vendor
    ```
 3. **Respetar la regla de `#include`:**
    Si creas un archivo en `widgets/`, asegúrate de **no** importar nada que esté dentro de `views/` ni `modals/`. Esto garantiza que los componentes sigan siendo testeables de forma aislada.
