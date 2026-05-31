@@ -1,4 +1,4 @@
-# OveNotesDS
+﻿# OveNotesDS
 
 [English](#english) | [Español](#español)
 
@@ -251,3 +251,13 @@ Por ahora solo permite dibujar y subir notas como PNG a tu servidor. No obstante
 
 ### 5. ¿Es seguro conectar mi DS a Internet?
 Conectar la DS a un servidor local o privado es seguro. Sin embargo, ten en cuenta que el hardware de la DS utiliza protocolos de red antiguos sin cifrado moderno (HTTP sin SSL/TLS). Evita transmitir datos personales o confidenciales.
+
+---
+
+## 🙏 Agradecimientos / Credits
+
+| Contribución | Usuario | Enlace |
+|---|---|---|
+| Revisión y corrección de la localización francesa (traducción, teclado AZERTY, compatibilidad de fuentes) | **tockyng** (Izuku Midoriya) | [Reddit u/tockyng](https://www.reddit.com/user/tockyng) |
+
+> Special thanks to **tockyng** (Izuku Midoriya) from Reddit for reviewing the French localization, catching translation errors and providing the corrections that made the French language support accurate and complete.
