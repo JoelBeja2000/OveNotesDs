@@ -170,14 +170,14 @@ OveNotesDs/
 │   │   ├── input.c/.h      # Abstracción de botones y pantalla táctil
 │   │   └── log.c/.h        # Log de depuración en tarjeta SD
 │   └── ui/
-│       ├── ui.c/.h         # Barra de herramientas, barra lateral, layout
-│       ├── ui_keyboard.c   # Teclado en pantalla QWERTY / AZERTY
-│       ├── ui_modal.c      # Modales (herramientas, colores, capas…)
-│       ├── ui_menu.c       # Pantalla de inicio y selector de temas
-│       ├── ui_form.c       # Formulario del asistente de conexión
-│       ├── language_en.c   # Cadenas en inglés
-│       ├── language_es.c   # Cadenas en español
-│       └── language_fr.c   # Cadenas en francés
+│       ├── ui.c/.h         # Coordinador / enrutador de vistas (UI)
+│       ├── forms/          # Formularios de entrada (form_wifi.c, form_rename.c)
+│       ├── modals/         # Modales de interfaz (colores, herramientas, fondos, pincel, confirmación, idioma...)
+│       ├── views/          # Vistas de pantalla principal (view_canvas.c, view_menu.c, view_gallery.c, view_wizard.c)
+│       ├── widgets/        # Componentes/widgets de bajo nivel (keyboard.c, sidebar.c, toolbar.c, widget_buttons.c)
+│       ├── language_en.c   # Localización en inglés
+│       ├── language_es.c   # Localización en español
+│       └── language_fr.c   # Localización en francés
 ├── dist/index.html         # Interfaz web companion (servida por server.js)
 ├── server.js               # Servidor Node.js de emparejamiento y galería
 ├── src-tauri/              # Shell de la app Tauri

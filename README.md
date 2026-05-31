@@ -170,14 +170,14 @@ OveNotesDs/
 │   │   ├── input.c/.h      # Button & touchscreen abstraction
 │   │   └── log.c/.h        # SD card debug logging
 │   └── ui/
-│       ├── ui.c/.h         # Toolbar, sidebar, layout
-│       ├── ui_keyboard.c   # On-screen QWERTY / AZERTY keyboard
-│       ├── ui_modal.c      # Modals (tools, colors, layers…)
-│       ├── ui_menu.c       # Home screen & theme selector
-│       ├── ui_form.c       # Connection wizard form
-│       ├── language_en.c   # English strings
-│       ├── language_es.c   # Spanish strings
-│       └── language_fr.c   # French strings
+│       ├── ui.c/.h         # Coordinator / view router
+│       ├── forms/          # UI Input forms (form_wifi.c, form_rename.c)
+│       ├── modals/         # UI Modals (colors, tools, backgrounds, brush, confirm, language...)
+│       ├── views/          # Screen views (view_canvas.c, view_menu.c, view_gallery.c, view_wizard.c)
+│       ├── widgets/        # Low-level widgets (keyboard.c, sidebar.c, toolbar.c, widget_buttons.c)
+│       ├── language_en.c   # English localization strings
+│       ├── language_es.c   # Spanish localization strings
+│       └── language_fr.c   # French localization strings
 ├── dist/index.html         # Web companion UI (served by server.js)
 ├── server.js               # Node.js pairing & gallery server
 ├── src-tauri/              # Tauri app shell
