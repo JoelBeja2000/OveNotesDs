@@ -1,4 +1,4 @@
-﻿# OveNotesDS
+# OveNotesDS
 
 [English](#english) | [Español](#español)
 
@@ -26,7 +26,7 @@ You need to have your DS connected to a Wi-Fi network and download the .nds file
 
 ---
 
-This document describes the project structure, main systems, and execution flow of **OveNotesDS**, a Nintendo DS homebrew application. It is built using the **[BlocksDS](https://github.com/blocksds)** SDK (developed by **[@AntonioND](https://github.com/AntonioND)**), which made this project possible! The main purpose of the application is to let the user draw on the touchscreen and upload the result as PNG images to a server using HTTP POST requests (`/api/nueva-nota`).
+This document describes the project structure, main systems, and execution flow of **OveNotesDS**, a Nintendo DS homebrew application built using the **[BlocksDS](https://github.com/blocksds)** SDK. The main purpose of the application is to let the user draw on the touchscreen and upload the result as PNG images to a server using HTTP POST requests (`/api/nueva-nota`).
 
 ---
 
@@ -149,7 +149,7 @@ Connecting a DS to a local or private server is safe. However, keep in mind that
 Tienes que tener tu DS conectada a una red wifi y descargarte el archivo .nds, la APK o el .exe. Una vez que estés en la vista para crear notas, haces clic en el botón de menú. Ahí encontrarás un formulario para introducir el código de la DS que te aparece en el PC o en el móvil. También tienes que seleccionar el nombre de tu wifi en ese mismo formulario.
 ---
 
-Este documento describe la estructura del proyecto, los sistemas principales y el flujo de ejecución de **OveNotesDS**, una aplicación homebrew para Nintendo DS. Está desarrollada utilizando el SDK **[BlocksDS](https://github.com/blocksds)** (creado por **[@AntonioND](https://github.com/AntonioND)**), gracias al cual este proyecto ha sido posible. Su propósito principal es permitir al usuario dibujar en la pantalla táctil y subir el resultado como imágenes PNG a un servidor mediante peticiones HTTP POST (`/api/nueva-nota`).
+Este documento describe la estructura del proyecto, los sistemas principales y el flujo de ejecución de **OveNotesDS**, una aplicación homebrew para Nintendo DS desarrollada con el SDK **[BlocksDS](https://github.com/blocksds)**. Su propósito principal es permitir al usuario dibujar en la pantalla táctil y subir el resultado como imágenes PNG a un servidor mediante peticiones HTTP POST (`/api/nueva-nota`).
 
 ---
 
@@ -254,10 +254,26 @@ Conectar la DS a un servidor local o privado es seguro. Sin embargo, ten en cuen
 
 ---
 
-## 🙏 Agradecimientos / Credits
+## 🙏 Credits / Agradecimientos
+
+### English
+
+| Contribution | User | Link |
+|---|---|---|
+| French localization review: translation corrections, AZERTY keyboard layout, font compatibility fixes | **tockyng** (Izuku Midoriya) | [Reddit u/tockyng](https://www.reddit.com/user/tockyng) |
+| Created and maintains **BlocksDS**, the SDK that made this entire project possible | **@AntonioND** | [GitHub @AntonioND](https://github.com/AntonioND) |
+
+> Special thanks to **tockyng** (Izuku Midoriya) from Reddit for reviewing the French localization and providing the corrections that made the French language support accurate and complete.
+>
+> Special thanks to **@AntonioND** for creating and maintaining [BlocksDS](https://github.com/blocksds), without which this project would not exist.
+
+### Español
 
 | Contribución | Usuario | Enlace |
 |---|---|---|
-| Revisión y corrección de la localización francesa (traducción, teclado AZERTY, compatibilidad de fuentes) | **tockyng** (Izuku Midoriya) | [Reddit u/tockyng](https://www.reddit.com/user/tockyng) |
+| Revisión de la localización francesa: correcciones de traducción, teclado AZERTY, compatibilidad de fuentes | **tockyng** (Izuku Midoriya) | [Reddit u/tockyng](https://www.reddit.com/user/tockyng) |
+| Creación y mantenimiento de **BlocksDS**, el SDK que ha hecho posible este proyecto | **@AntonioND** | [GitHub @AntonioND](https://github.com/AntonioND) |
 
-> Special thanks to **tockyng** (Izuku Midoriya) from Reddit for reviewing the French localization, catching translation errors and providing the corrections that made the French language support accurate and complete.
+> Agradecimiento especial a **tockyng** (Izuku Midoriya) de Reddit por revisar la localización francesa y aportar las correcciones que han hecho que el soporte del idioma francés sea preciso y completo.
+>
+> Agradecimiento especial a **@AntonioND** por crear y mantener [BlocksDS](https://github.com/blocksds), sin el cual este proyecto no existiría.
