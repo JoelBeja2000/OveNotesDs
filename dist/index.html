@@ -37,7 +37,7 @@
     .header{font-weight:800;color:var(--accent);padding:8px 12px;border-bottom:1px solid rgba(255,255,255,0.03)}
     .main{padding:18px;display:flex;flex-direction:column;gap:12px}
     .pairing-title{text-align:center;color:var(--accent);font-weight:800;letter-spacing:1px;font-family:'NDS BIOS', Outfit, sans-serif}
-    .pairing-code{display:block;margin:6px auto;font-size:44px;font-weight:900;letter-spacing:10px;background:rgba(255,255,255,0.02);padding:12px 22px;border-radius:8px;border:1px dashed rgba(255,209,0,0.45);max-width:420px;text-align:center;font-family:'NDS BIOS', monospace}
+    .pairing-code{display:block;margin:6px auto;font-size:44px;font-weight:900;letter-spacing:10px;background:rgba(255,255,255,0.02);padding:12px 22px;border-radius:8px;border:1px dashed rgba(255,209,0,0.45);max-width:420px;text-align:center;font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace}
     .meta{text-align:center;color:var(--muted);font-size:13px}
 
     .notes-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-top:6px}
@@ -152,6 +152,13 @@
 </head>
 <body>
   <div class="wrap">
+    <div class="header" style="display:flex; justify-content:space-between; align-items:center;">
+      <span style="font-family:'NDS BIOS', Outfit, sans-serif; font-size:16px;">OveNotesDS</span>
+      <div class="lang-switch" style="display:flex; gap:8px;">
+        <button id="btnLangEs" onclick="setLang('es')" style="background:var(--accent); color:#000; border:none; padding:4px 8px; border-radius:4px; font-weight:800; font-size:11px; cursor:pointer; font-family:'NDS BIOS', sans-serif;">ES</button>
+        <button id="btnLangEn" onclick="setLang('en')" style="background:rgba(255,255,255,0.08); color:var(--text); border:none; padding:4px 8px; border-radius:4px; font-weight:800; font-size:11px; cursor:pointer; font-family:'NDS BIOS', sans-serif;">EN</button>
+      </div>
+    </div>
     <div class="main">
       <div>
         <div class="pairing-title">CÓDIGO DE CONEXIÓN</div>
@@ -166,6 +173,7 @@
         <div id="notesContainer" class="notes-grid"></div>
       </div>
     </div>
+  </div>
   <div id="noteModal" class="modal" onclick="closeModal()">
     <div class="modal-content" onclick="event.stopPropagation()">
       <div id="modalTitle" class="modal-title"></div>
@@ -182,6 +190,77 @@
     // Server can replace these tokens or set window.initialPairing / window.initialNotes
     let pairingCodeData = { code: '------', ip: '...', port: '...' };
     let cachedNotes = [];
+
+    const translations = {
+      es: {
+        title: "OveNotesDS - Emparejamiento",
+        pairingTitle: "CÓDIGO DE CONEXIÓN",
+        restartBtn: "Reiniciar Servidor",
+        emptyNotes: "No se encontraron notas. Envía una nota desde tu DSi.",
+        btnView: "Ver",
+        btnDownload: "Descargar",
+        btnDelete: "Eliminar",
+        modalTip: "Tip: Mantén pulsada la imagen para guardarla en la galería del móvil",
+        btnClose: "Cerrar",
+        restartConfirm: "¿Seguro que quieres reiniciar el servidor?",
+        restarting: "Reiniciando...",
+        restartAlert: "El servidor se está reiniciando. Por favor, espera unos segundos y recarga la página.",
+        restartError: "Error al reiniciar el servidor.",
+        connectError: "Error al conectar con el servidor.",
+        deleteConfirm: "¿Eliminar esta nota? Esta acción no se puede deshacer.",
+        deleteError: "No se pudo eliminar la nota.",
+        deleteCatch: "Error al eliminar"
+      },
+      en: {
+        title: "OveNotesDS - Pairing",
+        pairingTitle: "CONNECTION CODE",
+        restartBtn: "Restart Server",
+        emptyNotes: "No notes found. Send a note from your DSi.",
+        btnView: "View",
+        btnDownload: "Download",
+        btnDelete: "Delete",
+        modalTip: "Tip: Long press the image to save it to your mobile gallery",
+        btnClose: "Close",
+        restartConfirm: "Are you sure you want to restart the server?",
+        restarting: "Restarting...",
+        restartAlert: "The server is restarting. Please wait a few seconds and reload the page.",
+        restartError: "Error restarting the server.",
+        connectError: "Error connecting to the server.",
+        deleteConfirm: "Delete this note? This action cannot be undone.",
+        deleteError: "Could not delete the note.",
+        deleteCatch: "Error deleting"
+      }
+    };
+
+    let currentLang = localStorage.getItem('lang') || (navigator.language && navigator.language.startsWith('es') ? 'es' : 'en');
+
+    function setLang(lang) {
+      currentLang = lang;
+      localStorage.setItem('lang', lang);
+      
+      const btnEs = document.getElementById('btnLangEs');
+      const btnEn = document.getElementById('btnLangEn');
+      if (lang === 'es') {
+        btnEs.style.background = 'var(--accent)';
+        btnEs.style.color = '#000';
+        btnEn.style.background = 'rgba(255,255,255,0.08)';
+        btnEn.style.color = 'var(--text)';
+      } else {
+        btnEn.style.background = 'var(--accent)';
+        btnEn.style.color = '#000';
+        btnEs.style.background = 'rgba(255,255,255,0.08)';
+        btnEs.style.color = 'var(--text)';
+      }
+      
+      document.title = translations[lang].title;
+      document.querySelector('.pairing-title').textContent = translations[lang].pairingTitle;
+      document.querySelector('.btn-restart').textContent = translations[lang].restartBtn;
+      document.querySelector('.modal-tip').textContent = translations[lang].modalTip;
+      document.getElementById('modalDownload').textContent = translations[lang].btnDownload;
+      document.querySelector('.btn-close').textContent = translations[lang].btnClose;
+      
+      render();
+    }
 
     function getApiUrl(path) {
       if (window.__TAURI_INTERNALS__ || window.__tauri_ipc__) {
@@ -201,7 +280,7 @@
       metaEl.textContent = `IP: ${pairingCodeData.ip||'...'}   PORT: ${pairingCodeData.port||'...'}`;
 
       if(!Array.isArray(cachedNotes) || cachedNotes.length===0){
-        notesEl.innerHTML = '<div class="empty">No se encontraron notas. Envía una nota desde tu DSi.</div>';
+        notesEl.innerHTML = `<div class="empty">${translations[currentLang].emptyNotes}</div>`;
         return;
       }
 
@@ -213,9 +292,9 @@
             <img class="note-thumb" src="${url}" alt="${n.name}" onclick="openNote('${encodeURIComponent(n.name)}')" style="cursor:pointer" />\
             <div class="note-meta"><span>${time}</span><span>${n.name}</span></div>\
             <div class="note-actions">\
-              <button class="btn-view" onclick="openNote('${encodeURIComponent(n.name)}')">Ver</button>\
-              <button class="btn-download" onclick="downloadNote('${url}', '${n.name}')">Descargar</button>\
-              <button class="btn-delete" onclick="deleteNote('${encodeURIComponent(n.name)}', event)">Eliminar</button>\
+              <button class="btn-view" onclick="openNote('${encodeURIComponent(n.name)}')">${translations[currentLang].btnView}</button>\
+              <button class="btn-download" onclick="downloadNote('${url}', '${n.name}')">${translations[currentLang].btnDownload}</button>\
+              <button class="btn-delete" onclick="deleteNote('${encodeURIComponent(n.name)}', event)">${translations[currentLang].btnDelete}</button>\
             </div>\
           </div>`;
       }).join('');
@@ -251,31 +330,31 @@
     }
 
     async function restartServer() {
-      const ok = confirm('¿Seguro que quieres reiniciar el servidor?');
+      const ok = confirm(translations[currentLang].restartConfirm);
       if (!ok) return;
       try {
         const btn = document.querySelector('.btn-restart');
         const oldText = btn.textContent;
-        btn.textContent = 'Reiniciando...';
+        btn.textContent = translations[currentLang].restarting;
         btn.disabled = true;
         
         const r = await fetch(getApiUrl('/api/restart'), { method: 'POST' });
         if (r.ok) {
-          alert('El servidor se está reiniciando. Por favor, espera unos segundos y recarga la página.');
+          alert(translations[currentLang].restartAlert);
           setTimeout(() => {
             window.location.reload();
           }, 3000);
         } else {
-          alert('Error al reiniciar el servidor.');
+          alert(translations[currentLang].restartError);
           btn.textContent = oldText;
           btn.disabled = false;
         }
       } catch (e) {
         console.error('restart failed', e);
-        alert('Error al conectar con el servidor.');
+        alert(translations[currentLang].connectError);
         const btn = document.querySelector('.btn-restart');
         if (btn) {
-          btn.textContent = 'Reiniciar Servidor';
+          btn.textContent = translations[currentLang].restartBtn;
           btn.disabled = false;
         }
       }
@@ -285,7 +364,7 @@
       if(event && event.stopPropagation) event.stopPropagation();
       let decoded = name;
       try{ decoded = decodeURIComponent(name); }catch(e){}
-      const ok = confirm('¿Eliminar esta nota? Esta acción no se puede deshacer.');
+      const ok = confirm(translations[currentLang].deleteConfirm);
       if(!ok) return;
       try{
         const r = await fetch(getApiUrl('/api/notas/' + encodeURIComponent(decoded)), { method: 'DELETE' });
@@ -294,9 +373,9 @@
           cachedNotes = cachedNotes.filter(n => n.name !== decoded && n.name !== name);
           render();
         } else {
-          alert('No se pudo eliminar la nota.');
+          alert(translations[currentLang].deleteError);
         }
-      }catch(e){ console.error('delete failed', e); alert('Error al eliminar'); }
+      }catch(e){ console.error('delete failed', e); alert(translations[currentLang].deleteCatch); }
     }
 
     async function fetchNotes(){
@@ -314,7 +393,7 @@
     window.addEventListener('DOMContentLoaded', ()=>{
       if(window.initialPairing) pairingCodeData = window.initialPairing;
       if(window.initialNotes) cachedNotes = window.initialNotes;
-      render();
+      setLang(currentLang);
       fetchNotes(); fetchPairing();
       setInterval(()=>{ fetchNotes(); fetchPairing(); },2000);
 
