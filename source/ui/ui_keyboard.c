@@ -54,8 +54,14 @@ static void drawKeyboard(void) {
     drawKey(220, 96, 252, 116, "<-", false);
     
     // Row 2: q to backslash
-    const char* r2_labels_low[] = {"q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "[", "]", "\\"};
-    const char* r2_labels_up[]  = {"Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P", "{", "}", "|"};
+    const char* r2_labels_low_qwerty[] = {"q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "[", "]", "\\"};
+    const char* r2_labels_up_qwerty[]  = {"Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P", "{", "}", "|"};
+    const char* r2_labels_low_azerty[] = {"a", "z", "e", "r", "t", "y", "u", "i", "o", "p", "[", "]", "\\"};
+    const char* r2_labels_up_azerty[]  = {"A", "Z", "E", "R", "T", "Y", "U", "I", "O", "P", "{", "}", "|"};
+    
+    const char** r2_labels_low = (current_lang == 2) ? r2_labels_low_azerty : r2_labels_low_qwerty;
+    const char** r2_labels_up  = (current_lang == 2) ? r2_labels_up_azerty : r2_labels_up_qwerty;
+    
     for (int i = 0; i < 13; i++) {
         int x0 = 4 + i * 19;
         drawKey(x0, 118, x0 + 17, 138, upper ? r2_labels_up[i] : r2_labels_low[i], false);
@@ -63,8 +69,15 @@ static void drawKeyboard(void) {
     
     // Row 3: Caps, a to ' and Rtrn
     drawKey(4, 140, 29, 160, "CPS", caps_active);
-    const char* r3_labels_low[] = {"a", "s", "d", "f", "g", "h", "j", "k", "l", ";", "'"};
-    const char* r3_labels_up[]  = {"A", "S", "D", "F", "G", "H", "J", "K", "L", ":", "\""};
+    
+    const char* r3_labels_low_qwerty[] = {"a", "s", "d", "f", "g", "h", "j", "k", "l", ";", "'"};
+    const char* r3_labels_up_qwerty[]  = {"A", "S", "D", "F", "G", "H", "J", "K", "L", ":", "\""};
+    const char* r3_labels_low_azerty[] = {"q", "s", "d", "f", "g", "h", "j", "k", "l", "m", "'"};
+    const char* r3_labels_up_azerty[]  = {"Q", "S", "D", "F", "G", "H", "J", "K", "L", "M", "\""};
+    
+    const char** r3_labels_low = (current_lang == 2) ? r3_labels_low_azerty : r3_labels_low_qwerty;
+    const char** r3_labels_up  = (current_lang == 2) ? r3_labels_up_azerty : r3_labels_up_qwerty;
+    
     for (int i = 0; i < 11; i++) {
         int x0 = 31 + i * 18;
         drawKey(x0, 140, x0 + 16, 160, upper ? r3_labels_up[i] : r3_labels_low[i], false);
@@ -73,13 +86,20 @@ static void drawKeyboard(void) {
     
     // Row 4: Shift, z to /, Space
     drawKey(4, 162, 29, 182, "SFT", shift_active);
-    const char* r4_labels_low[] = {"z", "x", "c", "v", "b", "n", "m", ",", ".", "/"};
-    const char* r4_labels_up[]  = {"Z", "X", "C", "V", "B", "N", "M", "<", ">", "?"};
+    
+    const char* r4_labels_low_qwerty[] = {"z", "x", "c", "v", "b", "n", "m", ",", ".", "/"};
+    const char* r4_labels_up_qwerty[]  = {"Z", "X", "C", "V", "B", "N", "M", "<", ">", "?"};
+    const char* r4_labels_low_azerty[] = {"w", "x", "c", "v", "b", "n", ",", ";", ".", "/"};
+    const char* r4_labels_up_azerty[]  = {"W", "X", "C", "V", "B", "N", "<", ";", ".", "?"};
+    
+    const char** r4_labels_low = (current_lang == 2) ? r4_labels_low_azerty : r4_labels_low_qwerty;
+    const char** r4_labels_up  = (current_lang == 2) ? r4_labels_up_azerty : r4_labels_up_qwerty;
+    
     for (int i = 0; i < 10; i++) {
         int x0 = 31 + i * 18;
         drawKey(x0, 162, x0 + 16, 182, upper ? r4_labels_up[i] : r4_labels_low[i], false);
     }
-    drawKey(211, 162, 254, 182, "Space", false);
+    drawKey(211, 162, 254, 182, uiTxt(TXT_KEY_SPACE), false);
 }
 
 void uiDrawRenameKeyboard(const char* input_text) {
@@ -97,11 +117,11 @@ void uiDrawRenameKeyboard(const char* input_text) {
         }
     }
     
-    // Header banner: "PROPIEDADES DE CAPA"
+    // Header banner: Localized
     uint16_t header_bg = blendRGB555_int(app_theme_color, bg_color, 8);
     drawRect(0, 0, 255, 12, header_bg);
     drawRect(0, 12, 255, 12, app_theme_color);
-    renderDrawText("PROPIEDADES DE CAPA", 8, 2, RGB15(31, 31, 31), 0);
+    renderDrawText(uiTxt(TXT_KEY_LAYER_PROP), 8, 2, RGB15(31, 31, 31), 0);
     
     // Text input box outline and fill
     for (int y = 18; y <= 36; y++) {
@@ -115,9 +135,9 @@ void uiDrawRenameKeyboard(const char* input_text) {
     sprintf(label, "%s_", input_text);
     renderDrawText(label, 16, 23, RGB15(31, 31, 31), 0);
     
-    // Cancel & Save Buttons
-    drawKey(10, 44, 90, 62, "CANCEL (B)", false);
-    drawKey(166, 44, 246, 62, "SAVE (A)", false);
+    // Cancel & Save Buttons (Localized)
+    drawKey(10, 44, 90, 62, uiTxt(TXT_KEY_CANCEL), false);
+    drawKey(166, 44, 246, 62, uiTxt(TXT_KEY_SAVE), false);
     
     drawKeyboard();
 }
@@ -149,8 +169,13 @@ char uiHandleKeyboardTouch(int tx, int ty, bool* shift_toggled, bool* caps_toggl
         for (int i = 0; i < 13; i++) {
             int x0 = 4 + i * 19;
             if (tx >= x0 && tx <= x0 + 17) {
-                const char* r2_labels_low[] = {"q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "[", "]", "\\"};
-                const char* r2_labels_up[]  = {"Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P", "{", "}", "|"};
+                const char* r2_labels_low_qwerty[] = {"q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "[", "]", "\\"};
+                const char* r2_labels_up_qwerty[]  = {"Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P", "{", "}", "|"};
+                const char* r2_labels_low_azerty[] = {"a", "z", "e", "r", "t", "y", "u", "i", "o", "p", "[", "]", "\\"};
+                const char* r2_labels_up_azerty[]  = {"A", "Z", "E", "R", "T", "Y", "U", "I", "O", "P", "{", "}", "|"};
+                
+                const char** r2_labels_low = (current_lang == 2) ? r2_labels_low_azerty : r2_labels_low_qwerty;
+                const char** r2_labels_up  = (current_lang == 2) ? r2_labels_up_azerty : r2_labels_up_qwerty;
                 return upper ? r2_labels_up[i][0] : r2_labels_low[i][0];
             }
         }
@@ -165,8 +190,13 @@ char uiHandleKeyboardTouch(int tx, int ty, bool* shift_toggled, bool* caps_toggl
         for (int i = 0; i < 11; i++) {
             int x0 = 31 + i * 18;
             if (tx >= x0 && tx <= x0 + 16) {
-                const char* r3_labels_low[] = {"a", "s", "d", "f", "g", "h", "j", "k", "l", ";", "'"};
-                const char* r3_labels_up[]  = {"A", "S", "D", "F", "G", "H", "J", "K", "L", ":", "\""};
+                const char* r3_labels_low_qwerty[] = {"a", "s", "d", "f", "g", "h", "j", "k", "l", ";", "'"};
+                const char* r3_labels_up_qwerty[]  = {"A", "S", "D", "F", "G", "H", "J", "K", "L", ":", "\""};
+                const char* r3_labels_low_azerty[] = {"q", "s", "d", "f", "g", "h", "j", "k", "l", "m", "'"};
+                const char* r3_labels_up_azerty[]  = {"Q", "S", "D", "F", "G", "H", "J", "K", "L", "M", "\""};
+                
+                const char** r3_labels_low = (current_lang == 2) ? r3_labels_low_azerty : r3_labels_low_qwerty;
+                const char** r3_labels_up  = (current_lang == 2) ? r3_labels_up_azerty : r3_labels_up_qwerty;
                 return upper ? r3_labels_up[i][0] : r3_labels_low[i][0];
             }
         }
@@ -185,8 +215,14 @@ char uiHandleKeyboardTouch(int tx, int ty, bool* shift_toggled, bool* caps_toggl
         for (int i = 0; i < 10; i++) {
             int x0 = 31 + i * 18;
             if (tx >= x0 && tx <= x0 + 16) {
-                const char* r4_labels_low[] = {"z", "x", "c", "v", "b", "n", "m", ",", ".", "/"};
-                const char* r4_labels_up[]  = {"Z", "X", "C", "V", "B", "N", "M", "<", ">", "?"};
+                const char* r4_labels_low_qwerty[] = {"z", "x", "c", "v", "b", "n", "m", ",", ".", "/"};
+                const char* r4_labels_up_qwerty[]  = {"Z", "X", "C", "V", "B", "N", "M", "<", ">", "?"};
+                const char* r4_labels_low_azerty[] = {"w", "x", "c", "v", "b", "n", ",", ";", ".", "/"};
+                const char* r4_labels_up_azerty[]  = {"W", "X", "C", "V", "B", "N", "<", ";", ".", "?"};
+                
+                const char** r4_labels_low = (current_lang == 2) ? r4_labels_low_azerty : r4_labels_low_qwerty;
+                const char** r4_labels_up  = (current_lang == 2) ? r4_labels_up_azerty : r4_labels_up_qwerty;
+                
                 char c = upper ? r4_labels_up[i][0] : r4_labels_low[i][0];
                 if (shift_active) {
                     shift_active = false;

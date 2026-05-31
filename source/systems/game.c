@@ -179,15 +179,15 @@ static void runUpload(void) {
     clearUploadLogs();
 
     // 2. Draw our premium console text box window on the preview_buffer
-    uiDrawTopConsoleBox(uiTxt("ENVIANDO DIBUJO...", "UPLOADING DRAWING...", "ENVOI DU DESSIN..."));
+    uiDrawTopConsoleBox(uiTxt(TXT_UPLOAD_ENVIANDO));
     
     // 3. Make sure the upper screen is set to show BG2 (the preview bitmap)
     videoSetModeSub(MODE_5_2D | DISPLAY_BG2_ACTIVE);
     
-    drawUploadLog(uiTxt("Iniciando Wi-Fi...", "Starting Wi-Fi...", "Connexion Wi-Fi..."));
+    drawUploadLog(uiTxt(TXT_UPLOAD_WIFI_INIT));
     
     if (!netInitWifi()) {
-        drawUploadLog(uiTxt("Error: fallo al iniciar Wi-Fi!", "Error: failed to start Wi-Fi!", "Erreur : echec Wi-Fi !"));
+        drawUploadLog(uiTxt(TXT_UPLOAD_WIFI_FAIL));
         for(int i=0; i<120; i++) swiWaitForVBlank();
         renderComposeCanvas();
         renderUpdatePreview();
@@ -195,11 +195,11 @@ static void runUpload(void) {
         return;
     }
     
-    drawUploadLog(uiTxt("Codificando PNG...", "Encoding PNG...", "Encodage PNG..."));
+    drawUploadLog(uiTxt(TXT_UPLOAD_PNG_ENCODE));
     
     unsigned char* rgb_buf = malloc(256 * 192 * 3);
     if (!rgb_buf) {
-        drawUploadLog(uiTxt("Error: no hay memoria RAM", "Error: out of memory", "Erreur : manque de memoire"));
+        drawUploadLog(uiTxt(TXT_UPLOAD_OOM));
         for(int i=0; i<120; i++) swiWaitForVBlank();
         renderComposeCanvas();
         renderUpdatePreview();
@@ -233,12 +233,12 @@ static void runUpload(void) {
         return;
     }
     
-    drawUploadLog(uiTxt("Conectando al servidor...", "Connecting to server...", "Connexion au serveur..."));
+    drawUploadLog(uiTxt(TXT_UPLOAD_CONNECTING));
     
     if (enviarNotaHTTP(http_ip, atoi(http_port_str), png_data, png_size)) {
-        drawUploadLog(uiTxt("Enviado con exito!", "Uploaded successfully!", "Envoye avec succes !"));
+        drawUploadLog(uiTxt(TXT_UPLOAD_SUCCESS));
     } else {
-        drawUploadLog(uiTxt("Error al enviar dibujo.", "Error sending drawing.", "Erreur lors de l'envoi."));
+        drawUploadLog(uiTxt(TXT_UPLOAD_ERROR));
     }
     
     free(png_data);

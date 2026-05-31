@@ -37,6 +37,6 @@ void uiDrawTopConsoleBox(const char* title);
 
 extern uint16_t theme_colors[5];
 extern const char* theme_names[5];
-const char* uiTxt(const char* es, const char* en, const char* fr);
+#include "texts.h"
 
 #endif // UI_H

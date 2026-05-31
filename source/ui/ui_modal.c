@@ -8,21 +8,21 @@
 #include <math.h>
 
 void uiDrawModalToolbox(const AppState* app, int y0, int y1) {
-    renderDrawText(uiTxt("UTENSILIO", "TOOL", "OUTIL"), 16, y0 + 2, RGB15(31, 31, 31), 0);
-    drawToolButtonWithIconAt(16, 86, 32, 52, uiTxt("PINCEL", "BRUSH", "PINCEAU"), 0, (!app->draw.is_eraser && !app->draw.is_bucket));
-    drawToolButtonWithIconAt(92, 162, 32, 52, uiTxt("BORRADOR", "ERASER", "GOMME"), 1, app->draw.is_eraser);
-    drawToolButtonWithIconAt(168, 238, 32, 52, uiTxt("RELLENO", "BUCKET", "REMPLISSAGE"), 2, app->draw.is_bucket);
+    renderDrawText(uiTxt(TXT_UTENSILIO), 16, y0 + 2, RGB15(31, 31, 31), 0);
+    drawToolButtonWithIconAt(16, 86, 32, 52, uiTxt(TXT_PINCEL), 0, (!app->draw.is_eraser && !app->draw.is_bucket));
+    drawToolButtonWithIconAt(92, 162, 32, 52, uiTxt(TXT_BORRADOR), 1, app->draw.is_eraser);
+    drawToolButtonWithIconAt(168, 238, 32, 52, uiTxt(TXT_RELLENO), 2, app->draw.is_bucket);
     
-    renderDrawText(uiTxt("TRAZO", "STROKE", "TRAIT"), 16, y0 + 36, RGB15(31, 31, 31), 0);
-    drawToolButtonWithIconAt(16, 86, 66, 86, uiTxt("NORMAL", "NORMAL", "NORMAL"), 3, (app->draw.drawing_mode == 0));
-    drawToolButtonWithIconAt(92, 162, 66, 86, uiTxt("ROTUL.", "MARKER", "FEUTRE"), 4, (app->draw.drawing_mode == 1));
+    renderDrawText(uiTxt(TXT_TRAZO), 16, y0 + 36, RGB15(31, 31, 31), 0);
+    drawToolButtonWithIconAt(16, 86, 66, 86, uiTxt(TXT_NORMAL), 3, (app->draw.drawing_mode == 0));
+    drawToolButtonWithIconAt(92, 162, 66, 86, uiTxt(TXT_ROTUL), 4, (app->draw.drawing_mode == 1));
     
-    renderDrawText(uiTxt("PATRON BRUSH", "PATTERN BRUSH", "BROSSE MOTIF"), 16, y0 + 70, RGB15(31, 31, 31), 0);
+    renderDrawText(uiTxt(TXT_PATRON_BRUSH), 16, y0 + 70, RGB15(31, 31, 31), 0);
     for (int i = 0; i < 5; i++) {
         drawPatternBrushButtonAt(16 + i * 46, 16 + i * 46 + 40, 100, 120, 2 + i, (app->draw.drawing_mode == 2 + i));
     }
     
-    renderDrawText(uiTxt("PLUMAS", "NIB FEATHERS", "PLUMES"), 16, y0 + 104, RGB15(31, 31, 31), 0);
+    renderDrawText(uiTxt(TXT_PLUMAS), 16, y0 + 104, RGB15(31, 31, 31), 0);
     drawPlumaButtonAt(16, 56, 134, 154, "PL1", 7, (app->draw.drawing_mode == 7));
     drawPlumaButtonAt(62, 102, 134, 154, "PL2", 8, (app->draw.drawing_mode == 8));
     drawPlumaButtonAt(108, 148, 134, 154, "PL3", 9, (app->draw.drawing_mode == 9));
@@ -31,13 +31,13 @@ void uiDrawModalToolbox(const AppState* app, int y0, int y1) {
     sprintf(ang_lbl, "ANG:%d", app->draw.nib_angle);
     drawModalButtonAt(200, 240, 134, 154, ang_lbl, false);
 }
-
+ 
 void uiDrawModalBrushSize(const AppState* app, int y0, int y1) {
     char label[32];
     if (app->draw.is_eraser) {
-        sprintf(label, uiTxt("GROSOR BORRADOR: %d px", "ERASER SIZE: %d px", "TAILLE GOMME : %d px"), app->draw.eraser_size);
+        sprintf(label, uiTxt(TXT_GROSOR_BORRADOR), app->draw.eraser_size);
     } else {
-        sprintf(label, uiTxt("GROSOR PINCEL: %d px", "BRUSH SIZE: %d px", "TAILLE PINCEAU : %d px"), app->draw.active_brush_size);
+        sprintf(label, uiTxt(TXT_GROSOR_PINCEL), app->draw.active_brush_size);
     }
     renderDrawText(label, 16, 126, RGB15(31, 31, 31), 0);
     
@@ -56,7 +56,7 @@ void uiDrawModalBrushSize(const AppState* app, int y0, int y1) {
     drawRect(knob_x - 4, 138, knob_x + 4, 154, RGB15(12, 12, 18));
     drawRectOutline(knob_x - 4, 138, knob_x + 4, 154, RGB15(0, 0, 0));
 }
-
+ 
 static void uiDrawColorPickerTabs(const AppState* app) {
     uint16_t tab_active_bg = blendRGB555_int(app->ui.app_theme_color, RGB15(4, 4, 5), 6);
     uint16_t tab_inactive_bg = RGB15(2, 2, 3);
@@ -68,8 +68,8 @@ static void uiDrawColorPickerTabs(const AppState* app) {
     drawRectOutline(8, 20, 127, 32, (app->ui.color_modal_tab == 0) ? tab_border : blendRGB555_int(app->ui.app_theme_color, RGB15(2,2,3), 8));
     drawRectOutline(128, 20, 247, 32, (app->ui.color_modal_tab == 1) ? tab_border : blendRGB555_int(app->ui.app_theme_color, RGB15(2,2,3), 8));
     
-    renderDrawText(uiTxt("PRESETS", "PRESETS", "PRESETS"), 44, 23, (app->ui.color_modal_tab == 0) ? RGB15(31, 31, 31) : RGB15(15, 15, 15), 0);
-    renderDrawText(uiTxt("MIS PALETAS", "MY PALETTES", "MES PALETTES"), 152, 23, (app->ui.color_modal_tab == 1) ? RGB15(31, 31, 31) : RGB15(15, 15, 15), 0);
+    renderDrawText(uiTxt(TXT_PRESETS), 44, 23, (app->ui.color_modal_tab == 0) ? RGB15(31, 31, 31) : RGB15(15, 15, 15), 0);
+    renderDrawText(uiTxt(TXT_MIS_PALETAS), 152, 23, (app->ui.color_modal_tab == 1) ? RGB15(31, 31, 31) : RGB15(15, 15, 15), 0);
 }
 
 static void uiDrawColorPickerSwatches(const AppState* app) {
@@ -164,7 +164,7 @@ static void uiDrawColorPickerCustom(const AppState* app) {
         }
     }
     
-    drawModalButtonAt(12, 82, 154, 170, uiTxt("GUARDAR", "SAVE", "SAUVER"), false);
+    drawModalButtonAt(12, 82, 154, 170, uiTxt(TXT_GUARDAR_BTN), false);
     drawModalButtonAt(114, 144, 154, 170, "<-", false);
     drawModalButtonAt(174, 204, 154, 170, "->", false);
     renderDrawText(page_lbl, 210, 158, RGB15(31, 31, 31), 0);
@@ -194,8 +194,8 @@ static void uiDrawBackgroundSettingsTabs(const AppState* app) {
     drawRectOutline(8, 20, 127, 32, (app->ui.bg_modal_tab == 0) ? tab_border : blendRGB555_int(app->ui.app_theme_color, RGB15(2,2,3), 8));
     drawRectOutline(128, 20, 247, 32, (app->ui.bg_modal_tab == 1) ? tab_border : blendRGB555_int(app->ui.app_theme_color, RGB15(2,2,3), 8));
     
-    renderDrawText(uiTxt("PATRONES", "PATTERNS", "MOTIFS"), 44, 23, (app->ui.bg_modal_tab == 0) ? RGB15(31, 31, 31) : RGB15(15, 15, 15), 0);
-    renderDrawText(uiTxt("PERSPECTIVA", "PERSPECTIVE", "PERSPECTIVE"), 152, 23, (app->ui.bg_modal_tab == 1) ? RGB15(31, 31, 31) : RGB15(15, 15, 15), 0);
+    renderDrawText(uiTxt(TXT_PATRONES), 44, 23, (app->ui.bg_modal_tab == 0) ? RGB15(31, 31, 31) : RGB15(15, 15, 15), 0);
+    renderDrawText(uiTxt(TXT_PERSPECTIVA), 152, 23, (app->ui.bg_modal_tab == 1) ? RGB15(31, 31, 31) : RGB15(15, 15, 15), 0);
 }
 
 static void uiDrawBackgroundSettingsPatterns(const AppState* app) {
@@ -206,23 +206,23 @@ static void uiDrawBackgroundSettingsPatterns(const AppState* app) {
         drawPatternPreview(12 + i * 58, 84, 12 + i * 58 + 52, 124, 4 + i, (app->draw.bg_pattern_idx == 4 + i));
     }
     
-    char color_p_lbl[16];
-    sprintf(color_p_lbl, "COL P:%d", app->draw.bg_color_p_idx);
+    char color_p_lbl[24];
+    sprintf(color_p_lbl, "%s P:%d", uiTxt(TXT_COL_ABBR), app->draw.bg_color_p_idx);
     drawModalButtonAt(12, 70, 132, 150, color_p_lbl, false);
     
-    char color_s_lbl[16];
-    sprintf(color_s_lbl, "COL S:%d", app->draw.bg_color_s_idx);
+    char color_s_lbl[24];
+    sprintf(color_s_lbl, "%s S:%d", uiTxt(TXT_COL_ABBR), app->draw.bg_color_s_idx);
     drawModalButtonAt(74, 132, 132, 150, color_s_lbl, false);
     
-    drawModalButtonAt(136, 194, 132, 150, app->draw.bg_modifiable ? uiTxt("MOD:SI", "EDIT:YES", "MOD:OUI") : uiTxt("MOD:NO", "EDIT:NO", "MOD:NON"), app->draw.bg_modifiable);
+    drawModalButtonAt(136, 194, 132, 150, app->draw.bg_modifiable ? uiTxt(TXT_MOD_SI) : uiTxt(TXT_MOD_NO), app->draw.bg_modifiable);
     
     char rot_lbl[16];
     sprintf(rot_lbl, "ROT:%d", app->draw.bg_angle);
     drawModalButtonAt(198, 244, 132, 150, rot_lbl, false);
 }
-
+ 
 static void uiDrawBackgroundSettingsPerspective(const AppState* app) {
-    renderDrawText(uiTxt("MODO DE PERSPECTIVA", "PERSPECTIVE MODE", "MODE PERSPECTIVE"), 16, 36, RGB15(31, 31, 31), 0);
+    renderDrawText(uiTxt(TXT_MODO_PERSPECTIVA), 16, 36, RGB15(31, 31, 31), 0);
     
     drawModalButtonAt(12, 53, 46, 62, "OFF", (app->draw.perspective_mode == 0));
     drawModalButtonAt(57, 101, 46, 62, "1 VP", (app->draw.perspective_mode == 1));
@@ -231,40 +231,40 @@ static void uiDrawBackgroundSettingsPerspective(const AppState* app) {
     drawModalButtonAt(201, 244, 46, 62, "4 VP", (app->draw.perspective_mode == 4));
     
     if (app->draw.perspective_mode > 0) {
-        drawModalButtonAt(12, 244, 68, 84, uiTxt("REUBICAR TODOS LOS PUNTOS", "RELOCATE ALL POINTS", "REPOSITIONNER POINTS"), false);
+        drawModalButtonAt(12, 244, 68, 84, uiTxt(TXT_REUBICAR_PUNTOS), false);
     } else {
-        drawModalButtonAt(12, 244, 68, 84, uiTxt("(SIN PERSPECTIVA)", "(NO PERSPECTIVE)", "(SANS PERSPECTIVE)"), false);
+        drawModalButtonAt(12, 244, 68, 84, uiTxt(TXT_SIN_PERSPECTIVA), false);
     }
     
     if (app->draw.perspective_mode >= 1) {
-        drawModalButtonAt(12, 65, 90, 106, uiTxt("PUNTO 1", "POINT 1", "POINT 1"), false);
+        drawModalButtonAt(12, 65, 90, 106, uiTxt(TXT_PUNTO_1), false);
     } else {
-        drawModalButtonDisabledAt(12, 65, 90, 106, uiTxt("PUNTO 1", "POINT 1", "POINT 1"));
+        drawModalButtonDisabledAt(12, 65, 90, 106, uiTxt(TXT_PUNTO_1));
     }
     
     if (app->draw.perspective_mode >= 2) {
-        drawModalButtonAt(71, 124, 90, 106, uiTxt("PUNTO 2", "POINT 2", "POINT 2"), false);
+        drawModalButtonAt(71, 124, 90, 106, uiTxt(TXT_PUNTO_2), false);
     } else {
-        drawModalButtonDisabledAt(71, 124, 90, 106, uiTxt("PUNTO 2", "POINT 2", "POINT 2"));
+        drawModalButtonDisabledAt(71, 124, 90, 106, uiTxt(TXT_PUNTO_2));
     }
     
     if (app->draw.perspective_mode >= 3) {
-        drawModalButtonAt(130, 183, 90, 106, uiTxt("PUNTO 3", "POINT 3", "POINT 3"), false);
+        drawModalButtonAt(130, 183, 90, 106, uiTxt(TXT_PUNTO_3), false);
     } else {
-        drawModalButtonDisabledAt(130, 183, 90, 106, uiTxt("PUNTO 3", "POINT 3", "POINT 3"));
+        drawModalButtonDisabledAt(130, 183, 90, 106, uiTxt(TXT_PUNTO_3));
     }
     
     if (app->draw.perspective_mode >= 4) {
-        drawModalButtonAt(189, 244, 90, 106, uiTxt("PUNTO 4", "POINT 4", "POINT 4"), false);
+        drawModalButtonAt(189, 244, 90, 106, uiTxt(TXT_PUNTO_4), false);
     } else {
-        drawModalButtonDisabledAt(189, 244, 90, 106, uiTxt("PUNTO 4", "POINT 4", "POINT 4"));
+        drawModalButtonDisabledAt(189, 244, 90, 106, uiTxt(TXT_PUNTO_4));
     }
     
     char dens_lbl[32];
-    sprintf(dens_lbl, uiTxt("DENSIDAD DE REJILLA: %d px", "GRID DENSITY: %d px", "DENSITE GRILLE : %d px"), app->draw.perspective_step);
+    sprintf(dens_lbl, uiTxt(TXT_DENSIDAD_REJILLA), app->draw.perspective_step);
     drawModalButtonAt(12, 244, 112, 128, dens_lbl, false);
 }
-
+ 
 void uiDrawModalBackgroundSettings(const AppState* app, int y0, int y1) {
     uiDrawBackgroundSettingsTabs(app);
     if (app->ui.bg_modal_tab == 0) {
@@ -273,13 +273,13 @@ void uiDrawModalBackgroundSettings(const AppState* app, int y0, int y1) {
         uiDrawBackgroundSettingsPerspective(app);
     }
 }
-
+ 
 void uiDrawModalAngleWheel(const AppState* app, int y0, int y1) {
     char label[32];
     if (app->draw.angle_target == 1) {
-        sprintf(label, uiTxt("ROTACION FONDO: %d", "BG ROTATION: %d", "ROTATION FOND : %d"), app->draw.bg_angle);
+        sprintf(label, uiTxt(TXT_ROTACION_FONDO), app->draw.bg_angle);
     } else {
-        sprintf(label, uiTxt("ANGULO DE LA LA PLUMA: %d", "NIB ANGLE: %d", "ANGLE PLUME : %d"), app->draw.nib_angle);
+        sprintf(label, uiTxt(TXT_ANGULO_PLUMA), app->draw.nib_angle);
     }
     renderDrawText(label, 16, 96, RGB15(31, 31, 31), 0);
     
@@ -297,22 +297,22 @@ void uiDrawModalAngleWheel(const AppState* app, int y0, int y1) {
     int end_y = cy + (int)(sinf(rad) * 26.0f);
     drawLine(cx, cy, end_x, end_y, RGB15(31, 0, 0));
 }
-
+ 
 void uiDrawModalNoteMenu(const AppState* app, int y0, int y1) {
-    renderDrawText(uiTxt("MENU DE LA NOTA", "NOTE MENU", "MENU NOTE"), 80, y0 + 6, RGB15(31, 31, 31), 0);
+    renderDrawText(uiTxt(TXT_MENU_NOTA), 80, y0 + 6, RGB15(31, 31, 31), 0);
     
-    drawModalButtonAt(24, 232, y0 + 22, y0 + 44, uiTxt("GUARDAR NOTA (SD)", "SAVE NOTE (SD)", "SAUVER NOTE (SD)"), false);
-    drawModalButtonAt(24, 232, y0 + 50, y0 + 72, uiTxt("WIFI / CONEXION", "WIFI / CONNECTION", "CONNEXION WIFI"), false);
-    drawModalButtonAt(24, 232, y0 + 78, y0 + 100, uiTxt("VOLVER AL MENU INICIO", "RETURN TO START MENU", "RETOUR AU DEBUT"), false);
-    drawModalButtonAt(24, 232, y0 + 106, y0 + 128, uiTxt("CANCELAR", "CANCEL", "ANNULER"), false);
+    drawModalButtonAt(24, 232, y0 + 22, y0 + 44, uiTxt(TXT_GUARDAR_NOTA_SD), false);
+    drawModalButtonAt(24, 232, y0 + 50, y0 + 72, uiTxt(TXT_WIFI_CONNECTION), false);
+    drawModalButtonAt(24, 232, y0 + 78, y0 + 100, uiTxt(TXT_VOLVER_AL_MENU_INICIO), false);
+    drawModalButtonAt(24, 232, y0 + 106, y0 + 128, uiTxt(TXT_CANCEL), false);
 }
 
 void uiDrawModalSaveConfirm(const AppState* app, int y0, int y1) {
-    renderDrawText(uiTxt("¿GUARDAR ANTES DE SALIR?", "SAVE BEFORE EXITING?", "SAUVER AVANT QUITTER ?"), 56, y0 + 8, RGB15(31, 5, 5), 0);
+    renderDrawText(uiTxt(TXT_GUARDAR_ANTES_DE_SALIR), 56, y0 + 8, RGB15(31, 5, 5), 0);
     
-    drawModalButtonAt(24, 232, y0 + 26, y0 + 48, uiTxt("SI, GUARDAR Y SALIR", "YES, SAVE AND EXIT", "OUI, SAUVER ET QUITTER"), false);
-    drawModalButtonAt(24, 232, y0 + 54, y0 + 76, uiTxt("NO, SALIR SIN GUARDAR", "NO, EXIT WITHOUT SAVING", "NON, QUITTER SANS SAUVER"), false);
-    drawModalButtonAt(24, 232, y0 + 82, y0 + 104, uiTxt("CANCELAR", "CANCEL", "ANNULER"), false);
+    drawModalButtonAt(24, 232, y0 + 26, y0 + 48, uiTxt(TXT_SI_GUARDAR_Y_SALIR), false);
+    drawModalButtonAt(24, 232, y0 + 54, y0 + 76, uiTxt(TXT_NO_SALIR_SIN_GUARDAR), false);
+    drawModalButtonAt(24, 232, y0 + 82, y0 + 104, uiTxt(TXT_CANCEL), false);
 }
 
 void uiDrawLanguageModal(const AppState* app) {
@@ -321,7 +321,7 @@ void uiDrawLanguageModal(const AppState* app) {
     drawRectOutline(32, 30, 224, 160, app->ui.app_theme_color);
     drawRectOutline(33, 31, 223, 159, app->ui.app_theme_color);
     
-    renderDrawText(uiTxt("SELECCIONAR IDIOMA", "SELECT LANGUAGE", "CHOISIR LA LANGUE"), 48, 38, RGB15(31, 31, 31), 0);
+    renderDrawText(uiTxt(TXT_SELECCIONAR_IDIOMA), 48, 38, RGB15(31, 31, 31), 0);
     
     uint16_t es_bg = (app->ui.current_lang == 0) ? blendRGB555_int(app->ui.app_theme_color, RGB15(4, 4, 5), 8) : RGB15(12, 12, 14);
     uint16_t es_border = (app->ui.current_lang == 0) ? app->ui.app_theme_color : RGB15(18, 18, 20);
@@ -343,5 +343,5 @@ void uiDrawLanguageModal(const AppState* app) {
     
     drawRect(48, 132, 208, 152, RGB15(24, 6, 6));
     drawRectOutline(48, 132, 208, 152, RGB15(31, 0, 0));
-    renderDrawText(uiTxt("CERRAR", "CLOSE", "FERMER"), 108, 138, RGB15(31, 31, 31), 0);
+    renderDrawText(uiTxt(TXT_CERRAR), 108, 138, RGB15(31, 31, 31), 0);
 }

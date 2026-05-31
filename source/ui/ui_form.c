@@ -164,8 +164,14 @@ static void drawFormKeyboard(void) {
     drawFormKey(220, 96, 252, 116, "<-", false);
     
     // Row 2: q to backslash
-    const char* r2_labels_low[] = {"q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "[", "]", "\\"};
-    const char* r2_labels_up[]  = {"Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P", "{", "}", "|"};
+    const char* r2_labels_low_qwerty[] = {"q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "[", "]", "\\"};
+    const char* r2_labels_up_qwerty[]  = {"Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P", "{", "}", "|"};
+    const char* r2_labels_low_azerty[] = {"a", "z", "e", "r", "t", "y", "u", "i", "o", "p", "[", "]", "\\"};
+    const char* r2_labels_up_azerty[]  = {"A", "Z", "E", "R", "T", "Y", "U", "I", "O", "P", "{", "}", "|"};
+    
+    const char** r2_labels_low = (current_lang == 2) ? r2_labels_low_azerty : r2_labels_low_qwerty;
+    const char** r2_labels_up  = (current_lang == 2) ? r2_labels_up_azerty : r2_labels_up_qwerty;
+    
     for (int i = 0; i < 13; i++) {
         int x0 = 4 + i * 19;
         drawFormKey(x0, 118, x0 + 17, 138, upper ? r2_labels_up[i] : r2_labels_low[i], false);
@@ -173,8 +179,15 @@ static void drawFormKeyboard(void) {
     
     // Row 3: Caps, a to ' and Rtrn
     drawFormKey(4, 140, 29, 160, "CPS", caps_active);
-    const char* r3_labels_low[] = {"a", "s", "d", "f", "g", "h", "j", "k", "l", ";", "'"};
-    const char* r3_labels_up[]  = {"A", "S", "D", "F", "G", "H", "J", "K", "L", ":", "\""};
+    
+    const char* r3_labels_low_qwerty[] = {"a", "s", "d", "f", "g", "h", "j", "k", "l", ";", "'"};
+    const char* r3_labels_up_qwerty[]  = {"A", "S", "D", "F", "G", "H", "J", "K", "L", ":", "\""};
+    const char* r3_labels_low_azerty[] = {"q", "s", "d", "f", "g", "h", "j", "k", "l", "m", "'"};
+    const char* r3_labels_up_azerty[]  = {"Q", "S", "D", "F", "G", "H", "J", "K", "L", "M", "\""};
+    
+    const char** r3_labels_low = (current_lang == 2) ? r3_labels_low_azerty : r3_labels_low_qwerty;
+    const char** r3_labels_up  = (current_lang == 2) ? r3_labels_up_azerty : r3_labels_up_qwerty;
+    
     for (int i = 0; i < 11; i++) {
         int x0 = 31 + i * 18;
         drawFormKey(x0, 140, x0 + 16, 160, upper ? r3_labels_up[i] : r3_labels_low[i], false);
@@ -183,13 +196,20 @@ static void drawFormKeyboard(void) {
     
     // Row 4: Shift, z to /, Space
     drawFormKey(4, 162, 29, 182, "SFT", shift_active);
-    const char* r4_labels_low[] = {"z", "x", "c", "v", "b", "n", "m", ",", ".", "/"};
-    const char* r4_labels_up[]  = {"Z", "X", "C", "V", "B", "N", "M", "<", ">", "?"};
+    
+    const char* r4_labels_low_qwerty[] = {"z", "x", "c", "v", "b", "n", "m", ",", ".", "/"};
+    const char* r4_labels_up_qwerty[]  = {"Z", "X", "C", "V", "B", "N", "M", "<", ">", "?"};
+    const char* r4_labels_low_azerty[] = {"w", "x", "c", "v", "b", "n", ",", ";", ".", "/"};
+    const char* r4_labels_up_azerty[]  = {"W", "X", "C", "V", "B", "N", "<", ";", ".", "?"};
+    
+    const char** r4_labels_low = (current_lang == 2) ? r4_labels_low_azerty : r4_labels_low_qwerty;
+    const char** r4_labels_up  = (current_lang == 2) ? r4_labels_up_azerty : r4_labels_up_qwerty;
+    
     for (int i = 0; i < 10; i++) {
         int x0 = 31 + i * 18;
         drawFormKey(x0, 162, x0 + 16, 182, upper ? r4_labels_up[i] : r4_labels_low[i], false);
     }
-    drawFormKey(211, 162, 254, 182, "Space", false);
+    drawFormKey(211, 162, 254, 182, uiTxt(TXT_KEY_SPACE), false);
 }
 
 void uiDrawFormUI(int step, const char* input_text) {
@@ -212,7 +232,7 @@ void uiDrawFormUI(int step, const char* input_text) {
     // 1. Header
     drawSubRect(0, 0, 255, 15, header_bg);
     drawSubLine(0, 16, 255, 16, border_col);
-    drawSubText(uiTxt("Ajustes de Conexion", "Connection Settings", "Parametres de Connexion"), 8, 4, header_text_col, 0);
+    drawSubText(uiTxt(TXT_CONN_SETTINGS), 8, 4, header_text_col, 0);
 
     // 2. Footer (Cancel / Save)
     drawSubRect(0, 176, 255, 191, header_bg);
@@ -221,12 +241,12 @@ void uiDrawFormUI(int step, const char* input_text) {
     // [B] Cancel
     drawSubRectOutline(8, 180, 20, 188, border_col);
     drawSubText("B", 11, 181, header_text_col, 0);
-    drawSubText(uiTxt("Cancelar", "Cancel", "Annuler"), 24, 181, header_text_col, 0);
+    drawSubText(uiTxt(TXT_CANCEL), 24, 181, header_text_col, 0);
 
     // [A] Save
     drawSubRectOutline(204, 180, 216, 188, border_col);
     drawSubText("A", 207, 181, header_text_col, 0);
-    drawSubText(uiTxt("Guardar", "Save", "Sauver"), 220, 181, header_text_col, 0);
+    drawSubText(uiTxt(TXT_SAVE), 220, 181, header_text_col, 0);
 
     // 3. Main Panel (centered, full width)
     drawSubRect(6, 22, 250, 110, panel_bg);
@@ -235,10 +255,10 @@ void uiDrawFormUI(int step, const char* input_text) {
     // Inner Header
     drawSubRect(7, 23, 249, 36, blendRGB555_int(app_theme_color, RGB15(4, 4, 5), 8));
     drawSubLine(6, 37, 250, 37, border_col);
-    drawSubText(uiTxt("Config. de Emparejamiento", "Pairing Configuration", "Configuration d'Appairage"), 10, 26, header_text_col, 0);
+    drawSubText(uiTxt(TXT_PAIRING_CONFIG), 10, 26, header_text_col, 0);
 
     // Field 0: Code (y = 44 to 62)
-    drawSubText(uiTxt("Codigo", "Code", "Code"), 12, 50, text_col, 0);
+    drawSubText(uiTxt(TXT_CODE), 12, 50, text_col, 0);
     drawSubRectOutline(50, 44, 244, 62, (step == 0) ? active_col : RGB15(15, 15, 15));
     if (step == 0) {
         drawSubRectOutline(51, 45, 243, 61, active_col);
@@ -259,8 +279,8 @@ void uiDrawFormUI(int step, const char* input_text) {
 
     // Help text with pointer sheep pointing at it
     drawSubPointerSheep(6, 118);
-    drawSubText(uiTxt("Pon el codigo que te aparece", "Enter the code shown in the", "Entrez le code affiche dans"), 56, 124, text_col, 0);
-    drawSubText(uiTxt("en la app en del otro dispositivo.", "app on another device.", "l'application sur l'autre appareil."), 56, 136, inactive_text, 0);
+    drawSubText(uiTxt(TXT_ENTER_CODE_1), 56, 124, text_col, 0);
+    drawSubText(uiTxt(TXT_ENTER_CODE_2), 56, 136, inactive_text, 0);
 }
 
 void uiDrawBottomForm(int step, const char* input_text) {
@@ -286,11 +306,11 @@ void uiDrawBottomForm(int step, const char* input_text) {
     drawRectOutline(10, 8, 246, 36, app_theme_color);
     
     char label[128];
-    if (step == 0)      sprintf(label, "%s: %s_", uiTxt("CODIGO", "CODE", "CODE"), input_text);
+    if (step == 0)      sprintf(label, "%s: %s_", uiTxt(TXT_CODIGO_CAPS), input_text);
     else if (step == 1) sprintf(label, "WIFI: %s_", input_text);
     renderDrawText(label, 16, 17, RGB15(31, 31, 31), 0);
     
-    drawFormKey(10, 42, 120, 62, uiTxt("CODIGO", "CODE", "CODE"), (step == 0));
+    drawFormKey(10, 42, 120, 62, uiTxt(TXT_CODIGO_CAPS), (step == 0));
     drawFormKey(126, 42, 246, 62, "WIFI", (step == 1));
     
     if (step == 0) {
@@ -311,7 +331,7 @@ void uiDrawBottomForm(int step, const char* input_text) {
                         sprintf(label, "%d: %s", i + 1, net_wfc_ssids[i]);
                     }
                 } else {
-                    sprintf(label, "%d: %s", i + 1, uiTxt("[Vacia]", "[Empty]", "[Vide]"));
+                    sprintf(label, "%d: %s", i + 1, uiTxt(TXT_EMPTY_SLOT));
                 }
                 drawFormKey(10, 68 + i * 30, 124, 92 + i * 30, label, high);
             }
@@ -327,12 +347,12 @@ void uiDrawBottomForm(int step, const char* input_text) {
                         sprintf(label, "%d: %s", i + 1, net_wfc_ssids[i]);
                     }
                 } else {
-                    sprintf(label, "%d: %s", i + 1, uiTxt("[Vacia]", "[Empty]", "[Vide]"));
+                    sprintf(label, "%d: %s", i + 1, uiTxt(TXT_EMPTY_SLOT));
                 }
                 drawFormKey(132, 68 + (i - 3) * 30, 246, 92 + (i - 3) * 30, label, high);
             }
             
-            drawFormKey(10, 158, 246, 182, uiTxt("Manual (Teclado)", "Manual (Keyboard)", "Manuel (Clavier)"), false);
+            drawFormKey(10, 158, 246, 182, uiTxt(TXT_MANUAL_KEYBOARD), false);
         }
     }
 }

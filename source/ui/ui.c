@@ -82,10 +82,15 @@ const char* theme_names[5] = {
     "UVA (MORADO)"
 };
 
-const char* uiTxt(const char* es, const char* en, const char* fr) {
-    if (current_lang == 2) return fr;
-    if (current_lang == 1) return en;
-    return es;
+extern const char* const strings_es[];
+extern const char* const strings_en[];
+extern const char* const strings_fr[];
+
+const char* uiTxt(TextId id) {
+    if (id < 0 || id >= TXT_MAX) return "";
+    if (current_lang == 2) return strings_fr[id];
+    if (current_lang == 1) return strings_en[id];
+    return strings_es[id];
 }
 
 uint16_t preset_palettes[20][5] = {
@@ -362,20 +367,20 @@ void uiDrawToolbar(void) {
     }
 
     // Button 0: TOOL
-    const char* tool_label = uiTxt("PINC", "PEN", "PINC");
-    if (is_eraser) tool_label = uiTxt("BORR", "ERAS", "GOMM");
+    const char* tool_label = uiTxt(TXT_TOOLBAR_PINC);
+    if (is_eraser) tool_label = uiTxt(TXT_TOOLBAR_BORR);
     else if (is_bucket) tool_label = "FILL";
     renderDrawText(tool_label, 9, 180, (open_modal == 0) ? active_text_color : default_text_color, 0);
 
     // Button 1: SIZE
-    char size_label[6];
-    if (is_eraser) sprintf(size_label, "S:%d", eraser_size);
-    else sprintf(size_label, "S:%d", active_brush_size);
+    char size_label[8];
+    if (is_eraser) sprintf(size_label, uiTxt(TXT_SIZE_ABBR_FORMAT), eraser_size);
+    else sprintf(size_label, uiTxt(TXT_SIZE_ABBR_FORMAT), active_brush_size);
     renderDrawText(size_label, 50, 180, (open_modal == 1) ? active_text_color : default_text_color, 0);
 
     // Button 2: COLOR
     uint16_t current_color = palette_colors[active_color_idx];
-    renderDrawText("COL", 90, 180, (open_modal == 2) ? active_text_color : default_text_color, 0);
+    renderDrawText(uiTxt(TXT_COL_ABBR), 90, 180, (open_modal == 2) ? active_text_color : default_text_color, 0);
     for (int dy = 0; dy < 6; dy++) {
         for (int dx = 0; dx < 6; dx++) {
             renderSetPixel(112 + dx, 181 + dy, current_color);
@@ -391,7 +396,7 @@ void uiDrawToolbar(void) {
     renderDrawText("MENU", 178, 180, (open_modal == 5) ? active_text_color : default_text_color, 0);
 
     // Button 5: ENVIAR
-    renderDrawText(uiTxt("ENVIAR", "SEND", "ENVOI"), 216, 180, RGB15(20, 31, 20), 0);
+    renderDrawText(uiTxt(TXT_TOOLBAR_ENVIAR), 216, 180, RGB15(20, 31, 20), 0);
 }
 
 static void uiDrawLayersSidebar(void) {
@@ -408,7 +413,7 @@ static void uiDrawLayersSidebar(void) {
     }
     
     // Header title
-    renderDrawText(uiTxt("CAPAS", "LAYERS", "CALQS"), 148, 2, text_col, 0);
+    renderDrawText(uiTxt(TXT_SIDEBAR_CAPAS), 148, 2, text_col, 0);
     
     // Close button "X"
     drawRect(236, 1, 252, 11, RGB15(6, 2, 2));
@@ -420,11 +425,11 @@ static void uiDrawLayersSidebar(void) {
         uint16_t plus_capa_bg = blendRGB555_int(app_theme_color, panel_bg, 6);
         drawRect(148, 14, 252, 24, plus_capa_bg);
         drawRectOutline(148, 14, 252, 24, border_col);
-        renderDrawText(uiTxt("+ CAPA", "+ LAYER", "+ CALQ"), 182, 16, text_col, 0);
+        renderDrawText(uiTxt(TXT_SIDEBAR_ADD_CAPA), 182, 16, text_col, 0);
     } else {
         drawRect(148, 14, 252, 24, RGB15(2, 2, 3));
         drawRectOutline(148, 14, 252, 24, RGB15(6, 6, 8));
-        renderDrawText(uiTxt("LLENO", "FULL", "PLEIN"), 188, 16, RGB15(10, 10, 10), 0);
+        renderDrawText(uiTxt(TXT_SIDEBAR_LLENO), 188, 16, RGB15(10, 10, 10), 0);
     }
     
     // Layer items
@@ -468,7 +473,7 @@ static void uiDrawLayersSidebar(void) {
         
         char disp_name[7];
         if (strncmp(layer_names[i], "CAPA ", 5) == 0) {
-            sprintf(disp_name, "%s%c", uiTxt("CAPA", "LAY", "CLQ"), layer_names[i][5]);
+            sprintf(disp_name, "%s%c", uiTxt(TXT_SIDEBAR_CAPA), layer_names[i][5]);
         } else {
             strncpy(disp_name, layer_names[i], 6);
             disp_name[6] = '\0';
@@ -501,12 +506,12 @@ static void uiDrawLayersSidebar(void) {
     int bg_y = 27 + layers_count * 13;
     drawRect(148, bg_y, 212, bg_y + 11, RGB15(2, 2, 3));
     drawRectOutline(148, bg_y, 212, bg_y + 11, RGB15(6, 6, 8));
-    renderDrawText(uiTxt("FONDO", "BG", "FOND"), 158, bg_y + 2, text_col, 0);
+    renderDrawText(uiTxt(TXT_SIDEBAR_FONDO), 158, bg_y + 2, text_col, 0);
     
     // Lock toggle
     drawRect(216, bg_y, 252, bg_y + 11, bg_modifiable ? blendRGB555_int(app_theme_color, panel_bg, 6) : RGB15(12, 3, 3));
     drawRectOutline(216, bg_y, 252, bg_y + 11, bg_modifiable ? border_col : RGB15(6, 2, 2));
-    renderDrawText(bg_modifiable ? uiTxt(" MOD", " EDIT", " MOD") : uiTxt(" LOK", " LOCK", " CAD"), 218, bg_y + 2, bg_modifiable ? text_col : RGB15(31, 10, 10), 0);
+    renderDrawText(bg_modifiable ? uiTxt(TXT_SIDEBAR_MOD) : uiTxt(TXT_SIDEBAR_LOK), 218, bg_y + 2, bg_modifiable ? text_col : RGB15(31, 10, 10), 0);
     drawLockIcon(244, bg_y + 1, !bg_modifiable);
     
     // Draw Opacity Slider
@@ -526,7 +531,7 @@ static void uiDrawLayersSidebar(void) {
     
     drawRect(148, 157, 198, 169, mdown_bg);
     drawRectOutline(148, 157, 198, 169, mdown_border);
-    renderDrawText(uiTxt("C. ABJ", "MRG DN", "F. BAS"), 154, 160, mdown_txt, 0);
+    renderDrawText(uiTxt(TXT_SIDEBAR_C_ABJ), 154, 160, mdown_txt, 0);
     
     bool can_merge_up = (active_layer_idx < layers_count - 1);
     uint16_t mup_bg = can_merge_up ? blendRGB555_int(app_theme_color, panel_bg, 8) : RGB15(2, 2, 3);
@@ -535,7 +540,7 @@ static void uiDrawLayersSidebar(void) {
     
     drawRect(202, 157, 252, 169, mup_bg);
     drawRectOutline(202, 157, 252, 169, mup_border);
-    renderDrawText(uiTxt("C. ARB", "MRG UP", "F. HAUT"), 208, 160, mup_txt, 0);
+    renderDrawText(uiTxt(TXT_SIDEBAR_C_ARB), 208, 160, mup_txt, 0);
 }
 
 void uiDrawLayersOverlay(void) {

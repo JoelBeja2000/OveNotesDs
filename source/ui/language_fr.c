@@ -1,0 +1,105 @@
+#include "texts.h"
+
+const char* const strings_fr[TXT_MAX] = {
+    // START MENU
+    [TXT_WELCOME_TITLE]          = "BIENVENUE SUR OVENOTES DS",
+    [TXT_CREATE_NOTE]            = "CREER UNE NOTE",
+    [TXT_VIEW_NOTES]             = "VOIR LES NOTES",
+    [TXT_WIFI_CONNECTION]        = "CONNEXION WIFI",
+    [TXT_THEME_LABEL]            = "THEME : %s",
+    [TXT_START_INSTRUCTIONS]     = "Appuyer pour demarrer",
+    
+    // GALLERY
+    [TXT_BACK_B]                 = "RETOUR(B)",
+    [TXT_NO_NOTES_FOUND]         = "Aucune note trouvee.",
+    [TXT_CREATE_NOTE_IN_START_MENU] = "Creer note au menu debut.",
+    [TXT_MORE_NOTES_ABOVE]       = "^ PLUS DE NOTES HAUT ^",
+    [TXT_MORE_NOTES_BELOW]       = "v PLUS DE NOTES BAS v",
+    [TXT_GALLERY_INSTRUCTIONS]   = "Utiliser le pad ou stylet",
+    
+    // CONNECTION WIZARD
+    [TXT_CONN_SETTINGS]          = "Parametres de Connexion",
+    [TXT_CANCEL]                 = "Annuler",
+    [TXT_SAVE]                   = "Sauver",
+    [TXT_PAIRING_CONFIG]         = "Configuration d'Appairage",
+    [TXT_CODE]                   = "Code",
+    [TXT_ENTER_CODE_1]           = "Entrez le code affiche dans",
+    [TXT_ENTER_CODE_2]           = "l'application sur l'autre appareil.",
+    [TXT_CODIGO_CAPS]            = "CODE",
+    [TXT_EMPTY_SLOT]             = "[Vide]",
+    [TXT_MANUAL_KEYBOARD]        = "Manuel (Clavier)",
+    
+    // TOOLBAR
+    [TXT_TOOLBAR_PINC]           = "PINC",
+    [TXT_TOOLBAR_BORR]           = "GOMM",
+    [TXT_TOOLBAR_ENVIAR]         = "ENVOI",
+    
+    // SIDEBAR
+    [TXT_SIDEBAR_CAPAS]          = "CALQS",
+    [TXT_SIDEBAR_ADD_CAPA]       = "+ CALQ",
+    [TXT_SIDEBAR_LLENO]          = "PLEIN",
+    [TXT_SIDEBAR_CAPA]           = "CLQ",
+    [TXT_SIDEBAR_FONDO]          = "FOND",
+    [TXT_SIDEBAR_MOD]            = " MOD",
+    [TXT_SIDEBAR_LOK]            = " CAD",
+    [TXT_SIDEBAR_C_ABJ]          = "F. BAS",
+    [TXT_SIDEBAR_C_ARB]          = "F. HAUT",
+    
+    // MODALS
+    [TXT_UTENSILIO]              = "OUTIL",
+    [TXT_PINCEL]                 = "PINCEAU",
+    [TXT_BORRADOR]               = "GOMME",
+    [TXT_RELLENO]                = "REMPLISSAGE",
+    [TXT_TRAZO]                  = "TRAIT",
+    [TXT_NORMAL]                 = "NORMAL",
+    [TXT_ROTUL]                  = "FEUTRE",
+    [TXT_PATRON_BRUSH]           = "BROSSE MOTIF",
+    [TXT_PLUMAS]                 = "PLUMES",
+    [TXT_GROSOR_BORRADOR]        = "TAILLE GOMME : %d px",
+    [TXT_GROSOR_PINCEL]          = "TAILLE PINCEAU : %d px",
+    [TXT_PRESETS]                = "PREREGLAGES",
+    [TXT_MIS_PALETAS]            = "MES PALETTES",
+    [TXT_GUARDAR_BTN]            = "SAUVER",
+    [TXT_PATRONES]               = "MOTIFS",
+    [TXT_PERSPECTIVA]            = "PERSPECTIVE",
+    [TXT_MOD_SI]                 = "MOD:OUI",
+    [TXT_MOD_NO]                 = "MOD:NON",
+    [TXT_MODO_PERSPECTIVA]       = "MODE PERSPECTIVE",
+    [TXT_REUBICAR_PUNTOS]        = "REPOSITIONNER POINTS",
+    [TXT_SIN_PERSPECTIVA]        = "(SANS PERSPECTIVE)",
+    [TXT_PUNTO_1]                = "POINT 1",
+    [TXT_PUNTO_2]                = "POINT 2",
+    [TXT_PUNTO_3]                = "POINT 3",
+    [TXT_PUNTO_4]                = "POINT 4",
+    [TXT_DENSIDAD_REJILLA]       = "DENSITE GRILLE : %d px",
+    [TXT_ROTACION_FONDO]         = "ROTATION FOND : %d",
+    [TXT_ANGULO_PLUMA]           = "ANGLE PLUME : %d",
+    [TXT_MENU_NOTA]              = "MENU NOTE",
+    [TXT_GUARDAR_NOTA_SD]        = "SAUVER NOTE (SD)",
+    [TXT_WIFI_CONEXION_MODAL]    = "CONNEXION WIFI",
+    [TXT_VOLVER_AL_MENU_INICIO]   = "RETOUR AU DEBUT",
+    [TXT_CANCELAR_MODAL]         = "ANNULER",
+    [TXT_GUARDAR_ANTES_DE_SALIR]  = "SAUVER AVANT QUITTER ?",
+    [TXT_SI_GUARDAR_Y_SALIR]     = "OUI, SAUVER ET QUITTER",
+    [TXT_NO_SALIR_SIN_GUARDAR]   = "NON, QUITTER SANS SAUVER",
+    [TXT_SELECCIONAR_IDIOMA]     = "CHOISIR LA LANGUE",
+    [TXT_CERRAR]                 = "FERMER",
+    
+    // UPLOAD FLOW
+    [TXT_UPLOAD_ENVIANDO]        = "ENVOI DU DESSIN...",
+    [TXT_UPLOAD_WIFI_INIT]       = "Connexion Wi-Fi...",
+    [TXT_UPLOAD_WIFI_FAIL]       = "Erreur : echec Wi-Fi !",
+    [TXT_UPLOAD_PNG_ENCODE]      = "Encodage PNG...",
+    [TXT_UPLOAD_OOM]             = "Erreur : manque de memoire",
+    [TXT_UPLOAD_CONNECTING]      = "Connexion au serveur...",
+    [TXT_UPLOAD_SUCCESS]         = "Envoye avec succes !",
+    [TXT_UPLOAD_ERROR]           = "Erreur lors de l'envoi.",
+    
+    // NEW CODES FOR FRENCH AND KEYBOARD
+    [TXT_COL_ABBR]               = "COUL",
+    [TXT_SIZE_ABBR_FORMAT]       = "T:%d",
+    [TXT_KEY_CANCEL]             = "ANNULER (B)",
+    [TXT_KEY_SAVE]               = "SAUVER (A)",
+    [TXT_KEY_SPACE]              = "Espace",
+    [TXT_KEY_LAYER_PROP]         = "PROPRIETES DE CALQUE"
+};
