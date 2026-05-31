@@ -1,131 +1,199 @@
-# OveNotesDS
+<p align="center">
+  <img src="https://github.com/JoelBeja2000/OveNotesDs/releases/download/v1.0.0/nds.gif" alt="OveNotesDS Demo" width="480">
+</p>
 
-> 🌐 **Language / Idioma:** English | [Español](README.es.md)
+<h1 align="center">OveNotesDS</h1>
 
 <p align="center">
-  <img src="https://github.com/JoelBeja2000/OveNotesDs/releases/download/v1.0.0/nds.gif" alt="OveNotesDS Demo" width="400">
+  <strong>Draw on your Nintendo DS/DSi and send notes wirelessly to any device.</strong>
+</p>
+
+<p align="center">
+  <a href="https://github.com/JoelBeja2000/OveNotesDs/releases/latest"><img src="https://img.shields.io/github/v/release/JoelBeja2000/OveNotesDs?style=flat-square&label=Latest%20Release&color=ffd100" alt="Latest Release"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/JoelBeja2000/OveNotesDs?style=flat-square&color=ffd100" alt="License"></a>
+  <a href="https://github.com/JoelBeja2000/OveNotesDs/stargazers"><img src="https://img.shields.io/github/stars/JoelBeja2000/OveNotesDs?style=flat-square&color=ffd100" alt="Stars"></a>
+</p>
+
+<p align="center">
+  🌐 English | <a href="README.es.md">Español</a>
 </p>
 
 ---
 
+## What is OveNotesDS?
+
+OveNotesDS is a **Nintendo DS / DSi homebrew app** that turns your console into a wireless drawing pad. Draw directly on the touchscreen, then send your note as a PNG image to a companion app running on your **PC, Mac, or Android phone** — all over your local Wi-Fi network.
+
+### ✨ Features
+
+- 🖊️ **Freehand drawing** on the DS touchscreen with multiple brush sizes
+- 🧹 **Eraser tool** and **bucket fill**
+- 🎨 **Color palette** with custom colors
+- 🖼️ **Layer system** — work with multiple independent drawing layers
+- 📐 **Perspective grid** with vanishing points for technical drawing
+- 🌐 **Wireless upload** — send notes as PNG to any device on your network
+- 🗂️ **Gallery view** — browse, preview and download your notes from the companion app
+- 🌍 **3 languages** — Spanish, English, French (with AZERTY keyboard)
+- 🎨 **Multiple themes** — choose your color scheme
+
+---
+
+## 📥 Downloads
+
 > [!IMPORTANT]
-> ### 🚀 Direct Download Links (Latest Version)
-> Download the compiled, ready-to-use version for your devices:
-> 
-> * **🎮 Nintendo DS / DSi (Homebrew ROM):** [Download OveNotesDs.nds](https://github.com/JoelBeja2000/OveNotesDs/releases/latest/download/OveNotesDs.nds)
-> * **📱 Android (Mobile App):** [Download OveNotesDS.apk](https://github.com/JoelBeja2000/OveNotesDs/releases/latest/download/OveNotesDS.apk)
-> * **💻 Windows 64-bit (Portable App):** [Download OveNotesDS.exe](https://github.com/JoelBeja2000/OveNotesDs/releases/latest/download/OveNotesDS.exe)
-> * **💻 Windows 64-bit (Installer / Fixes WebView2 error):** [Download OveNotesDS_x64_installer.exe](https://github.com/JoelBeja2000/OveNotesDs/releases/latest/download/OveNotesDS_x64_installer.exe)
-> * **💻 Windows 32-bit (Portable App):** [Download OveNotesDS_x86.exe](https://github.com/JoelBeja2000/OveNotesDs/releases/latest/download/OveNotesDS_x86.exe)
-> * **💻 Windows 32-bit (Installer / Fixes WebView2 error):** [Download OveNotesDS_x86_installer.exe](https://github.com/JoelBeja2000/OveNotesDs/releases/latest/download/OveNotesDS_x86_installer.exe)
-> * **🍎 macOS (Desktop App):** [Download OveNotesDS.dmg](https://github.com/JoelBeja2000/OveNotesDs/releases/latest/download/OveNotesDS.dmg)
+> **New here? Just grab the files below — no technical knowledge needed.**
 
-You need to have your DS connected to a Wi-Fi network and download the .nds file, the APK, or the .exe. Once you are in the note creation view, click the menu button. There, you will find a form to enter the DS code that appears on your PC or mobile device. You must also select your Wi-Fi name in that same form.
+| Platform | Download |
+|---|---|
+| 🎮 Nintendo DS / DSi (ROM) | [**OveNotesDs.nds**](https://github.com/JoelBeja2000/OveNotesDs/releases/latest/download/OveNotesDs.nds) |
+| 📱 Android | [**OveNotesDS.apk**](https://github.com/JoelBeja2000/OveNotesDs/releases/latest/download/OveNotesDS.apk) |
+| 💻 Windows 64-bit (Portable) | [**OveNotesDS.exe**](https://github.com/JoelBeja2000/OveNotesDs/releases/latest/download/OveNotesDS.exe) |
+| 💻 Windows 64-bit (Installer) | [**OveNotesDS_x64_installer.exe**](https://github.com/JoelBeja2000/OveNotesDs/releases/latest/download/OveNotesDS_x64_installer.exe) |
+| 💻 Windows 32-bit (Portable) | [**OveNotesDS_x86.exe**](https://github.com/JoelBeja2000/OveNotesDs/releases/latest/download/OveNotesDS_x86.exe) |
+| 💻 Windows 32-bit (Installer) | [**OveNotesDS_x86_installer.exe**](https://github.com/JoelBeja2000/OveNotesDs/releases/latest/download/OveNotesDS_x86_installer.exe) |
+| 🍎 macOS | [**OveNotesDS.dmg**](https://github.com/JoelBeja2000/OveNotesDs/releases/latest/download/OveNotesDS.dmg) |
 
----
-
-This document describes the project structure, main systems, and execution flow of **OveNotesDS**, a Nintendo DS homebrew application built using the **[BlocksDS](https://github.com/blocksds)** SDK. The main purpose of the application is to let the user draw on the touchscreen and upload the result as PNG images to a server using HTTP POST requests (`/api/nueva-nota`).
+> 💡 Use the **Installer** version on Windows if you get a WebView2 error when launching the app.
 
 ---
 
-## 🛠️ Development Environment and Tools
+## 🚀 Quick Start (5 minutes)
 
-*   **SDK**: [BlocksDS](https://github.com/blocksds) (Core).
-*   **Language**: C (ARM9).
-*   **Main libraries**:
-    *   `libnds9`: Handles Nintendo DS hardware (screens, VRAM, buttons, touchscreen input).
-    *   `libdswifi9` (`dswifi`): Initializes and manages Wi-Fi network connections.
-    *   `lodepng`: PNG encoder in C for converting the drawing buffer into compressed PNG data before upload.
+> **Requirements:** DS/DSi connected to Wi-Fi · PC/Mac/Android on the **same** network
+
+1. **Install the companion app** on your PC, Mac or Android (see Downloads above).
+2. **Copy `OveNotesDs.nds`** to your DS flashcard SD card.
+3. **Launch the companion app** — it will show a **6-character connection code**.
+4. **Launch `OveNotesDs.nds`** on your DS, go to the drawing view, tap **MENU**.
+5. **Enter the connection code** shown in the companion app and select your Wi-Fi network.
+6. **Draw something**, then tap **SEND** — your note appears instantly in the companion app!
 
 ---
 
-## 📂 Source Structure (`/source`)
+## 📸 Screenshots
 
-The code is organized in independent modules for game logic, networking, UI and rendering.
-
-### 1. `main.c` (Entry Point)
-*   **Function**: Initializes exception handling, sets up the screens, and mounts the SD card with `fatInitDefault()`.
-*   **Flow**:
-    1. Calls `gameInit()` to configure VRAM and video modes.
-    2. If SD mount succeeds, initializes logging with `logInit()` and loads saved configuration with `netLoadConfig()`.
-    3. Enters the main loop, running `inputScan()`, `gameUpdate()`, and waiting for vertical sync (`swiWaitForVBlank()`) at 60 FPS.
-
-### 2. `game.c` and `game.h` (Application State Machine)
-*   **`GameState` states**:
-    *   `STATE_DRAW`: Main drawing screen, showing the canvas and toolbar.
-    *   `STATE_WIZARD`: Network setup form for IP, port, and Wi-Fi SSID with an on-screen keyboard.
-    *   `STATE_UPLOAD`: Encodes the canvas to PNG in RAM and sends it via HTTP POST over TCP sockets.
-*   **`gameUpdate()`**: Processes touchscreen input and dispatches events based on the active state.
-*   **Touch handling**: Uses release-based logic to avoid noisy initial ADC coordinates like `0,0` when the stylus first touches the screen.
-
-### 3. `net.c` and `net.h` (Networking and Sockets)
-*   **DS vs DSi networking**: Uses `Wifi_InitDefault(WIFI_ATTEMPT_DSI_MODE)` to try DSi mode first. If unavailable, falls back to DS-compatible networks.
-*   **`enviarNotaHTTP()`**:
-    *   Creates a TCP socket (`AF_INET`, `SOCK_STREAM`).
-    *   Connects to the configured remote server.
-    *   Builds standard HTTP POST headers (`Content-Type: application/octet-stream`, `Content-Length`).
-    *   Sends binary PNG data with non-blocking socket support and `select()` timeouts to avoid freezing the main loop.
-*   **Configuration persistence**:
-    *   `netLoadConfig()`: Reads `ovenotes_config.txt` from the SD root and parses IP, port, and SSID.
-    *   `netSaveConfig()`: Writes those values back to SD for later reuse.
-
-### 4. `ui.c` and `ui.h` (User Interface)
-*   **`uiDrawToolbar()`**: Renders the bottom toolbar with brush sizes (1, 3, 5), eraser, CONFIG, and UPLOAD.
-*   **`uiDrawFormUI()`**: Draws the network configuration panel and virtual keyboard.
-
-### 5. `render.c` and `render.h` (Drawing and Graphics)
-*   **Render engine**: Draws primitives directly to the touchscreen canvas buffer.
-*   **Functions**: Implements pixel drawing, interpolated line strokes, and preview buffers for the top screen.
-
-### 6. `input.c` and `input.h` (Hardware Input)
-*   Wraps button state and touchscreen ADC reading into a simple input abstraction.
-
-### 7. `log.c` and `log.h` (SD Logging)
-*   Replaces `printf` with `logPrintf` when `log.h` is included.
-*   Writes debug trace to `sd:/debug_log.txt`, flushing immediately to preserve logs after crashes.
+<table>
+  <tr>
+    <td align="center"><img src="https://github.com/JoelBeja2000/OveNotesDs/releases/download/v1.0.0/InicicioDeLaApp.jpg" width="220" alt="App launch"><br><sub>App launch</sub></td>
+    <td align="center"><img src="https://github.com/JoelBeja2000/OveNotesDs/releases/download/v1.0.0/notaCreada.jpg" width="220" alt="Note created"><br><sub>Note created</sub></td>
+    <td align="center"><img src="https://github.com/JoelBeja2000/OveNotesDs/releases/download/v1.0.0/Conexion.jpg" width="220" alt="Connection"><br><sub>Connection screen</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="https://github.com/JoelBeja2000/OveNotesDs/releases/download/v1.0.0/FotoCambioDeTema.jpg" width="220" alt="Themes"><br><sub>Theme selector</sub></td>
+    <td align="center"><img src="https://github.com/JoelBeja2000/OveNotesDs/releases/download/v1.0.0/Cambiodioma.jpg" width="220" alt="Languages"><br><sub>Language switcher</sub></td>
+    <td align="center"><img src="https://github.com/JoelBeja2000/OveNotesDs/releases/download/v1.0.0/b9f0dd38-37db-4ba2-9692-18a966a032e4.jpg" width="220" alt="Extra"><br><sub>Drawing view</sub></td>
+  </tr>
+</table>
 
 ---
 
 ## 💬 FAQ
 
-### 1. Does this app work on the Nintendo 3DS / 2DS?
-**Yes!** You can run the `.nds` ROM on any 3DS or 2DS system (via custom launchers or homebrew forwarders running `nds-bootstrap`).
-*   **WPA2 Wi-Fi Support on 3DS:** Since the ROM is compiled with DSi support, launching the application in **DSi Mode** allows it to connect directly to the modern **WPA2 Wi-Fi networks** configured in your 3DS/2DS console's system settings.
-*   If you run it in **DS Mode** (e.g., from a standard DS flashcart), it will be restricted to DS-classic network slots (WEP or open/unencrypted hotspots).
+<details>
+<summary><strong>Does it work on 3DS / 2DS?</strong></summary>
 
-### 2. Why is the Wi-Fi connection failing on my original DS / DS Lite?
-The original Nintendo DS and DS Lite hardware only support **WEP security** or **unencrypted (open) networks**. Most modern home routers use WPA2 or WPA3. To connect a classic DS, you will need to set up an open (password-less) mobile hotspot on your smartphone.
+**Yes!** Run the `.nds` ROM via `nds-bootstrap` or any homebrew launcher.
 
-### 3. Is this project "vibe coded" (AI-assisted)?
-**Yes!** The prototype and codebase were built with the assistance of AI tools to rapidly experiment with Nintendo DS homebrew development and build a cross-platform connection flow. It is completely open-source, and **we welcome any manual optimizations, code cleanups, or refactoring** from the homebrew community! Feel free to open a PR.
+- **DSi Mode** → full WPA2 Wi-Fi support (recommended)
+- **DS Mode** (flashcart) → WEP or open networks only
+</details>
 
-### 4. Can this be used for instant messaging or chat?
-Currently, the app only supports drawing and uploading notes as PNGs to a server. However, since the network layer uses TCP sockets, expanding it to support bidirectional real-time chat is entirely possible. It is a great candidate feature for future updates.
+<details>
+<summary><strong>Wi-Fi not connecting on original DS / DS Lite?</strong></summary>
 
-### 5. Is it safe to connect my DS to the internet?
-Connecting a DS to a local or private server is safe. However, keep in mind that the DS hardware uses legacy network protocols (HTTP without SSL/TLS). Avoid sending sensitive or personal data.
+The original DS hardware only supports **WEP** or **open (no password)** networks. Create a temporary open hotspot on your phone and connect the DS to it.
+</details>
+
+<details>
+<summary><strong>Is it safe to use?</strong></summary>
+
+Safe for local/private use. The DS uses plain HTTP (no SSL), so avoid sending sensitive data over public networks.
+</details>
+
+<details>
+<summary><strong>Can it be used for chat / messaging?</strong></summary>
+
+Not currently — it only sends PNG drawings. But since it uses TCP sockets, adding real-time chat is possible and a great PR idea!
+</details>
+
+<details>
+<summary><strong>Is this AI-assisted / vibe coded?</strong></summary>
+
+Yes! Built with AI tools to explore DS homebrew development. It's fully open-source — manual improvements, refactors and PRs are very welcome.
+</details>
 
 ---
 
-## Screenshots
+## 🛠️ For Developers
 
-### App launch
-![App launch](https://github.com/JoelBeja2000/OveNotesDs/releases/download/v1.0.0/InicicioDeLaApp.jpg)
+### Tech Stack
 
-### Note created
-![Note created](https://github.com/JoelBeja2000/OveNotesDs/releases/download/v1.0.0/notaCreada.jpg)
+| Component | Technology |
+|---|---|
+| DS Firmware | C (ARM9), [BlocksDS](https://github.com/blocksds) SDK |
+| Networking | `libdswifi9`, raw TCP sockets |
+| PNG encoding | `lodepng` (embedded) |
+| Companion App | [Tauri](https://tauri.app/) (Rust + Web) |
+| Server | Node.js (`server.js`) |
+| Android | Tauri Android target |
 
-### Connection screen
-![Connection screen](https://github.com/JoelBeja2000/OveNotesDs/releases/download/v1.0.0/Conexion.jpg)
+### Building from Source
 
-### Theme switch
-![Theme switch](https://github.com/JoelBeja2000/OveNotesDs/releases/download/v1.0.0/FotoCambioDeTema.jpg)
+#### DS ROM
 
-### Language switch
-![Language switch](https://github.com/JoelBeja2000/OveNotesDs/releases/download/v1.0.0/Cambiodioma.jpg)
+1. Install [BlocksDS](https://github.com/blocksds/sdk) and [Wonderful Toolchain](https://wonderful.asie.pl/).
+2. Clone this repo.
+3. Run:
+```bash
+make
+```
+Output: `OveNotesDs.nds`
 
-### Extra screenshot
-![Additional screenshot](https://github.com/JoelBeja2000/OveNotesDs/releases/download/v1.0.0/b9f0dd38-37db-4ba2-9692-18a966a032e4.jpg)
+#### Companion App (Windows / macOS / Android)
+
+```bash
+npm install
+npm run tauri build          # Windows / macOS
+npm run tauri android build  # Android APK
+```
+
+### Project Structure
+
+```
+OveNotesDs/
+├── source/
+│   ├── main.c              # Entry point, main loop
+│   ├── systems/
+│   │   ├── game.c/.h       # State machine (DRAW / WIZARD / UPLOAD)
+│   │   ├── net.c/.h        # Wi-Fi init, TCP socket, HTTP POST
+│   │   ├── render.c/.h     # Pixel drawing, line interpolation
+│   │   ├── input.c/.h      # Button & touchscreen abstraction
+│   │   └── log.c/.h        # SD card debug logging
+│   └── ui/
+│       ├── ui.c/.h         # Toolbar, sidebar, layout
+│       ├── ui_keyboard.c   # On-screen QWERTY / AZERTY keyboard
+│       ├── ui_modal.c      # Modals (tools, colors, layers…)
+│       ├── ui_menu.c       # Home screen & theme selector
+│       ├── ui_form.c       # Connection wizard form
+│       ├── language_en.c   # English strings
+│       ├── language_es.c   # Spanish strings
+│       └── language_fr.c   # French strings
+├── dist/index.html         # Web companion UI (served by server.js)
+├── server.js               # Node.js pairing & gallery server
+├── src-tauri/              # Tauri app shell
+└── Makefile
+```
+
+### Contributing
+
+Pull requests are welcome! Some ideas:
+- 🔤 Add a new language translation
+- 🎨 Add a new theme
+- 🐛 Bug fixes
+- ⚡ Performance improvements
+- 🔐 HTTPS/TLS support for the server
+
+Open an issue first for large changes so we can discuss the approach.
 
 ---
 
@@ -133,9 +201,11 @@ Connecting a DS to a local or private server is safe. However, keep in mind that
 
 | Contribution | User | Link |
 |---|---|---|
-| Created and maintains **BlocksDS**, the SDK that made this entire project possible | **@AntonioND** | [GitHub @AntonioND](https://github.com/AntonioND) |
-| French localization review: translation corrections, AZERTY keyboard layout, font compatibility fixes | **tockyng** (Izuku Midoriya) | [Reddit u/tockyng](https://www.reddit.com/user/tockyng) |
+| Created and maintains **BlocksDS**, the SDK that made this project possible | **@AntonioND** | [GitHub @AntonioND](https://github.com/AntonioND) |
+| French localization review: translations, AZERTY keyboard, font compatibility | **tockyng** (Izuku Midoriya) | [Reddit u/tockyng](https://www.reddit.com/user/tockyng) |
 
-> Special thanks to **tockyng** (Izuku Midoriya) from Reddit for reviewing the French localization and providing the corrections that made the French language support accurate and complete.
->
-> Special thanks to **@AntonioND** for creating and maintaining [BlocksDS](https://github.com/blocksds), without which this project would not exist.
+---
+
+## 📄 License
+
+[MIT](LICENSE) © JoelBeja2000
