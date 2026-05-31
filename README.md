@@ -12,6 +12,8 @@
   <a href="https://github.com/JoelBeja2000/OveNotesDs/releases/latest"><img src="https://img.shields.io/github/v/release/JoelBeja2000/OveNotesDs?style=flat-square&label=Latest%20Release&color=ffd100" alt="Latest Release"></a>
   <a href="LICENSE"><img src="https://img.shields.io/github/license/JoelBeja2000/OveNotesDs?style=flat-square&color=ffd100" alt="License"></a>
   <a href="https://github.com/JoelBeja2000/OveNotesDs/stargazers"><img src="https://img.shields.io/github/stars/JoelBeja2000/OveNotesDs?style=flat-square&color=ffd100" alt="Stars"></a>
+  <img src="https://img.shields.io/badge/Platform-Nintendo%20DS%20%2F%20DSi-ffd100?style=flat-square" alt="Platform: Nintendo DS / DSi">
+  <a href="https://github.com/blocksds/blocksds"><img src="https://img.shields.io/badge/SDK-BlocksDS-ffd100?style=flat-square" alt="SDK: BlocksDS"></a>
 </p>
 
 <p align="center">
@@ -119,7 +121,7 @@ Not currently — it only sends PNG drawings. But since it uses TCP sockets, add
 <details>
 <summary><strong>Is this AI-assisted / vibe coded?</strong></summary>
 
-Yes! Built with AI tools to explore DS homebrew development. It's fully open-source — manual improvements, refactors and PRs are very welcome.
+Yes! This project was built by combining advanced AI coding assistants with rigorous software engineering principles. It serves as a proof-of-concept demonstrating that Nintendo DS homebrew can be designed with a clean, modular, and decoupled architecture regardless of the development workflow. PRs, manual refinements, and code audits are highly encouraged!
 </details>
 
 ---
@@ -181,6 +183,9 @@ OveNotesDs/
 ├── src-tauri/              # Tauri app shell
 └── Makefile
 ```
+
+> [!TIP]
+> For a detailed walkthrough of the UI architecture, file responsibilities, and layering rules, please refer to [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ### Contributing
 

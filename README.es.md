@@ -9,9 +9,11 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/JoelBeja2000/OveNotesDs/releases/latest"><img src="https://img.shields.io/github/v/release/JoelBeja2000/OveNotesDs?style=flat-square&label=Última%20versión&color=ffd100" alt="Última versión"></a>
+  <a href="https://github.com/JoelBeja2000/OveNotesDs/releases/latest"><img src="https://img.shields.io/github/v/release/JoelBeja2000/OveNotesDs?style=flat-square&label=%C3%9Altima%20versi%C3%B3n&color=ffd100" alt="Última versión"></a>
   <a href="LICENSE"><img src="https://img.shields.io/github/license/JoelBeja2000/OveNotesDs?style=flat-square&color=ffd100" alt="Licencia"></a>
   <a href="https://github.com/JoelBeja2000/OveNotesDs/stargazers"><img src="https://img.shields.io/github/stars/JoelBeja2000/OveNotesDs?style=flat-square&color=ffd100" alt="Estrellas"></a>
+  <img src="https://img.shields.io/badge/Plataforma-Nintendo%20DS%20%2F%20DSi-ffd100?style=flat-square" alt="Plataforma: Nintendo DS / DSi">
+  <a href="https://github.com/blocksds/blocksds"><img src="https://img.shields.io/badge/SDK-BlocksDS-ffd100?style=flat-square" alt="SDK: BlocksDS"></a>
 </p>
 
 <p align="center">
@@ -119,7 +121,7 @@ Actualmente solo envía dibujos como PNG. Pero como usa sockets TCP, añadir cha
 <details>
 <summary><strong>¿Es un proyecto "vibe coded" (asistido por IA)?</strong></summary>
 
-¡Sí! Desarrollado con herramientas de IA para explorar el homebrew en DS. Es completamente de código abierto — mejoras manuales, refactorizaciones y PRs son muy bienvenidos.
+¡Sí! Este proyecto se ha desarrollado combinando potentes asistentes de IA con arquitectura e ingeniería de software tradicionales. Sirve como demostración de que es posible construir homebrew de Nintendo DS con un diseño de código limpio, modular y desacoplado, sin importar el método de desarrollo. ¡Los PRs, mejoras manuales y refactorizaciones son más que bienvenidos!
 </details>
 
 ---
@@ -181,6 +183,9 @@ OveNotesDs/
 ├── src-tauri/              # Shell de la app Tauri
 └── Makefile
 ```
+
+> [!TIP]
+> Para una descripción detallada de la arquitectura de la interfaz de usuario, responsabilidades de los archivos y reglas de dependencia, consulta [ARCHITECTURE.es.md](ARCHITECTURE.es.md).
 
 ### Contribuir
 
