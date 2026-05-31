@@ -103,6 +103,7 @@ typedef enum {
     TXT_KEY_SAVE,
     TXT_KEY_SPACE,
     TXT_KEY_LAYER_PROP,
+    TXT_BG_ABBR_FORMAT,
     
     TXT_MAX
 } TextId;

@@ -101,5 +101,6 @@ const char* const strings_en[TXT_MAX] = {
     [TXT_KEY_CANCEL]             = "CANCEL (B)",
     [TXT_KEY_SAVE]               = "SAVE (A)",
     [TXT_KEY_SPACE]              = "Space",
-    [TXT_KEY_LAYER_PROP]         = "LAYER PROPERTIES"
+    [TXT_KEY_LAYER_PROP]         = "LAYER PROPERTIES",
+    [TXT_BG_ABBR_FORMAT]         = "BG%d"
 };
