@@ -1,81 +1,81 @@
-# Arquitectura de Software - OveNotesDS UI
+# Software Architecture - OveNotesDS UI
 
-Este documento describe la estructura y diseño del sistema de interfaz de usuario (UI) de OveNotesDS, después de su refactorización a una arquitectura modular por capas. Está pensado para que cualquier desarrollador pueda entender rápidamente dónde se encuentra cada elemento y cómo interactúan las piezas del software.
+This document describes the structure and design of the OveNotesDS user interface (UI) system after its refactoring to a layered modular architecture. It is designed to help any developer quickly understand where each element is located and how the software components interact.
 
 ---
 
-## 📐 Reglas de Capas y Dependencias (Dirección del Flujo)
+## 📐 Layer Rules & Dependencies (Flow Direction)
 
-Para evitar dependencias circulares y mantener el código desacoplado y mantenible, la UI se organiza en **4 capas estrictas**. Un archivo de una capa inferior **nunca** debe incluir `#include` ni conocer la existencia de elementos de una capa superior.
+To avoid circular dependencies and maintain decoupled, clean, and maintainable code, the UI is organized into **4 strict layers**. A file in a lower layer **must never** `#include` or be aware of the existence of any files/elements in a higher layer.
 
 ```mermaid
 graph TD
-    State[game.c / Máquina de Estados] -->|Orquesta| Views[Capa 3: views/]
-    Views -->|Usa| Modals[Capa 2: modals/ & forms/]
-    Views -->|Usa| Widgets[Capa 1: widgets/]
-    Modals -->|Usa| Widgets
-    Widgets -->|Capa 0: Más Baja| Rendering[Sistemas Base: render.c / input.c]
+    State[game.c / State Machine] -->|Orchestrates| Views[Layer 3: views/]
+    Views -->|Uses| Modals[Layer 2: modals/ & forms/]
+    Views -->|Uses| Widgets[Layer 1: widgets/]
+    Modals -->|Uses| Widgets
+    Widgets -->|Layer 0: Lowest| Rendering[Base Systems: render.c / input.c]
 ```
 
-### 📋 Reglas detalladas:
-1. **`widgets/` (Capa 1):** Es la capa más baja de UI. No conoce nada de `modals/`, `forms/` ni `views/`. Solo depende de las primitivas gráficas (`render.c`) y de entrada (`input.c`).
-2. **`modals/` y `forms/` (Capa 2):** Pueden usar los `widgets/` comunes para renderizar botones, teclados o sliders, pero no saben nada de las `views/` principales ni del estado global del flujo del juego.
-3. **`views/` (Capa 3):** Es la capa más alta de la interfaz. Coordina la barra de herramientas, los paneles laterales, los modales abiertos y compone la pantalla completa.
-4. **Coordinador del Juego (`game.c`):** La máquina de estados del juego se comunica **únicamente** con la capa de `views/` a través de funciones exportadas (`view_*_show()`). Nunca interactúa con widgets o modales de forma directa.
+### 📋 Detailed Rules:
+1. **`widgets/` (Layer 1):** The lowest UI layer. It has no knowledge of `modals/`, `forms/`, or `views/`. It only depends on graphic primitives (`render.c`) and input systems (`input.c`).
+2. **`modals/` and `forms/` (Layer 2):** Can use common `widgets/` to render buttons, keyboards, or sliders, but they know nothing about the main `views/` or the global state of the game flow.
+3. **`views/` (Layer 3):** The highest interface layer. It coordinates the toolbar, sidebars, open modals, and composes the overall screen display.
+4. **Game Coordinator (`game.c`):** The game state machine communicates **only** with the `views/` layer via exported functions (`view_*_show()`). It never interacts directly with widgets or modals.
 
 ---
 
-## 📂 Directorios y Correspondencia de Archivos
+## 📂 Directories and File Mappings
 
-A continuación se detalla a qué corresponde cada archivo dentro del directorio `source/ui/`:
+Below is the file map of the `source/ui/` directory:
 
-### 1. 🖥️ Capa de Vistas (`source/ui/views/`)
-Contiene las pantallas principales del juego. Cada una implementa su propio bucle de pintado y actualización de pantalla.
+### 1. 🖥️ Views Layer (`source/ui/views/`)
+Contains the main screens of the application. Each view manages its own drawing and update loop.
 
-- **`view_canvas.c/.h`:** Gestiona el lienzo de dibujo principal. Dibuja los botones de Deshacer/Rehacer (Undo/Redo) en la esquina superior izquierda si la UI está visible, y compone el área de trabajo en tiempo real.
-- **`view_menu.c/.h`:** Administra el menú de inicio (pantalla de bienvenida), el selector visual de temas (colores de la interfaz) y los botones de acceso a la Galería y Wi-Fi.
-- **`view_gallery.c/.h`:** Controla el visor de notas guardadas en la tarjeta SD, renderizando el carrusel de previsualizaciones y la barra superior de acciones.
-- **`view_wizard.c/.h`:** Gestiona el asistente de emparejamiento por red, mostrando el código de sincronización y el estado de conexión inalámbrica.
+- **`view_canvas.c/.h`:** Manages the main drawing board canvas. Draws the Undo/Redo buttons in the top-left corner if the UI is visible, and composes the workspace in real-time.
+- **`view_menu.c/.h`:** Manages the start screen (welcome menu), theme selector, and entry buttons for the Gallery and Wi-Fi Wizard.
+- **`view_gallery.c/.h`:** Controls the SD card saved notes explorer, rendering the previews carousel and the top action bar.
+- **`view_wizard.c/.h`:** Manages the network pairing wizard, displaying the synchronization code and connection status.
 
-### 2. 💬 Capa de Modales (`source/ui/modals/`)
-Cuadros de diálogo superpuestos que solicitan confirmación o permiten modificar configuraciones temporales.
+### 2. 💬 Modals Layer (`source/ui/modals/`)
+Overlay dialogues that prompt for confirmations or modify temporary configuration parameters.
 
-- **`modal_tools.c/.h`:** Cuadro de selección de herramientas activas: Pincel, Borrador, Relleno de pintura y guías de perspectiva técnica.
-- **`modal_colors.c/.h`:** Modal de paleta de colores. Muestra colores predefinidos, ranuras personalizadas y controles deslizantes de tono, saturación y valor (HSV).
-- **`modal_bg.c/.h`:** Selección de cuadrículas y patrones de fondo del lienzo (puntos, líneas, rejillas isométrica/perspectiva).
-- **`modal_brush.c/.h`:** Modal de ajuste de tamaño de pincel y goma de borrar con previsualización dinámica.
-- **`modal_confirm.c/.h`:** Diálogo estándar de confirmación (ej: borrar lienzo, salir sin guardar).
-- **`modal_language.c/.h`:** Modal de cambio de idioma global de la aplicación.
+- **`modal_tools.c/.h`:** Tool selection modal: Brush, Eraser, Bucket Fill, and technical perspective guides.
+- **`modal_colors.c/.h`:** Color palette selection modal. Displays preset palette colors, custom slots, and Hue/Saturation/Value (HSV) sliders.
+- **`modal_bg.c/.h`:** Canvas background pattern and grid selection (dots, lines, isometric/perspective grids).
+- **`modal_brush.c/.h`:** Brush and eraser sizing modal with real-time size pre-rendering.
+- **`modal_confirm.c/.h`:** Standard confirmation dialogs (e.g., clear canvas, exit drawing without saving).
+- **`modal_language.c/.h`:** Application-wide language selector.
 
-### 3. 📝 Capa de Formularios (`source/ui/forms/`)
-Vistas de entrada de texto e interacción estructurada.
+### 3. 📝 Forms Layer (`source/ui/forms/`)
+Dedicated text entry views and structured forms.
 
-- **`form_wifi.c/.h`:** Formulario para introducir y seleccionar las ranuras de conexión Wi-Fi de la consola Nintendo DS.
-- **`form_rename.c/.h`:** Formulario de cambio de nombre para guardar archivos de notas de forma personalizada.
+- **`form_wifi.c/.h`:** Form to enter and select Nintendo DS Wi-Fi connection slots.
+- **`form_rename.c/.h`:** Note rename form for saving files under custom names.
 
-### 4. 🧱 Capa de Widgets (`source/ui/widgets/`)
-Elementos gráficos interactivos de bajo nivel y reutilizables.
+### 4. 🧱 Widgets Layer (`source/ui/widgets/`)
+Reusable, low-level interactive UI components.
 
-- **`keyboard.c/.h`:** Teclado interactivo en pantalla con soporte para configuraciones QWERTY y AZERTY (idioma francés).
-- **`sidebar.c/.h`:** Barra lateral derecha para el control y orden de capas (añadir, eliminar, visibilidad y opacidad de capas).
-- **`toolbar.c/.h`:** Barra de herramientas inferior con los botones rápidos de selección de color, herramientas, ajustes de lienzo y menú.
-- **`widget_buttons.c/.h`:** Componente base para dibujar botones estilizados con textos, iconos y bordes adaptados al tema de color actual.
+- **`keyboard.c/.h`:** On-screen virtual keyboard with support for QWERTY and AZERTY layouts (French support).
+- **`sidebar.c/.h`:** Right layer panel for controlling drawing layers (add, delete, visibility, and layer opacity).
+- **`toolbar.c/.h`:** Bottom toolbar containing quick shortcuts for color, tools, canvas adjustments, and system menus.
+- **`widget_buttons.c/.h`:** Base widget to render buttons with text, icons, and borders adapted to the current UI theme color.
 
-### 5. 🌍 Localización y Coordinación Base
-- **`ui.c/.h`:** Coordinador central de la interfaz de usuario. Almacena el estado global de ventanas (`g_app_state.ui`) y gestiona las transiciones entre modales.
-- **`ui_compat.h`:** Archivo de macros de compatibilidad. Traduce variables legadas cortas a la jerarquía moderna estructurada dentro de `g_app_state` sin romper código histórico.
-- **`language_en.c`, `language_es.c`, `language_fr.c` / `language.h`:** Cadenas de traducción internacional y mapeo de fuentes.
+### 5. 🌍 Localization & Coordination Base
+- **`ui.c/.h`:** Main user interface manager and coordinator. Keeps track of the open modal state (`g_app_state.ui`) and handles window routing.
+- **`ui_compat.h`:** Compatibility macros that map short legacy names to the modern nested properties in `g_app_state` without breaking historic references.
+- **`language_en.c`, `language_es.c`, `language_fr.c` / `language.h`:** Translation resource files and font mapping.
 
 ---
 
-## 🛠️ Cómo compilar y añadir una nueva funcionalidad
+## 🛠️ How to Compile & Add New Features
 
-1. **Añadir un nuevo Modal/Formulario/Widget:**
-   Créalo en su carpeta respectiva. Ej: `source/ui/modals/modal_export.c`.
-2. **Actualizar el Makefile:**
-   Los archivos se agregan automáticamente al compilar porque el Makefile escanea los subdirectorios dentro de `source/ui/` de forma recursiva:
+1. **Add a new Modal/Form/Widget:**
+   Create it in its corresponding folder (e.g., `source/ui/modals/modal_export.c`).
+2. **Update the Makefile:**
+   Files are added automatically upon building as the Makefile scans all subdirectories recursively:
    ```make
    SOURCES := source source/systems source/ui source/ui/widgets source/ui/modals source/ui/forms source/ui/views source/vendor
    ```
-3. **Respetar la regla de `#include`:**
-   Si creas un archivo en `widgets/`, asegúrate de **no** importar nada que esté dentro de `views/` ni `modals/`. Esto garantiza que los componentes sigan siendo testeables de forma aislada.
+3. **Adhere to Layering Rules:**
+   If you write a widget in `widgets/`, ensure it **never** imports any headers from `views/` or `modals/`. This ensures components remain isolated and testable.
