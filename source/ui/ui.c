@@ -390,7 +390,7 @@ void uiDrawToolbar(void) {
     // Button 3: BG
     char bg_label[16];
     sprintf(bg_label, uiTxt(TXT_BG_ABBR_FORMAT), bg_pattern_idx);
-    renderDrawText(bg_label, 138, 180, (open_modal == 3) ? active_text_color : default_text_color, 0);
+    renderDrawText(bg_label, 128, 180, (open_modal == 3) ? active_text_color : default_text_color, 0);
 
     // Button 4: MENU
     renderDrawText("MENU", 178, 180, (open_modal == 5) ? active_text_color : default_text_color, 0);
