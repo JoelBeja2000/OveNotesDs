@@ -1134,6 +1134,7 @@ void gameUpdate(void) {
             uiCloseModal(); // Close open modal if any
             toolbar_hidden = false;
             renderComposeCanvas();
+            uiDrawToolbar();
             renderUpdatePreview();
         }
 
