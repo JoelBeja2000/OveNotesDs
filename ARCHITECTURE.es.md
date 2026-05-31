@@ -46,6 +46,8 @@ Cuadros de diálogo superpuestos que solicitan confirmación o permiten modifica
 - **`modal_brush.c/.h`:** Modal de ajuste de tamaño de pincel y goma de borrar con previsualización dinámica.
 - **`modal_confirm.c/.h`:** Diálogo estándar de confirmación (ej: borrar lienzo, salir sin guardar).
 - **`modal_language.c/.h`:** Modal de cambio de idioma global de la aplicación.
+  > [!IMPORTANT]
+  > Al ser el único modal que afecta un estado global del sistema (el idioma de toda la app), este modal **únicamente** debe ser invocado por la máquina de estados en `game.c` o por el coordinador central `ui.c`. Ninguna otra vista o submódulo de interfaz debe llamarlo directamente, evitando así romper el aislamiento de capas por la puerta de atrás.
 
 ### 3. 📝 Capa de Formularios (`source/ui/forms/`)
 Vistas de entrada de texto e interacción estructurada.
@@ -65,6 +67,18 @@ Elementos gráficos interactivos de bajo nivel y reutilizables.
 - **`ui.c/.h`:** Coordinador central de la interfaz de usuario. Almacena el estado global de ventanas (`g_app_state.ui`) y gestiona las transiciones entre modales.
 - **`ui_compat.h`:** Archivo de macros de compatibilidad. Traduce variables legadas cortas a la jerarquía moderna estructurada dentro de `g_app_state` sin romper código histórico.
 - **`language_en.c`, `language_es.c`, `language_fr.c` / `language.h`:** Cadenas de traducción internacional y mapeo de fuentes.
+  > [!NOTE]
+  > *Fase de transición:* Actualmente estos archivos residen en la raíz de `source/ui/` por razones de compatibilidad histórica, pero está planificado extraerlos a un directorio propio de localización `source/ui/i18n/` en la **Fase 2** de la refactorización para mantener la raíz limpia.
+
+---
+
+## 🛑 Fuera de Scope: ¿Qué NO hace `ui.c`?
+
+Para mantener la cohesión y evitar que el coordinador central se convierta en un "archivo cajón de sastre" (God Object), se definen explícitamente las siguientes responsabilidades fuera de su alcance:
+* ❌ **Lógica de Red y Sockets:** `ui.c` no sabe cómo enviar paquetes HTTP ni inicializar la pila Wi-Fi de la consola. Toda esta responsabilidad reside en `source/systems/net.c`.
+* ❌ **Máquina de Estados de Flujo:** La UI no decide cuándo pasar de la pantalla de bienvenida al modo dibujo o a la galería tras desconectarse. Esa responsabilidad de control pertenece a la máquina de estados en `source/systems/game.c`.
+* ❌ **Persistencia y Acceso a SD:** El cargado, guardado y manipulación de archivos PNG en la tarjeta SD de la consola pertenece a `source/systems/io.c`.
+* ❌ **Gestión de Historial de Dibujo:** Las operaciones de deshacer/rehacer y mezcla de capas se orquestan en `source/systems/render.c`.
 
 ---
 

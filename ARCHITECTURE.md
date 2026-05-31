@@ -46,6 +46,8 @@ Overlay dialogues that prompt for confirmations or modify temporary configuratio
 - **`modal_brush.c/.h`:** Brush and eraser sizing modal with real-time size pre-rendering.
 - **`modal_confirm.c/.h`:** Standard confirmation dialogs (e.g., clear canvas, exit drawing without saving).
 - **`modal_language.c/.h`:** Application-wide language selector.
+  > [!IMPORTANT]
+  > Since it is the only modal that alters a global system state (the language for the entire app), this modal **must only** be invoked by the state machine in `game.c` or by the central coordinator `ui.c`. No other view or interface sub-module should invoke it directly, thereby avoiding any backdoor violation of layering constraints.
 
 ### 3. 📝 Forms Layer (`source/ui/forms/`)
 Dedicated text entry views and structured forms.
@@ -65,6 +67,18 @@ Reusable, low-level interactive UI components.
 - **`ui.c/.h`:** Main user interface manager and coordinator. Keeps track of the open modal state (`g_app_state.ui`) and handles window routing.
 - **`ui_compat.h`:** Compatibility macros that map short legacy names to the modern nested properties in `g_app_state` without breaking historic references.
 - **`language_en.c`, `language_es.c`, `language_fr.c` / `language.h`:** Translation resource files and font mapping.
+  > [!NOTE]
+  > *Transition Phase:* Currently, these files reside in the root of `source/ui/` for historical compatibility reasons, but there is a planned task to extract them to their own localization directory `source/ui/i18n/` in **Phase 2** of the refactoring to keep the root directory clean.
+
+---
+
+## 🛑 Out of Scope: What `ui.c` does NOT do
+
+To maintain strong cohesion and prevent the UI coordinator from becoming a "catch-all" God Object, the following responsibilities are explicitly declared out of its scope:
+* ❌ **Network & Socket Logic:** `ui.c` has no knowledge of how to send HTTP packets or initialize the console's Wi-Fi stack. All network operations live in `source/systems/net.c`.
+* ❌ **Game State/Flow Machine:** The UI does not decide when to transition from the welcome screen to drawing mode or to the gallery after disconnecting. That control flow lives in `source/systems/game.c`.
+* ❌ **Persistence & SD Card Access:** Loading, saving, and managing PNG files on the console's SD card belongs to `source/systems/io.c`.
+* ❌ **Drawing History & Canvas Math:** Undo/Redo operations and layer blending calculations are orchestrated in `source/systems/render.c`.
 
 ---
 
