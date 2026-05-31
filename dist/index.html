@@ -157,6 +157,7 @@
       <div class="lang-switch" style="display:flex; gap:8px;">
         <button id="btnLangEs" onclick="setLang('es')" style="background:var(--accent); color:#000; border:none; padding:4px 8px; border-radius:4px; font-weight:800; font-size:11px; cursor:pointer; font-family:'NDS BIOS', sans-serif;">ES</button>
         <button id="btnLangEn" onclick="setLang('en')" style="background:rgba(255,255,255,0.08); color:var(--text); border:none; padding:4px 8px; border-radius:4px; font-weight:800; font-size:11px; cursor:pointer; font-family:'NDS BIOS', sans-serif;">EN</button>
+        <button id="btnLangFr" onclick="setLang('fr')" style="background:rgba(255,255,255,0.08); color:var(--text); border:none; padding:4px 8px; border-radius:4px; font-weight:800; font-size:11px; cursor:pointer; font-family:'NDS BIOS', sans-serif;">FR</button>
       </div>
     </div>
     <div class="main">
@@ -229,10 +230,29 @@
         deleteConfirm: "Delete this note? This action cannot be undone.",
         deleteError: "Could not delete the note.",
         deleteCatch: "Error deleting"
+      },
+      fr: {
+        title: "OveNotesDS - Appairage",
+        pairingTitle: "CODE DE CONNEXION",
+        restartBtn: "Redemarrer Serveur",
+        emptyNotes: "Aucune note trouvee. Envoyez une note depuis votre DSi.",
+        btnView: "Voir",
+        btnDownload: "Telecharger",
+        btnDelete: "Supprimer",
+        modalTip: "Tip: Maintenez l'image enfoncee pour l'enregistrer dans la galerie mobile",
+        btnClose: "Fermer",
+        restartConfirm: "Voulez-vous vraiment redemarrer le serveur ?",
+        restarting: "Redemarrage...",
+        restartAlert: "Le serveur redemarre. Veuillez patienter quelques secondes et recharger la page.",
+        restartError: "Erreur lors du redemarrage du serveur.",
+        connectError: "Erreur de connexion au serveur.",
+        deleteConfirm: "Supprimer cette note ? Cette action est irreversible.",
+        deleteError: "Impossible de supprimer la note.",
+        deleteCatch: "Erreur de suppression"
       }
     };
 
-    let currentLang = localStorage.getItem('lang') || (navigator.language && navigator.language.startsWith('es') ? 'es' : 'en');
+    let currentLang = localStorage.getItem('lang') || (navigator.language && navigator.language.startsWith('es') ? 'es' : (navigator.language && navigator.language.startsWith('fr') ? 'fr' : 'en'));
 
     function setLang(lang) {
       currentLang = lang;
@@ -240,17 +260,16 @@
       
       const btnEs = document.getElementById('btnLangEs');
       const btnEn = document.getElementById('btnLangEn');
-      if (lang === 'es') {
-        btnEs.style.background = 'var(--accent)';
-        btnEs.style.color = '#000';
-        btnEn.style.background = 'rgba(255,255,255,0.08)';
-        btnEn.style.color = 'var(--text)';
-      } else {
-        btnEn.style.background = 'var(--accent)';
-        btnEn.style.color = '#000';
-        btnEs.style.background = 'rgba(255,255,255,0.08)';
-        btnEs.style.color = 'var(--text)';
-      }
+      const btnFr = document.getElementById('btnLangFr');
+      
+      btnEs.style.background = (lang === 'es') ? 'var(--accent)' : 'rgba(255,255,255,0.08)';
+      btnEs.style.color = (lang === 'es') ? '#000' : 'var(--text)';
+      
+      btnEn.style.background = (lang === 'en') ? 'var(--accent)' : 'rgba(255,255,255,0.08)';
+      btnEn.style.color = (lang === 'en') ? '#000' : 'var(--text)';
+      
+      btnFr.style.background = (lang === 'fr') ? 'var(--accent)' : 'rgba(255,255,255,0.08)';
+      btnFr.style.color = (lang === 'fr') ? '#000' : 'var(--text)';
       
       document.title = translations[lang].title;
       document.querySelector('.pairing-title').textContent = translations[lang].pairingTitle;

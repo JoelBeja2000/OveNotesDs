@@ -67,7 +67,7 @@ void uiDrawStartMenu(void) {
     }
     
     // Draw welcome title
-    renderDrawText(uiTxt("BIENVENIDO A OVENOTES DS", "WELCOME TO OVENOTES DS"), 32, 24, app_theme_color, 0);
+    renderDrawText(uiTxt("BIENVENIDO A OVENOTES DS", "WELCOME TO OVENOTES DS", "BIENVENUE SUR OVENOTES DS"), 32, 24, app_theme_color, 0);
     
     // Draw language/flag button at top-right
     // x = 226..246, y = 8..28
@@ -84,6 +84,18 @@ void uiDrawStartMenu(void) {
             else col = RGB15(28, 2, 2);
             
             for (int x = 227; x <= 245; x++) {
+                renderSetPixel(x, y, col);
+            }
+        }
+    } else if (current_lang == 2) {
+        // French Flag
+        // Blue vertical columns, White, Red
+        for (int y = 9; y <= 27; y++) {
+            for (int x = 227; x <= 245; x++) {
+                uint16_t col;
+                if (x >= 227 && x <= 232) col = RGB15(2, 5, 20); // Blue
+                else if (x >= 233 && x <= 239) col = RGB15(31, 31, 31); // White
+                else col = RGB15(28, 2, 2); // Red
                 renderSetPixel(x, y, col);
             }
         }
@@ -117,7 +129,7 @@ void uiDrawStartMenu(void) {
     drawRect(32, 42, 224, 64, RGB15(10, 10, 12));
     drawRectOutline(32, 42, 224, 64, app_theme_color);
     char create_lbl[48];
-    sprintf(create_lbl, "%s", uiTxt("CREAR NUEVA NOTA", "CREATE NEW NOTE"));
+    sprintf(create_lbl, "%s", uiTxt("CREAR NUEVA NOTA", "CREATE NEW NOTE", "CRÉER UNE NOTE"));
     int create_pad = (24 - strlen(create_lbl)) * 4;
     if (create_pad < 0) create_pad = 0;
     renderDrawText(create_lbl, 32 + create_pad, 49, RGB15(31, 31, 31), 0);
@@ -127,7 +139,7 @@ void uiDrawStartMenu(void) {
     drawRect(32, 72, 224, 94, RGB15(10, 10, 12));
     drawRectOutline(32, 72, 224, 94, app_theme_color);
     char view_lbl[48];
-    sprintf(view_lbl, "%s", uiTxt("VER NOTAS CREADAS", "VIEW CREATED NOTES"));
+    sprintf(view_lbl, "%s", uiTxt("VER NOTAS CREADAS", "VIEW CREATED NOTES", "VOIR LES NOTES"));
     int view_pad = (24 - strlen(view_lbl)) * 4;
     if (view_pad < 0) view_pad = 0;
     renderDrawText(view_lbl, 32 + view_pad, 79, RGB15(31, 31, 31), 0);
@@ -137,7 +149,7 @@ void uiDrawStartMenu(void) {
     drawRect(32, 102, 224, 124, RGB15(10, 10, 12));
     drawRectOutline(32, 102, 224, 124, app_theme_color);
     char wifi_lbl[48];
-    sprintf(wifi_lbl, "%s", uiTxt("WIFI / CONEXION", "WIFI / CONNECTION"));
+    sprintf(wifi_lbl, "%s", uiTxt("WIFI / CONEXION", "WIFI / CONNECTION", "CONNEXION WIFI"));
     int wifi_pad = (24 - strlen(wifi_lbl)) * 4;
     if (wifi_pad < 0) wifi_pad = 0;
     renderDrawText(wifi_lbl, 32 + wifi_pad, 109, RGB15(31, 31, 31), 0);
@@ -147,13 +159,13 @@ void uiDrawStartMenu(void) {
     drawRect(32, 132, 224, 154, RGB15(10, 10, 12));
     drawRectOutline(32, 132, 224, 154, app_theme_color);
     char theme_lbl[48];
-    sprintf(theme_lbl, uiTxt("TEMA: %s", "THEME: %s"), uiGetThemeName(active_theme_idx));
+    sprintf(theme_lbl, uiTxt("TEMA: %s", "THEME: %s", "THÈME : %s"), uiGetThemeName(active_theme_idx));
     int theme_pad = (24 - strlen(theme_lbl)) * 4;
     if (theme_pad < 0) theme_pad = 0;
     renderDrawText(theme_lbl, 32 + theme_pad, 139, RGB15(31, 31, 31), 0);
     
     // Bottom instructions
-    renderDrawText(uiTxt("Toca una opcion para comenzar", "Tap an option to start"), 20, 168, RGB15(20, 20, 22), 0);
+    renderDrawText(uiTxt("Toca una opcion para comenzar", "Tap an option to start", "Appuyer pour démarrer"), 20, 168, RGB15(20, 20, 22), 0);
     
     uiDrawLogo();
     
@@ -181,18 +193,18 @@ void uiDrawNotesGallery(int selected_idx, int total_count, const char filenames[
     
     // Header
     drawRect(0, 0, 255, 14, RGB15(12, 12, 12));
-    renderDrawText(uiTxt("VER NOTAS CREADAS", "VIEW CREATED NOTES"), 8, 3, app_theme_color, 0);
+    renderDrawText(uiTxt("VER NOTAS CREADAS", "VIEW CREATED NOTES", "VOIR LES NOTES"), 8, 3, app_theme_color, 0);
     
     // Back button
     // x = 180..250, y = 1..13
     drawRect(180, 1, 250, 13, RGB15(24, 6, 6));
     drawRectOutline(180, 1, 250, 13, RGB15(31, 0, 0));
-    renderDrawText(uiTxt("VOLVER(B)", "BACK(B)"), 186, 3, RGB15(31, 31, 31), 0);
+    renderDrawText(uiTxt("VOLVER(B)", "BACK(B)", "RETOUR(B)"), 186, 3, RGB15(31, 31, 31), 0);
     
     // If no notes are present
     if (total_count == 0) {
-        renderDrawText(uiTxt("No se encontraron notas.", "No notes found."), 32, 80, RGB15(20, 20, 22), 0);
-        renderDrawText(uiTxt("Crea una nota en el menu de inicio.", "Create a note in the start menu."), 16, 96, RGB15(16, 16, 18), 0);
+        renderDrawText(uiTxt("No se encontraron notas.", "No notes found.", "Aucune note trouvee."), 32, 80, RGB15(20, 20, 22), 0);
+        renderDrawText(uiTxt("Crea una nota en el menu de inicio.", "Create a note in the start menu.", "Creer note au menu debut."), 16, 96, RGB15(16, 16, 18), 0);
         
         // Clean top screen preview to indicate empty
         if (wizard_buffer != NULL) {
@@ -235,12 +247,12 @@ void uiDrawNotesGallery(int selected_idx, int total_count, const char filenames[
     
     // Draw scrolling markers if needed
     if (start_visible > 0) {
-        renderDrawText("^ MAS NOTAS ARRIBA ^", 48, 18, app_theme_color, 0);
+        renderDrawText(uiTxt("^ MAS NOTAS ARRIBA ^", "^ MORE NOTES ABOVE ^", "^ PLUS DE NOTES HAUT ^"), 48, 18, app_theme_color, 0);
     }
     if (end_visible < total_count) {
-        renderDrawText("v MAS NOTAS ABAJO v", 52, 156, app_theme_color, 0);
+        renderDrawText(uiTxt("v MAS NOTAS ABAJO v", "v MORE NOTES BELOW v", "v PLUS DE NOTES BAS v"), 52, 156, app_theme_color, 0);
     }
     
     // Instructions at the very bottom
-    renderDrawText("Usa DPAD Arriba/Abajo o Stylus", 12, 172, RGB15(16, 16, 18), 0);
+    renderDrawText(uiTxt("Usa DPAD Arriba/Abajo o Stylus", "Use DPAD Up/Down or Stylus", "Utiliser le pad ou stylet"), 12, 172, RGB15(16, 16, 18), 0);
 }

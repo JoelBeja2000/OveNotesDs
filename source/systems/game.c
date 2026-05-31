@@ -179,15 +179,15 @@ static void runUpload(void) {
     clearUploadLogs();
 
     // 2. Draw our premium console text box window on the preview_buffer
-    uiDrawTopConsoleBox(uiTxt("ENVIANDO DIBUJO...", "UPLOADING DRAWING..."));
+    uiDrawTopConsoleBox(uiTxt("ENVIANDO DIBUJO...", "UPLOADING DRAWING...", "ENVOI DU DESSIN..."));
     
     // 3. Make sure the upper screen is set to show BG2 (the preview bitmap)
     videoSetModeSub(MODE_5_2D | DISPLAY_BG2_ACTIVE);
     
-    drawUploadLog(uiTxt("Iniciando Wi-Fi...", "Starting Wi-Fi..."));
+    drawUploadLog(uiTxt("Iniciando Wi-Fi...", "Starting Wi-Fi...", "Connexion Wi-Fi..."));
     
     if (!netInitWifi()) {
-        drawUploadLog(uiTxt("Error: fallo al iniciar Wi-Fi!", "Error: failed to start Wi-Fi!"));
+        drawUploadLog(uiTxt("Error: fallo al iniciar Wi-Fi!", "Error: failed to start Wi-Fi!", "Erreur : echec Wi-Fi !"));
         for(int i=0; i<120; i++) swiWaitForVBlank();
         renderComposeCanvas();
         renderUpdatePreview();
@@ -195,11 +195,11 @@ static void runUpload(void) {
         return;
     }
     
-    drawUploadLog(uiTxt("Codificando PNG...", "Encoding PNG..."));
+    drawUploadLog(uiTxt("Codificando PNG...", "Encoding PNG...", "Encodage PNG..."));
     
     unsigned char* rgb_buf = malloc(256 * 192 * 3);
     if (!rgb_buf) {
-        drawUploadLog(uiTxt("Error: no hay memoria RAM", "Error: out of memory"));
+        drawUploadLog(uiTxt("Error: no hay memoria RAM", "Error: out of memory", "Erreur : manque de memoire"));
         for(int i=0; i<120; i++) swiWaitForVBlank();
         renderComposeCanvas();
         renderUpdatePreview();
@@ -233,12 +233,12 @@ static void runUpload(void) {
         return;
     }
     
-    drawUploadLog(uiTxt("Conectando al servidor...", "Connecting to server..."));
+    drawUploadLog(uiTxt("Conectando al servidor...", "Connecting to server...", "Connexion au serveur..."));
     
     if (enviarNotaHTTP(http_ip, atoi(http_port_str), png_data, png_size)) {
-        drawUploadLog(uiTxt("Enviado con exito!", "Uploaded successfully!"));
+        drawUploadLog(uiTxt("Enviado con exito!", "Uploaded successfully!", "Envoye avec succes !"));
     } else {
-        drawUploadLog(uiTxt("Error al enviar dibujo.", "Error sending drawing."));
+        drawUploadLog(uiTxt("Error al enviar dibujo.", "Error sending drawing.", "Erreur lors de l'envoi."));
     }
     
     free(png_data);
@@ -287,21 +287,28 @@ void gameUpdate(void) {
             if (was_touching) {
                 if (show_lang_modal) {
                     // Spanish option button
-                    if (prev_x >= 48 && prev_x <= 208 && prev_y >= 62 && prev_y <= 86) {
+                    if (prev_x >= 48 && prev_x <= 208 && prev_y >= 52 && prev_y <= 74) {
                         current_lang = 0;
                         netSaveConfig();
                         show_lang_modal = false;
                         uiDrawStartMenu();
                     }
                     // English option button
-                    else if (prev_x >= 48 && prev_x <= 208 && prev_y >= 94 && prev_y <= 118) {
+                    else if (prev_x >= 48 && prev_x <= 208 && prev_y >= 78 && prev_y <= 100) {
                         current_lang = 1;
                         netSaveConfig();
                         show_lang_modal = false;
                         uiDrawStartMenu();
                     }
+                    // French option button
+                    else if (prev_x >= 48 && prev_x <= 208 && prev_y >= 104 && prev_y <= 126) {
+                        current_lang = 2;
+                        netSaveConfig();
+                        show_lang_modal = false;
+                        uiDrawStartMenu();
+                    }
                     // Close button
-                    else if (prev_x >= 48 && prev_x <= 208 && prev_y >= 128 && prev_y <= 150) {
+                    else if (prev_x >= 48 && prev_x <= 208 && prev_y >= 132 && prev_y <= 152) {
                         show_lang_modal = false;
                         uiDrawStartMenu();
                     }

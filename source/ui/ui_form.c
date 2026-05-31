@@ -212,7 +212,7 @@ void uiDrawFormUI(int step, const char* input_text) {
     // 1. Header
     drawSubRect(0, 0, 255, 15, header_bg);
     drawSubLine(0, 16, 255, 16, border_col);
-    drawSubText(uiTxt("Ajustes de Conexion", "Connection Settings"), 8, 4, header_text_col, 0);
+    drawSubText(uiTxt("Ajustes de Conexion", "Connection Settings", "Parametres de Connexion"), 8, 4, header_text_col, 0);
 
     // 2. Footer (Cancel / Save)
     drawSubRect(0, 176, 255, 191, header_bg);
@@ -221,12 +221,12 @@ void uiDrawFormUI(int step, const char* input_text) {
     // [B] Cancel
     drawSubRectOutline(8, 180, 20, 188, border_col);
     drawSubText("B", 11, 181, header_text_col, 0);
-    drawSubText(uiTxt("Cancelar", "Cancel"), 24, 181, header_text_col, 0);
+    drawSubText(uiTxt("Cancelar", "Cancel", "Annuler"), 24, 181, header_text_col, 0);
 
     // [A] Save
     drawSubRectOutline(204, 180, 216, 188, border_col);
     drawSubText("A", 207, 181, header_text_col, 0);
-    drawSubText(uiTxt("Guardar", "Save"), 220, 181, header_text_col, 0);
+    drawSubText(uiTxt("Guardar", "Save", "Sauver"), 220, 181, header_text_col, 0);
 
     // 3. Main Panel (centered, full width)
     drawSubRect(6, 22, 250, 110, panel_bg);
@@ -235,10 +235,10 @@ void uiDrawFormUI(int step, const char* input_text) {
     // Inner Header
     drawSubRect(7, 23, 249, 36, blendRGB555_int(app_theme_color, RGB15(4, 4, 5), 8));
     drawSubLine(6, 37, 250, 37, border_col);
-    drawSubText(uiTxt("Config. de Emparejamiento", "Pairing Configuration"), 10, 26, header_text_col, 0);
+    drawSubText(uiTxt("Config. de Emparejamiento", "Pairing Configuration", "Configuration d'Appairage"), 10, 26, header_text_col, 0);
 
     // Field 0: Code (y = 44 to 62)
-    drawSubText(uiTxt("Codigo", "Code"), 12, 50, text_col, 0);
+    drawSubText(uiTxt("Codigo", "Code", "Code"), 12, 50, text_col, 0);
     drawSubRectOutline(50, 44, 244, 62, (step == 0) ? active_col : RGB15(15, 15, 15));
     if (step == 0) {
         drawSubRectOutline(51, 45, 243, 61, active_col);
@@ -259,8 +259,8 @@ void uiDrawFormUI(int step, const char* input_text) {
 
     // Help text with pointer sheep pointing at it
     drawSubPointerSheep(6, 118);
-    drawSubText(uiTxt("Pon el codigo que te aparece", "Enter the code shown in the"), 56, 124, text_col, 0);
-    drawSubText(uiTxt("en la app en del otro dispositivo.", "app on another device."), 56, 136, inactive_text, 0);
+    drawSubText(uiTxt("Pon el codigo que te aparece", "Enter the code shown in the", "Entrez le code affiche dans"), 56, 124, text_col, 0);
+    drawSubText(uiTxt("en la app en del otro dispositivo.", "app on another device.", "l'application sur l'autre appareil."), 56, 136, inactive_text, 0);
 }
 
 void uiDrawBottomForm(int step, const char* input_text) {
@@ -286,11 +286,11 @@ void uiDrawBottomForm(int step, const char* input_text) {
     drawRectOutline(10, 8, 246, 36, app_theme_color);
     
     char label[128];
-    if (step == 0)      sprintf(label, "%s: %s_", uiTxt("CODIGO", "CODE"), input_text);
+    if (step == 0)      sprintf(label, "%s: %s_", uiTxt("CODIGO", "CODE", "CODE"), input_text);
     else if (step == 1) sprintf(label, "WIFI: %s_", input_text);
     renderDrawText(label, 16, 17, RGB15(31, 31, 31), 0);
     
-    drawFormKey(10, 42, 120, 62, uiTxt("CODIGO", "CODE"), (step == 0));
+    drawFormKey(10, 42, 120, 62, uiTxt("CODIGO", "CODE", "CODE"), (step == 0));
     drawFormKey(126, 42, 246, 62, "WIFI", (step == 1));
     
     if (step == 0) {
@@ -311,7 +311,7 @@ void uiDrawBottomForm(int step, const char* input_text) {
                         sprintf(label, "%d: %s", i + 1, net_wfc_ssids[i]);
                     }
                 } else {
-                    sprintf(label, "%d: %s", i + 1, uiTxt("[Vacia]", "[Empty]"));
+                    sprintf(label, "%d: %s", i + 1, uiTxt("[Vacia]", "[Empty]", "[Vide]"));
                 }
                 drawFormKey(10, 68 + i * 30, 124, 92 + i * 30, label, high);
             }
@@ -327,12 +327,12 @@ void uiDrawBottomForm(int step, const char* input_text) {
                         sprintf(label, "%d: %s", i + 1, net_wfc_ssids[i]);
                     }
                 } else {
-                    sprintf(label, "%d: %s", i + 1, uiTxt("[Vacia]", "[Empty]"));
+                    sprintf(label, "%d: %s", i + 1, uiTxt("[Vacia]", "[Empty]", "[Vide]"));
                 }
                 drawFormKey(132, 68 + (i - 3) * 30, 246, 92 + (i - 3) * 30, label, high);
             }
             
-            drawFormKey(10, 158, 246, 182, uiTxt("Manual (Teclado)", "Manual (Keyboard)"), false);
+            drawFormKey(10, 158, 246, 182, uiTxt("Manual (Teclado)", "Manual (Keyboard)", "Manuel (Clavier)"), false);
         }
     }
 }
