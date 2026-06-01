@@ -17,5 +17,7 @@ void uiDrawModalAngleWheel(const AppState* app, int y0, int y1);
 void uiDrawModalNoteMenu(const AppState* app, int y0, int y1);
 void uiDrawModalSaveConfirm(const AppState* app, int y0, int y1);
 void uiDrawLanguageModal(const AppState* app);
+void uiDrawHelpModal(const AppState* app);
+void uiRefreshHelpModal(const AppState* app);
 
 #endif // MODALS_H

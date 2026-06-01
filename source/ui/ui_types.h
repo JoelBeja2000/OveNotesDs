@@ -54,6 +54,8 @@ typedef struct {
     int active_theme_idx;
     int current_lang; // 0 = Spanish, 1 = English
     bool show_lang_modal;
+    bool show_help_modal;
+    int help_page;
     
     bool layers_panel_open;
     int dragging_layer_idx;

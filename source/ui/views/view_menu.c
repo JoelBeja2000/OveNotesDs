@@ -81,20 +81,20 @@ void uiDrawStartMenu(void) {
     }
     
     // Draw welcome title
-    renderDrawText(uiTxt(TXT_WELCOME_TITLE), 32, 24, app_theme_color, 0);
+    renderDrawText(uiTxt(TXT_WELCOME_TITLE), 32, 12, app_theme_color, 0);
     
     // Draw language/flag button at top-right
-    // x = 226..246, y = 8..28
-    renderDrawRect(226, 8, 246, 28, RGB15(10, 10, 12));
-    renderDrawRectOutline(226, 8, 246, 28, app_theme_color);
+    // x = 226..246, y = 4..24
+    renderDrawRect(226, 4, 246, 24, RGB15(10, 10, 12));
+    renderDrawRectOutline(226, 4, 246, 24, app_theme_color);
     
     if (current_lang == 0) {
         // Spain Flag
         // Red top, yellow middle, red bottom
-        for (int y = 9; y <= 27; y++) {
+        for (int y = 5; y <= 23; y++) {
             uint16_t col;
-            if (y >= 9 && y <= 12) col = RGB15(28, 2, 2);
-            else if (y >= 13 && y <= 23) col = RGB15(31, 28, 0);
+            if (y >= 5 && y <= 8) col = RGB15(28, 2, 2);
+            else if (y >= 9 && y <= 19) col = RGB15(31, 28, 0);
             else col = RGB15(28, 2, 2);
             
             for (int x = 227; x <= 245; x++) {
@@ -104,7 +104,7 @@ void uiDrawStartMenu(void) {
     } else if (current_lang == 2) {
         // French Flag
         // Blue vertical columns, White, Red
-        for (int y = 9; y <= 27; y++) {
+        for (int y = 5; y <= 23; y++) {
             for (int x = 227; x <= 245; x++) {
                 uint16_t col;
                 if (x >= 227 && x <= 232) col = RGB15(2, 5, 20); // Blue
@@ -115,68 +115,75 @@ void uiDrawStartMenu(void) {
         }
     } else {
         // USA Flag
-        // Blue canton at x=227..234, y=9..17
-        for (int y = 9; y <= 27; y++) {
+        // Blue canton at x=227..234, y=5..13
+        for (int y = 5; y <= 23; y++) {
             for (int x = 227; x <= 245; x++) {
-                if (x >= 227 && x <= 234 && y >= 9 && y <= 17) {
+                if (x >= 227 && x <= 234 && y >= 5 && y <= 13) {
                     renderSetPixel(x, y, RGB15(2, 5, 20));
                 } else {
-                    // Alternating Red and White stripes
-                    // 19 rows total (9 to 27). Let's make stripes 2px thick.
-                    // (y - 9) / 2 is stripe index. Even = Red, Odd = White
-                    int stripe_idx = (y - 9) / 2;
+                    int stripe_idx = (y - 5) / 2;
                     uint16_t col = (stripe_idx % 2 == 0) ? RGB15(28, 2, 2) : RGB15(31, 31, 31);
                     renderSetPixel(x, y, col);
                 }
             }
         }
         // Draw some tiny stars in the canton
+        renderSetPixel(229, 7, RGB15(31, 31, 31));
+        renderSetPixel(232, 7, RGB15(31, 31, 31));
+        renderSetPixel(230, 9, RGB15(31, 31, 31));
         renderSetPixel(229, 11, RGB15(31, 31, 31));
         renderSetPixel(232, 11, RGB15(31, 31, 31));
-        renderSetPixel(230, 13, RGB15(31, 31, 31));
-        renderSetPixel(229, 15, RGB15(31, 31, 31));
-        renderSetPixel(232, 15, RGB15(31, 31, 31));
     }
     
     // Button 1: Crear Nueva Nota
-    // x = 32..224, y = 42..64
-    renderDrawRect(32, 42, 224, 64, RGB15(10, 10, 12));
-    renderDrawRectOutline(32, 42, 224, 64, app_theme_color);
+    // x = 32..224, y = 34..52
+    renderDrawRect(32, 34, 224, 52, RGB15(10, 10, 12));
+    renderDrawRectOutline(32, 34, 224, 52, app_theme_color);
     char create_lbl[48];
     sprintf(create_lbl, "%s", uiTxt(TXT_CREATE_NOTE));
     int create_pad = (24 - strlen(create_lbl)) * 4;
     if (create_pad < 0) create_pad = 0;
-    renderDrawText(create_lbl, 32 + create_pad, 49, RGB15(31, 31, 31), 0);
+    renderDrawText(create_lbl, 32 + create_pad, 39, RGB15(31, 31, 31), 0);
     
     // Button 2: Ver Notas Creadas
-    // x = 32..224, y = 72..94
-    renderDrawRect(32, 72, 224, 94, RGB15(10, 10, 12));
-    renderDrawRectOutline(32, 72, 224, 94, app_theme_color);
+    // x = 32..224, y = 60..78
+    renderDrawRect(32, 60, 224, 78, RGB15(10, 10, 12));
+    renderDrawRectOutline(32, 60, 224, 78, app_theme_color);
     char view_lbl[48];
     sprintf(view_lbl, "%s", uiTxt(TXT_VIEW_NOTES));
     int view_pad = (24 - strlen(view_lbl)) * 4;
     if (view_pad < 0) view_pad = 0;
-    renderDrawText(view_lbl, 32 + view_pad, 79, RGB15(31, 31, 31), 0);
+    renderDrawText(view_lbl, 32 + view_pad, 65, RGB15(31, 31, 31), 0);
     
     // Button 3: WiFi / Conexión
-    // x = 32..224, y = 102..124
-    renderDrawRect(32, 102, 224, 124, RGB15(10, 10, 12));
-    renderDrawRectOutline(32, 102, 224, 124, app_theme_color);
+    // x = 32..224, y = 86..104
+    renderDrawRect(32, 86, 224, 104, RGB15(10, 10, 12));
+    renderDrawRectOutline(32, 86, 224, 104, app_theme_color);
     char wifi_lbl[48];
     sprintf(wifi_lbl, "%s", uiTxt(TXT_WIFI_CONNECTION));
     int wifi_pad = (24 - strlen(wifi_lbl)) * 4;
     if (wifi_pad < 0) wifi_pad = 0;
-    renderDrawText(wifi_lbl, 32 + wifi_pad, 109, RGB15(31, 31, 31), 0);
+    renderDrawText(wifi_lbl, 32 + wifi_pad, 91, RGB15(31, 31, 31), 0);
     
     // Button 4: Cambiar Tema
-    // x = 32..224, y = 132..154
-    renderDrawRect(32, 132, 224, 154, RGB15(10, 10, 12));
-    renderDrawRectOutline(32, 132, 224, 154, app_theme_color);
+    // x = 32..224, y = 112..130
+    renderDrawRect(32, 112, 224, 130, RGB15(10, 10, 12));
+    renderDrawRectOutline(32, 112, 224, 130, app_theme_color);
     char theme_lbl[48];
     sprintf(theme_lbl, uiTxt(TXT_THEME_LABEL), uiGetThemeName(active_theme_idx));
     int theme_pad = (24 - strlen(theme_lbl)) * 4;
     if (theme_pad < 0) theme_pad = 0;
-    renderDrawText(theme_lbl, 32 + theme_pad, 139, RGB15(31, 31, 31), 0);
+    renderDrawText(theme_lbl, 32 + theme_pad, 117, RGB15(31, 31, 31), 0);
+    
+    // Button 5: Guía de Controles (Help)
+    // x = 32..224, y = 138..156
+    renderDrawRect(32, 138, 224, 156, RGB15(10, 10, 12));
+    renderDrawRectOutline(32, 138, 224, 156, app_theme_color);
+    char help_lbl[48];
+    sprintf(help_lbl, "%s", uiTxt(TXT_HELP_BUTTON));
+    int help_pad = (24 - strlen(help_lbl)) * 4;
+    if (help_pad < 0) help_pad = 0;
+    renderDrawText(help_lbl, 32 + help_pad, 143, RGB15(31, 31, 31), 0);
     
     // Bottom instructions
     renderDrawText(uiTxt(TXT_START_INSTRUCTIONS), 20, 168, RGB15(20, 20, 22), 0);
@@ -185,6 +192,10 @@ void uiDrawStartMenu(void) {
     
     if (show_lang_modal) {
         uiDrawLanguageModal(&g_app_state);
+    }
+    
+    if (g_app_state.ui.show_help_modal) {
+        uiDrawHelpModal(&g_app_state);
     }
 }
 

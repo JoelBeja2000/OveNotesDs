@@ -310,14 +310,37 @@ void gameUpdate(void) {
                         show_lang_modal = false;
                         view_menu_show();
                     }
+                } else if (show_help_modal) {
+                    // Close button: x = 230..244, y = 14..26
+                    if (prev_x >= 230 && prev_x <= 244 && prev_y >= 14 && prev_y <= 26) {
+                        show_help_modal = false;
+                        view_menu_show();
+                    }
+                    // Prev button (<): x = 16..74, y = 158..174
+                    else if (prev_x >= 16 && prev_x <= 74 && prev_y >= 158 && prev_y <= 174) {
+                        if (help_page > 0) {
+                            help_page--;
+                            uiRefreshHelpModal(&g_app_state);
+                        }
+                    }
+                    // Next button (>): x = 182..240, y = 158..174
+                    else if (prev_x >= 182 && prev_x <= 240 && prev_y >= 158 && prev_y <= 174) {
+                        if (help_page < 3) {
+                            help_page++;
+                            uiRefreshHelpModal(&g_app_state);
+                        }
+                    }
                 } else {
-                    // Hamburger button at top-right
-                    if (prev_x >= 226 && prev_x <= 246 && prev_y >= 8 && prev_y <= 28) {
+                    // Hamburger button at top-right (shifted y to 4..24)
+                    if (prev_x >= 226 && prev_x <= 246 && prev_y >= 4 && prev_y <= 24) {
                         show_lang_modal = true;
                         view_menu_show();
                     }
-                    // Button 1: Crear Nueva Nota (y = 42..64, x = 32..224)
-                    else if (prev_x >= 32 && prev_x <= 224 && prev_y >= 42 && prev_y <= 64) {
+                    // Button 1: Crear Nueva Nota (y = 34..52, x = 32..224)
+                    else if (prev_x >= 32 && prev_x <= 224 && prev_y >= 34 && prev_y <= 52) {
+                        // Clear all layers so new note starts blank
+                        renderInitCanvas();
+                        
                         videoBgDisableSub(3);
                         
                         // Initialize BG2 bitmap for preview on the top screen
@@ -332,8 +355,8 @@ void gameUpdate(void) {
                         
                         current_state = STATE_DRAW;
                     }
-                    // Button 2: Ver Notas Creadas (y = 72..94, x = 32..224)
-                    else if (prev_x >= 32 && prev_x <= 224 && prev_y >= 72 && prev_y <= 94) {
+                    // Button 2: Ver Notas Creadas (y = 60..78, x = 32..224)
+                    else if (prev_x >= 32 && prev_x <= 224 && prev_y >= 60 && prev_y <= 78) {
                         char filenames[100][32];
                         int count = ioGetNoteList(filenames, 100);
                         
@@ -356,14 +379,20 @@ void gameUpdate(void) {
                         
                         view_gallery_show(gallery_selected_idx, gallery_count, gallery_filenames);
                     }
-                    // Button 3: WiFi / Conexión (y = 102..124, x = 32..224)
-                    else if (prev_x >= 32 && prev_x <= 224 && prev_y >= 102 && prev_y <= 124) {
+                    // Button 3: WiFi / Conexión (y = 86..104, x = 32..224)
+                    else if (prev_x >= 32 && prev_x <= 224 && prev_y >= 86 && prev_y <= 104) {
                         enterWizardState();
                     }
-                    // Button 4: Cambiar Tema (y = 132..154, x = 32..224)
-                    else if (prev_x >= 32 && prev_x <= 224 && prev_y >= 132 && prev_y <= 154) {
+                    // Button 4: Cambiar Tema (y = 112..130, x = 32..224)
+                    else if (prev_x >= 32 && prev_x <= 224 && prev_y >= 112 && prev_y <= 130) {
                         active_theme_idx = (active_theme_idx + 1) % 5;
                         app_theme_color = theme_colors[active_theme_idx];
+                        view_menu_show();
+                    }
+                    // Button 5: Guía de Controles (y = 138..156, x = 32..224)
+                    else if (prev_x >= 32 && prev_x <= 224 && prev_y >= 138 && prev_y <= 156) {
+                        show_help_modal = true;
+                        help_page = 0;
                         view_menu_show();
                     }
                 }
@@ -371,14 +400,31 @@ void gameUpdate(void) {
             }
         }
         
-        if (keys_down & (KEY_L | KEY_R)) {
-            if (keys_down & KEY_L) {
-                active_theme_idx = (active_theme_idx - 1 + 5) % 5;
-            } else {
-                active_theme_idx = (active_theme_idx + 1) % 5;
+        if (show_help_modal) {
+            if (keys_down & (KEY_LEFT | KEY_Y)) {
+                if (help_page > 0) {
+                    help_page--;
+                    uiRefreshHelpModal(&g_app_state);
+                }
+            } else if (keys_down & (KEY_RIGHT | KEY_A)) {
+                if (help_page < 3) {
+                    help_page++;
+                    uiRefreshHelpModal(&g_app_state);
+                }
+            } else if (keys_down & (KEY_B | KEY_START)) {
+                show_help_modal = false;
+                view_menu_show();
             }
-            app_theme_color = theme_colors[active_theme_idx];
-            view_menu_show();
+        } else {
+            if (keys_down & (KEY_L | KEY_R)) {
+                if (keys_down & KEY_L) {
+                    active_theme_idx = (active_theme_idx - 1 + 5) % 5;
+                } else {
+                    active_theme_idx = (active_theme_idx + 1) % 5;
+                }
+                app_theme_color = theme_colors[active_theme_idx];
+                view_menu_show();
+            }
         }
         return;
     }

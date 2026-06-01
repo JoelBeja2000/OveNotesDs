@@ -28,6 +28,8 @@
 #define active_theme_idx      g_app_state.ui.active_theme_idx
 #define current_lang          g_app_state.ui.current_lang
 #define show_lang_modal       g_app_state.ui.show_lang_modal
+#define show_help_modal       g_app_state.ui.show_help_modal
+#define help_page             g_app_state.ui.help_page
 
 // Render/Draw State compatibility macros
 #define layers_count         g_app_state.draw.layers_count
