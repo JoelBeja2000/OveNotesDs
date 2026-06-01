@@ -102,5 +102,8 @@ const char* const strings_en[TXT_MAX] = {
     [TXT_KEY_SAVE]               = "SAVE (A)",
     [TXT_KEY_SPACE]              = "Space",
     [TXT_KEY_LAYER_PROP]         = "LAYER PROPERTIES",
-    [TXT_BG_ABBR_FORMAT]         = "BG%d"
+    [TXT_BG_ABBR_FORMAT]         = "BG%d",
+    [TXT_HELP_BUTTON]            = "CONTROLS GUIDE",
+    [TXT_HELP_NEXT]              = "NEXT >",
+    [TXT_HELP_PREV]              = "< PREV"
 };

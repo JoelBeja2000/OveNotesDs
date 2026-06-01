@@ -102,5 +102,8 @@ const char* const strings_fr[TXT_MAX] = {
     [TXT_KEY_SAVE]               = "SAUVEGARDER (A)",
     [TXT_KEY_SPACE]              = "Espace",
     [TXT_KEY_LAYER_PROP]         = "PROPRIETES DE CALQUE",
-    [TXT_BG_ABBR_FORMAT]         = "ARR P%d"
+    [TXT_BG_ABBR_FORMAT]         = "ARR P%d",
+    [TXT_HELP_BUTTON]            = "GUIDE DES CONTROLES",
+    [TXT_HELP_NEXT]              = "SUIV. >",
+    [TXT_HELP_PREV]              = "< PREC."
 };

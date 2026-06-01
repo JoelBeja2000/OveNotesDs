@@ -105,6 +105,11 @@ typedef enum {
     TXT_KEY_LAYER_PROP,
     TXT_BG_ABBR_FORMAT,
     
+    // HELP MODAL
+    TXT_HELP_BUTTON,
+    TXT_HELP_NEXT,
+    TXT_HELP_PREV,
+    
     TXT_MAX
 } TextId;
 
