@@ -64,57 +64,99 @@ static void drawTopCircle(int xc, int yc, int r, uint16_t color, bool filled) {
 // Page 0 diagram: two canvas states (HUD on / HUD off) + dpad
 static void drawPage0Diagram(uint16_t theme) {
     uint16_t canvas_bg  = RGB15(2,2,3);
-    uint16_t toolbar_bg = RGB15(5,5,7);
-    uint16_t stroke_col = RGB15(22,22,22);
+    uint16_t toolbar_bg = RGB15(5,5,8);
+    uint16_t stroke_col = RGB15(28,28,28);
+    uint16_t send_col   = RGB15(4,20,4);
     uint16_t dim_col    = RGB15(10,10,12);
 
-    // === Left box: canvas WITH toolbar (HUD visible) ===
-    int lx0=16, ly0=28, lx1=106, ly1=148;
-    drawTopRect(lx0,ly0,lx1,ly1,canvas_bg);
-    drawTopRectOutline(lx0,ly0,lx1,ly1,dim_col);
-    // mock strokes
-    drawTopLine(lx0+8,ly0+30,lx0+50,ly0+55,stroke_col);
-    drawTopLine(lx0+50,ly0+55,lx0+70,ly0+40,stroke_col);
-    drawTopLine(lx0+20,ly0+65,lx0+60,ly0+70,stroke_col);
-    // toolbar strip at bottom of left box
-    int tb_y0=ly1-14, tb_y1=ly1-2;
-    drawTopRect(lx0+2,tb_y0,lx1-2,tb_y1,toolbar_bg);
-    drawTopRectOutline(lx0+2,tb_y0,lx1-2,tb_y1,theme);
-    // label
-    renderDrawTextOnBuffer(wizard_buffer,"CON HUD",lx0+12,ly1+4,theme,0);
+    // ============================================================
+    // Left box: canvas WITH toolbar (HUD visible)
+    // Canvas: x=8..108, y=22..136  |  Toolbar: y=137..152
+    // ============================================================
+    int lx0=8,  ly0=22, lx1=108, ly1=152;
+    int lt_y = ly1-15; // toolbar top y
 
-    // === Right box: canvas WITHOUT toolbar (HUD hidden) ===
-    int rx0=150, ry0=28, rx1=240, ry1=148;
-    drawTopRect(rx0,ry0,rx1,ry1,canvas_bg);
-    drawTopRectOutline(rx0,ry0,rx1,ry1,theme);
-    // mock strokes extending to full bottom
-    drawTopLine(rx0+8,ry0+30,rx0+50,ry0+55,stroke_col);
-    drawTopLine(rx0+50,ry0+55,rx0+70,ry0+40,stroke_col);
-    drawTopLine(rx0+20,ry0+65,rx0+60,ry0+70,stroke_col);
-    drawTopLine(rx0+10,ry0+90,rx0+75,ry0+95,stroke_col); // extra strokes in reclaimed area
-    drawTopLine(rx0+15,ry0+108,rx0+65,ry0+112,stroke_col);
-    // label
+    // Canvas fill
+    drawTopRect(lx0, ly0, lx1, lt_y-1, canvas_bg);
+    drawTopRectOutline(lx0, ly0, lx1, ly1, dim_col);
+
+    // Mock drawing strokes (stay within canvas, above toolbar)
+    drawTopLine(lx0+12, ly0+18, lx0+55, ly0+38, stroke_col);
+    drawTopLine(lx0+55, ly0+38, lx0+80, ly0+22, stroke_col);
+    drawTopLine(lx0+20, ly0+52, lx0+70, ly0+60, stroke_col);
+    drawTopLine(lx0+30, ly0+72, lx0+58, ly0+88, stroke_col);
+
+    // Sidebar arrow handle (right edge, visible in HUD mode)
+    drawTopRect(lx1-6, ly0+40, lx1-1, ly0+60, RGB15(6,7,10));
+    drawTopLine(lx1-4, ly0+49, lx1-2, ly0+46, dim_col);
+    drawTopLine(lx1-4, ly0+49, lx1-2, ly0+52, dim_col);
+
+    // Undo/Redo buttons (top-left corner)
+    drawTopRect(lx0+1, ly0+1, lx0+9,  ly0+9, RGB15(6,7,10));
+    drawTopRect(lx0+11,ly0+1, lx0+19, ly0+9, RGB15(6,7,10));
+    drawTopLine(lx0+4, ly0+5, lx0+6, ly0+3, dim_col);
+    drawTopLine(lx0+4, ly0+5, lx0+6, ly0+7, dim_col);
+    drawTopLine(lx0+16,ly0+5, lx0+14,ly0+3, dim_col);
+    drawTopLine(lx0+16,ly0+5, lx0+14,ly0+7, dim_col);
+
+    // === Toolbar strip ===
+    drawTopRect(lx0+1, lt_y, lx1-1, ly1-1, toolbar_bg);
+    drawTopLine(lx0+1, lt_y, lx1-1, lt_y, theme); // top border accent
+
+    // 5 buttons: PEN | COL | BG | MNU | SND
+    // Button widths spread evenly
+    int total_w = lx1 - lx0 - 2;
+    int bw = total_w / 5;
+    const char* labels[] = {"PEN","COL","BG","MNU","SND"};
+    for(int i = 0; i < 5; i++) {
+        int bx0 = lx0+1+i*bw;
+        int bx1 = (i==4) ? lx1-2 : bx0+bw-1;
+        uint16_t btn_bg = (i==4) ? send_col : toolbar_bg;
+        drawTopRect(bx0+1, lt_y+1, bx1-1, ly1-2, btn_bg);
+        if(i < 4) drawTopLine(bx1, lt_y+2, bx1, ly1-3, RGB15(9,9,11)); // divider
+        // Tiny label (font is 5px so at this scale only render at reasonable size)
+        renderDrawTextOnBuffer(wizard_buffer, labels[i], bx0+2, lt_y+4,
+            (i==4) ? RGB15(12,31,12) : RGB15(20,20,20), 0);
+    }
+
+    // Label below the left box
+    renderDrawTextOnBuffer(wizard_buffer,"CON HUD",lx0+10,ly1+4,theme,0);
+
+    // ============================================================
+    // Right box: canvas WITHOUT toolbar (HUD hidden = full canvas)
+    // Full height: x=148..248, y=22..152
+    // ============================================================
+    int rx0=148, ry0=22, rx1=248, ry1=152;
+
+    drawTopRect(rx0, ry0, rx1, ry1, canvas_bg);
+    drawTopRectOutline(rx0, ry0, rx1, ry1, theme); // highlighted = active
+
+    // Same strokes as left box, identical positions
+    drawTopLine(rx0+12, ry0+18, rx0+55, ry0+38, stroke_col);
+    drawTopLine(rx0+55, ry0+38, rx0+80, ry0+22, stroke_col);
+    drawTopLine(rx0+20, ry0+52, rx0+70, ry0+60, stroke_col);
+    drawTopLine(rx0+30, ry0+72, rx0+58, ry0+88, stroke_col);
+    // Extra strokes in the recovered toolbar area (shows more drawing space)
+    drawTopLine(rx0+10, ry0+105, rx0+65, ry0+114, stroke_col);
+    drawTopLine(rx0+28, ry0+120, rx0+72, ry0+126, stroke_col);
+
+    // Label below the right box
     renderDrawTextOnBuffer(wizard_buffer,"SIN HUD",rx0+8,ry1+4,theme,0);
 
-    // === Center: D-pad with only UP and DOWN highlighted ===
-    int cx=128, cy=88;
-    // cross arms
-    drawTopRect(cx-4,cy-14,cx+4,cy+14,RGB15(12,12,14));
-    drawTopRect(cx-14,cy-4,cx+14,cy+4,RGB15(12,12,14));
-    // UP highlighted
-    drawTopRect(cx-4,cy-14,cx+4,cy-4,theme);
-    drawTopLine(cx,cy-12,cx-3,cy-8,theme);
-    drawTopLine(cx,cy-12,cx+3,cy-8,theme);
-    // DOWN highlighted
-    drawTopRect(cx-4,cy+4,cx+4,cy+14,theme);
-    drawTopLine(cx,cy+12,cx-3,cy+8,theme);
-    drawTopLine(cx,cy+12,cx+3,cy+8,theme);
-
-    // Arrows connecting boxes to dpad
-    drawTopLine(rx0-2,cy,cx+16,cy,RGB15(18,18,18)); // right box -> dpad
-    drawTopLine(lx1+2,cy,cx-16,cy,RGB15(18,18,18)); // left box <- dpad
-    drawTopPixel(cx+14,cy-2,RGB15(18,18,18)); drawTopPixel(cx+14,cy+2,RGB15(18,18,18)); // arrowhead right
-    drawTopPixel(cx-14,cy-2,RGB15(18,18,18)); drawTopPixel(cx-14,cy+2,RGB15(18,18,18)); // arrowhead left
+    // ============================================================
+    // Center D-pad — only UP and DOWN highlighted
+    // ============================================================
+    int cx=128, cy=87;
+    drawTopRect(cx-4,cy-14,cx+4,cy+14,RGB15(12,12,14)); // vertical arm
+    drawTopRect(cx-14,cy-4,cx+14,cy+4,RGB15(12,12,14)); // horizontal arm
+    // UP arrow (theme color)
+    drawTopRect(cx-4,cy-14,cx+4,cy-5,theme);
+    drawTopLine(cx,cy-12,cx-3,cy-9,theme);
+    drawTopLine(cx,cy-12,cx+3,cy-9,theme);
+    // DOWN arrow (theme color)
+    drawTopRect(cx-4,cy+5,cx+4,cy+14,theme);
+    drawTopLine(cx,cy+12,cx-3,cy+9,theme);
+    drawTopLine(cx,cy+12,cx+3,cy+9,theme);
 }
 
 static void drawHelpTopScreenDiagram(const AppState* app) {
@@ -213,9 +255,17 @@ static void drawHelpTopScreenDiagram(const AppState* app) {
         renderDrawTextOnBuffer(wizard_buffer,"WIFI FTP",104,70,active,0);
         renderDrawTextOnBuffer(wizard_buffer,"CODE: AB12",100,90,RGB15(28,28,28),0);
 
-        // SD card icon: moved down so top border is visible
-        drawTopRectOutline(116,22,136,48,line_col);
-        drawTopLine(116,28,122,22,line_col); // notch
+        // SD card icon: draw outline WITHOUT top-left corner, then add diagonal chamfer
+        // Top edge: from chamfer end to right (skip top-left)
+        drawTopLine(122,22,136,22,line_col);
+        // Right edge
+        drawTopLine(136,22,136,48,line_col);
+        // Bottom edge
+        drawTopLine(136,48,116,48,line_col);
+        // Left edge: from bottom up to chamfer start (skip top-left)
+        drawTopLine(116,48,116,28,line_col);
+        // Diagonal chamfer replacing the top-left 90° corner
+        drawTopLine(116,28,122,22,line_col);
         renderDrawTextOnBuffer(wizard_buffer,"SD",120,32,active,0);
 
         if(current_lang==0) {
